@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import db from "../config/database.js";
+import { uploadFile, deleteFile } from "../utils/supabaseStorage.js";
 
 const ROLES_HIERARCHY = ["root", "admin", "manager", "teamlead", "hr", "developer"];
 
@@ -55,7 +56,7 @@ const createEmployee = async (req, res, next) => {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const profileImage = req.file ? `/uploads/${req.file.filename}` : null;
+    const profileImage = req.file ? await uploadFile(req.file, "profiles") : null;
 
     const [user] = await db("users")
       .insert({
@@ -218,7 +219,11 @@ const updateEmployee = async (req, res, next) => {
 
     // Handle file upload
     if (req.file) {
-      updates.profile_image = `/uploads/${req.file.filename}`;
+      const oldImage = await db("users").where("id", id).first();
+      if (oldImage?.profile_image) {
+        await deleteFile(oldImage.profile_image);
+      }
+      updates.profile_image = await uploadFile(req.file, "profiles");
     }
 
     // Map camelCase to snake_case

@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import db from "../config/database.js";
+import { uploadFile, deleteFile } from "../utils/supabaseStorage.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -354,7 +355,12 @@ const uploadAvatar = async (req, res, next) => {
 
     const userId = req.user._id;
 
-    const avatarUrl = `/uploads/${req.file.filename}`;
+    const oldUser = await db("users").where("id", userId).first();
+    if (oldUser?.avatar) {
+      await deleteFile(oldUser.avatar);
+    }
+
+    const avatarUrl = await uploadFile(req.file, "avatars");
 
     await db("users")
       .where("id", userId)
