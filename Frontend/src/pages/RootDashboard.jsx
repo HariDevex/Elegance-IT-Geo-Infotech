@@ -68,8 +68,7 @@ const RootDashboard = () => {
             root: employees.filter((e) => e.role === "root").length,
           },
         });
-      } catch (error) {
-        console.error("Failed to fetch stats:", error);
+      } catch {
       } finally {
         setLoadingStats(false);
       }

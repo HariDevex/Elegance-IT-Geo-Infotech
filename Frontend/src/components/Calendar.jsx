@@ -37,8 +37,7 @@ const Calendar = ({ onDateClick }) => {
       if (leavesRes.data.success) {
         setLeaves(leavesRes.data.leaves || []);
       }
-    } catch (error) {
-      console.error("Failed to fetch calendar data");
+    } catch {
     } finally {
       setLoading(false);
     }

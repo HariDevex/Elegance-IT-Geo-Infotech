@@ -67,8 +67,7 @@ const AdminDashboard = () => {
             hr: employees.filter((e) => e.role === "hr").length,
           },
         });
-      } catch (error) {
-        console.error("Failed to fetch stats:", error);
+      } catch {
       } finally {
         setLoadingStats(false);
       }

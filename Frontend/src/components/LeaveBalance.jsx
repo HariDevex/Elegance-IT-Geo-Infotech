@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { Award, Calendar, Clock, TrendingUp } from "lucide-react";
+import { Award, Calendar } from "lucide-react";
 import { Skeleton, SkeletonGrid } from "./Skeleton";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -22,8 +22,7 @@ const LeaveBalance = ({ compact = false }) => {
       if (res.data.success) {
         setBalances(res.data.balances || []);
       }
-    } catch (error) {
-      console.error("Failed to fetch leave balances");
+    } catch {
     } finally {
       setLoading(false);
     }

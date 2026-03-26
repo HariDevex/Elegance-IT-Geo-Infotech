@@ -38,9 +38,7 @@ const NotificationBell = () => {
         setNotifications(res.data.notifications || []);
         setUnreadCount(res.data.unreadCount || 0);
       }
-    } catch (error) {
-      console.error("Failed to fetch notifications");
-    }
+    } catch {}
   };
 
   const markAsRead = async (id) => {

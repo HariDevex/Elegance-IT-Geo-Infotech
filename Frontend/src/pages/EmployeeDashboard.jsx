@@ -47,8 +47,7 @@ const EmployeeDashboard = () => {
           pendingLeaves: leaves.filter((l) => l.status === "Pending").length,
           approvedLeaves: leaves.filter((l) => l.status === "Approved").length,
         });
-      } catch (error) {
-        console.error("Failed to fetch stats:", error);
+      } catch {
       } finally {
         setLoading(false);
       }

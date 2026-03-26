@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { Download } from "lucide-react";
 import { exportToExcel } from "../utils/excel";
+import { Skeleton, SkeletonTable } from "./Skeleton";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
@@ -91,7 +92,7 @@ const LoginLogs = () => {
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-slate-400">Loading...</div>
+        <SkeletonTable rows={8} cols={5} />
       ) : filteredLogs.length === 0 ? (
         <div className="text-center py-8 text-slate-400">No logs found</div>
       ) : (

@@ -55,7 +55,6 @@ const EmployeeAttendanceView = () => {
       const msg = action === "checkin" ? "Checked in successfully!" : "Checked out successfully!";
       setActionMsg(msg);
       toast.success(msg);
-      // Reload
       const firstDayOfYear = `${new Date().getFullYear()}-01-01`;
       const res = await axios.get(`${API_BASE}/api/attendance`, {
         headers: { Authorization: `Bearer ${token}` },

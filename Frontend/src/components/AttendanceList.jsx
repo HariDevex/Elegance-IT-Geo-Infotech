@@ -35,9 +35,7 @@ const AttendanceList = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setEmployees(res.data.users || []);
-    } catch (error) {
-      console.error("Failed to fetch employees");
-    }
+    } catch {}
   };
 
   const loadData = async (selectedDate) => {

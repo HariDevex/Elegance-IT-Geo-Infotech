@@ -79,8 +79,7 @@ const Celebrations = () => {
         celebrations.sort((a, b) => a.daysUntil - b.daysUntil);
         setUpcoming(celebrations.slice(0, 10));
       }
-    } catch (error) {
-      console.error("Failed to fetch celebrations");
+    } catch {
     } finally {
       setLoading(false);
     }
