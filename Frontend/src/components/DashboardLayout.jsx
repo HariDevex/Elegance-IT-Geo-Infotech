@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiEdit2, FiLock, FiLogOut, FiMenu, FiX } from "react-icons/fi";
+import { Edit2, Lock, LogOut, Menu, X } from "lucide-react";
 import { useAuth } from "../context/authContext";
 import axios from "axios";
 import { getImageUrl } from "../utils/excel";
@@ -130,7 +130,7 @@ const DashboardLayout = ({
           className="md:hidden p-2 rounded-lg transition-colors"
           style={{ backgroundColor: 'var(--color-bg-hover)' }}
         >
-          {mobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
 
         <div className="flex items-center gap-3">
@@ -183,7 +183,7 @@ const DashboardLayout = ({
                       style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg-primary)' }}
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      <FiEdit2 size={14} />
+                      <Edit2 size={14} />
                     </button>
                     <input
                       ref={fileInputRef}
@@ -212,7 +212,7 @@ const DashboardLayout = ({
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors"
                   style={{ color: 'var(--color-text-secondary)' }}
                 >
-                  <FiLock style={{ color: 'var(--color-text-secondary)' }} />
+                  <Lock size={16} style={{ color: 'var(--color-text-secondary)' }} />
                   Change Password
                 </button>
                 <button
@@ -221,7 +221,7 @@ const DashboardLayout = ({
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors"
                   style={{ color: 'var(--color-error)' }}
                 >
-                  <FiLogOut style={{ color: 'var(--color-error)' }} />
+                  <LogOut size={16} style={{ color: 'var(--color-error)' }} />
                   Logout
                 </button>
               </div>
