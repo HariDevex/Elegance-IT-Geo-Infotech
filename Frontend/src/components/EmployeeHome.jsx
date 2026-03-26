@@ -1,6 +1,6 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Calendar as CalIcon, Clock, CheckCircle, XCircle } from "lucide-react";
 import LeaveBalance from "./LeaveBalance";
+import AttendanceBarChart from "./charts/AttendanceBarChart";
 
 const EmployeeHome = ({ stats, loading }) => {
   const weekData = [
@@ -64,21 +64,7 @@ const EmployeeHome = ({ stats, loading }) => {
       >
         <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text-primary)' }}>This Week Attendance</h3>
         <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={weekData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="day" stroke="var(--color-text-muted)" />
-              <YAxis stroke="var(--color-text-muted)" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-bg-primary)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                }}
-              />
-              <Bar dataKey="present" fill="#02f5a1" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <AttendanceBarChart data={weekData} />
         </div>
       </div>
 

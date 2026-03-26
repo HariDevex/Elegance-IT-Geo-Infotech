@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useAuth } from "../context/authContext";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import AttendanceBarChart from "./charts/AttendanceBarChart";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
@@ -131,21 +131,7 @@ const EmployeeAttendanceView = () => {
       <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-6">
         <h3 className="text-lg font-semibold mb-4">Last 7 Days</h3>
         <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={last7Data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis dataKey="day" stroke="#94a3b8" />
-              <YAxis stroke="#94a3b8" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1e293b",
-                  border: "1px solid #334155",
-                  borderRadius: "8px",
-                }}
-              />
-              <Bar dataKey="present" fill="#22c55e" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <AttendanceBarChart data={last7Data} />
         </div>
       </div>
     </div>

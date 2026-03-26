@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
-import { Download, Trash2 } from "lucide-react";
+import { Download } from "lucide-react";
 import { exportToExcel, getImageUrl } from "../utils/excel";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -40,7 +40,7 @@ const EmployeesList = ({ onAddNew, onView, onEdit }) => {
     fetchEmployees();
   }, [search, pagination.page]);
 
-  const handleExport = async () => {
+  const handleExport = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(`${API_BASE}/api/auth/export/employees`, {
@@ -55,9 +55,9 @@ const EmployeesList = ({ onAddNew, onView, onEdit }) => {
     } catch {
       toast.error("Export failed");
     }
-  };
+  }, []);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!deleteId) return;
     try {
       const token = localStorage.getItem("token");
@@ -73,7 +73,7 @@ const EmployeesList = ({ onAddNew, onView, onEdit }) => {
     } catch (err) {
       toast.error(err.response?.data?.error || "Failed to delete");
     }
-  };
+  }, [deleteId]);
 
   const confirmDelete = (id) => {
     setDeleteId(id);

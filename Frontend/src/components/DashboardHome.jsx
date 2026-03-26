@@ -1,8 +1,10 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { useState, useEffect, memo } from "react";
 import { Users, UserCheck, UserX, Clock, Building } from "lucide-react";
 import LeaveBalance from "./LeaveBalance";
 import LeaveCalendar from "./LeaveCalendar";
 import Celebrations from "./Celebrations";
+import BarChartComponent from "./charts/BarChartComponent";
+import PieChartComponent from "./charts/PieChartComponent";
 
 const statsCards = [
   { label: "Total Employees", key: "totalEmployees", color: "#02f5a1" },
@@ -12,7 +14,7 @@ const statsCards = [
   { label: "Departments", key: "totalDepartments", color: "#3b82f6" },
 ];
 
-const StatCard = ({ label, value, color }) => (
+const StatCard = memo(({ label, value, color }) => (
   <div 
     className="relative overflow-hidden rounded-2xl border p-4 shadow-lg"
     style={{ backgroundColor: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}
@@ -26,7 +28,7 @@ const StatCard = ({ label, value, color }) => (
       <p className="text-3xl font-bold" style={{ color }}>{value || 0}</p>
     </div>
   </div>
-);
+));
 
 const DashboardHome = ({ stats, loading }) => {
   const roleData = stats
@@ -80,21 +82,7 @@ const DashboardHome = ({ stats, loading }) => {
         >
           <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text-primary)' }}>Employee Distribution</h3>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={roleData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="name" stroke="var(--color-text-muted)" />
-                <YAxis stroke="var(--color-text-muted)" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--color-bg-primary)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Bar dataKey="value" fill="#02f5a1" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <BarChartComponent data={roleData} />
           </div>
         </div>
 
@@ -105,30 +93,7 @@ const DashboardHome = ({ stats, loading }) => {
           <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text-primary)' }}>Today's Attendance</h3>
           <div className="flex items-center justify-center h-64">
             <div className="relative w-40 h-40">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={70}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'var(--color-bg-primary)',
-                      border: '1px solid var(--color-border)',
-                      borderRadius: '8px',
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              <PieChartComponent data={pieData} />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-3xl font-bold" style={{ color: 'var(--color-primary)' }}>{stats?.presentToday || 0}</span>
                 <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Present</span>

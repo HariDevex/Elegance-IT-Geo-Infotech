@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import logoSrc from "../assets/Logo/EG.png";
-import videoSrc from "../assets/Logo/galvid_bg_vid.mp4";
 import { useAuth } from "../context/authContext";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const VideoBackground = lazy(() => import("../components/VideoBackground"));
 
 const Login = () => {
   const navigate = useNavigate();
@@ -57,15 +57,9 @@ const Login = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover"
-      >
-        <source src={videoSrc} type="video/mp4" />
-      </video>
+      <Suspense fallback={<div className="absolute inset-0 bg-slate-900" />}>
+        <VideoBackground />
+      </Suspense>
       <div className="absolute inset-0 bg-black/30"></div>
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
