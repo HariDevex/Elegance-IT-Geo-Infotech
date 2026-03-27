@@ -7,7 +7,7 @@
 }
 
 .chat-input::placeholder {
-  color: #8696A0;
+  color: #525252;
 }
 
 @keyframes bounce-dot {
@@ -35,31 +35,31 @@
 }
 
 :root {
-  /* Primary Colors - Easy to change */
-  --color-primary: gray;
-  --color-primary-hover: gray;
-  --color-primary-muted: rgba(2, 245, 161, 0.15);
-  --color-primary-dark: gray;
+  /* Primary Colors - Cyan accent */
+  --color-primary: #06b6d4;
+  --color-primary-hover: #22d3ee;
+  --color-primary-muted: rgba(6, 182, 212, 0.15);
+  --color-primary-dark: #0891b2;
 
-  /* Background Colors */
-  --color-bg-primary: #07191e;
-  --color-bg-secondary: #0d2329;
-  --color-bg-tertiary: #132d34;
-  --color-bg-card: #0a1c21;
-  --color-bg-hover: rgba(2, 245, 161, 0.08);
+  /* Background Colors - Dark/Black theme */
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #0a0a0a;
+  --color-bg-tertiary: #171717;
+  --color-bg-card: #0f0f0f;
+  --color-bg-hover: rgba(6, 182, 212, 0.08);
 
   /* Text Colors */
   --color-text-primary: #ffffff;
   --color-text-secondary: #94a3b8;
   --color-text-muted: #64748b;
-  --color-text-accent: #02f5a1;
+  --color-text-accent: #06b6d4;
 
   /* Border Colors */
-  --color-border: #1e3a44;
-  --color-border-light: #2a4a53;
+  --color-border: #1f1f1f;
+  --color-border-light: #2d2d2d;
 
   /* Status Colors */
-  --color-success: gray;
+  --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
   --color-info: #3b82f6;

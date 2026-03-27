@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Calendar as CalIcon } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const LeaveCalendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -89,7 +89,7 @@ const LeaveCalendar = () => {
     switch (type?.toLowerCase()) {
       case "annual leave": return "bg-blue-500";
       case "sick leave": return "bg-rose-500";
-      case "casual leave": return "bg-emerald-500";
+      case "casual leave": return "bg-cyan-500";
       default: return "bg-slate-500";
     }
   };
@@ -166,7 +166,7 @@ const LeaveCalendar = () => {
                     min-h-16 p-1 rounded-lg border transition-all cursor-pointer
                     ${!day.date ? "border-transparent" : "border-slate-700 hover:border-slate-500"}
                     ${isToday(day.date) ? "ring-2 ring-indigo-500" : ""}
-                    ${hasHolidays ? "bg-emerald-500/10 border-emerald-500/30" : ""}
+                    ${hasHolidays ? "bg-cyan-500/10 border-cyan-500/30" : ""}
                     ${hasLeaves && !hasHolidays ? "bg-blue-500/10 border-blue-500/30" : ""}
                     ${isWeekend && !hasLeaves && !hasHolidays ? "bg-slate-700/20" : ""}
                   `}
@@ -178,7 +178,7 @@ const LeaveCalendar = () => {
                       </div>
                       <div className="space-y-0.5 mt-0.5">
                         {day.holidays?.slice(0, 1).map((h, i) => (
-                          <div key={i} className="text-[9px] px-1 py-0.5 rounded bg-emerald-500 text-white truncate" title={h.name}>
+                          <div key={i} className="text-[9px] px-1 py-0.5 rounded bg-cyan-500 text-white truncate" title={h.name}>
                             {h.name}
                           </div>
                         ))}
@@ -215,10 +215,10 @@ const LeaveCalendar = () => {
 
             {selectedDate.holidays?.length > 0 && (
               <div className="mb-4">
-                <h4 className="text-sm font-medium text-emerald-400 mb-2">Holidays</h4>
+                <h4 className="text-sm font-medium text-cyan-400 mb-2">Holidays</h4>
                 {selectedDate.holidays.map((h, i) => (
                   <div key={i} className="text-sm text-slate-300 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="w-2 h-2 rounded-full bg-cyan-500" />
                     {h.name} ({h.type})
                   </div>
                 ))}
@@ -257,7 +257,7 @@ const LeaveCalendar = () => {
           <span className="text-slate-400">Approved Leave</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-emerald-500" />
+          <div className="w-4 h-4 rounded bg-cyan-500" />
           <span className="text-slate-400">Holiday</span>
         </div>
         <div className="flex items-center gap-2">

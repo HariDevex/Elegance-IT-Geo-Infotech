@@ -4,7 +4,7 @@ import axios from "axios";
 import { Download } from "lucide-react";
 import { exportToExcel } from "../utils/excel";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const CheckInOut = () => {
   const [records, setRecords] = useState([]);
@@ -97,7 +97,7 @@ const CheckInOut = () => {
         <h2 className="text-xl font-semibold text-white">Check In / Out</h2>
         <button
           onClick={handleExport}
-          className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs transition-colors"
+          className="flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-xs transition-colors"
         >
           <Download size={14} />
           Export
@@ -119,7 +119,7 @@ const CheckInOut = () => {
           <button
             onClick={handleCheckin}
             disabled={checking || todayStats.remaining <= 0}
-            className="flex-1 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold transition-colors"
+            className="flex-1 py-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold transition-colors"
           >
             {checking ? "Processing..." : "Check In"}
           </button>
@@ -158,7 +158,7 @@ const CheckInOut = () => {
                     Out: {session.checkout?.time ? new Date(session.checkout.time).toLocaleTimeString() : "Active"}
                   </p>
                   {session.duration && (
-                    <p className="text-xs text-emerald-400">{session.duration} min</p>
+                    <p className="text-xs text-cyan-400">{session.duration} min</p>
                   )}
                 </div>
               </div>

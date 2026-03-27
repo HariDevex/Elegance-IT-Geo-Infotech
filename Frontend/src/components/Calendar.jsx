@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Calendar as CalIcon } from "lucide-react";
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const Calendar = ({ onDateClick }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -71,7 +71,7 @@ const Calendar = ({ onDateClick }) => {
         dayEvents.push({
           type: "holiday",
           title: h.name,
-          color: "bg-emerald-500",
+          color: "bg-cyan-500",
         });
       }
     });
@@ -189,7 +189,7 @@ const Calendar = ({ onDateClick }) => {
 
       <div className="mt-4 flex flex-wrap gap-3 text-xs">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-emerald-500"></div>
+          <div className="w-3 h-3 rounded bg-cyan-500"></div>
           <span className="text-slate-400">Holiday</span>
         </div>
         <div className="flex items-center gap-1.5">

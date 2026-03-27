@@ -36,7 +36,7 @@ const BarChartComponent = ({ data }) => {
             borderRadius: '8px',
           }}
         />
-        <Bar dataKey="value" fill="#02f5a1" radius={[8, 8, 0, 0]} />
+        <Bar dataKey="value" fill="#06b6d4" radius={[8, 8, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

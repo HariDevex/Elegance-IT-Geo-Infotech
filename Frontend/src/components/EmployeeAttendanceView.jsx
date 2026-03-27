@@ -4,7 +4,7 @@ import axios from "axios";
 import { useAuth } from "../context/authContext";
 import AttendanceBarChart from "./charts/AttendanceBarChart";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const EmployeeAttendanceView = () => {
   const { user } = useAuth();
@@ -107,7 +107,7 @@ const EmployeeAttendanceView = () => {
         <button
           onClick={() => act("checkin")}
           disabled={actionLoading}
-          className="px-6 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold disabled:opacity-50"
+          className="px-6 py-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold disabled:opacity-50"
         >
           {actionLoading ? "..." : "Check In"}
         </button>
@@ -118,7 +118,7 @@ const EmployeeAttendanceView = () => {
         >
           {actionLoading ? "..." : "Check Out"}
         </button>
-        {actionMsg && <span className="text-sm text-emerald-300">{actionMsg}</span>}
+        {actionMsg && <span className="text-sm text-cyan-300">{actionMsg}</span>}
       </div>
 
       {error && (

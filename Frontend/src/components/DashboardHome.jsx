@@ -7,8 +7,8 @@ import PieChartComponent from "./charts/PieChartComponent";
 import { Skeleton, SkeletonChart } from "./Skeleton";
 
 const statsCards = [
-  { label: "Total Employees", key: "totalEmployees", color: "#02f5a1" },
-  { label: "Present Today", key: "presentToday", color: "#02f5a1" },
+  { label: "Total Employees", key: "totalEmployees", color: "#06b6d4" },
+  { label: "Present Today", key: "presentToday", color: "#06b6d4" },
   { label: "Absent Today", key: "absentToday", color: "#ef4444" },
   { label: "Pending Leaves", key: "pendingLeaves", color: "#f59e0b" },
   { label: "Departments", key: "totalDepartments", color: "#3b82f6" },
@@ -41,7 +41,7 @@ const DashboardHome = ({ stats, loading }) => {
     : [];
 
   const pieData = [
-    { name: "Present", value: stats?.presentToday || 0, color: "#02f5a1" },
+    { name: "Present", value: stats?.presentToday || 0, color: "#06b6d4" },
     { name: "Absent", value: stats?.absentToday || 0, color: "#ef4444" },
   ];
 
@@ -108,7 +108,7 @@ const DashboardHome = ({ stats, loading }) => {
             </div>
             <div className="ml-6 space-y-3">
               <div className="flex items-center gap-3">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: '#02f5a1' }} />
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: '#06b6d4' }} />
                 <span style={{ color: 'var(--color-text-secondary)' }}>Present: {stats?.presentToday || 0}</span>
               </div>
               <div className="flex items-center gap-3">

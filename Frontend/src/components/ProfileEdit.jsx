@@ -3,8 +3,9 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useAuth } from "../context/authContext";
 import { Eye, EyeOff } from "lucide-react";
+import { getImageUrl } from "../utils/excel";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const ProfileEdit = ({ onDone }) => {
   const { user, updateAvatar } = useAuth();
@@ -37,7 +38,7 @@ const ProfileEdit = ({ onDone }) => {
           Authorization: `Bearer ${token}`,
         },
       });
-      const url = res.data?.avatarUrl || URL.createObjectURL(file);
+      const url = getImageUrl(res.data?.avatarUrl) || URL.createObjectURL(file);
       updateAvatar(url);
       toast.success("Avatar updated!");
     } catch (err) {
@@ -99,7 +100,7 @@ const ProfileEdit = ({ onDone }) => {
         </div>
       )}
       {success && (
-        <div className="p-3 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 text-sm">
+        <div className="p-3 rounded-lg bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 text-sm">
           {success}
         </div>
       )}
@@ -107,9 +108,9 @@ const ProfileEdit = ({ onDone }) => {
       <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-6 flex flex-col items-center">
         <div className="relative">
           <div className="h-32 w-32 rounded-full overflow-hidden bg-slate-700 border-4 border-slate-600">
-            {user?.avatar || user?.profileImage ? (
+            {(user?.avatar || user?.profileImage) ? (
               <img
-                src={user?.avatar || user?.profileImage}
+                src={getImageUrl(user?.avatar || user?.profileImage)}
                 alt={form.name}
                 className="h-full w-full object-cover"
               />
@@ -138,8 +139,9 @@ const ProfileEdit = ({ onDone }) => {
       <form onSubmit={onSubmit} className="bg-slate-800/60 border border-slate-700 rounded-xl p-6 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm text-slate-300">Name</label>
+            <label htmlFor="profile-name" className="text-sm text-slate-300">Name</label>
             <input
+              id="profile-name"
               type="text"
               value={form.name}
               onChange={(e) => update("name", e.target.value)}
@@ -149,8 +151,9 @@ const ProfileEdit = ({ onDone }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm text-slate-300">Email</label>
+            <label htmlFor="profile-email" className="text-sm text-slate-300">Email</label>
             <input
+              id="profile-email"
               type="email"
               value={form.email}
               disabled
@@ -159,8 +162,9 @@ const ProfileEdit = ({ onDone }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm text-slate-300">Department</label>
+            <label htmlFor="profile-department" className="text-sm text-slate-300">Department</label>
             <input
+              id="profile-department"
               type="text"
               value={form.department}
               onChange={(e) => update("department", e.target.value)}
@@ -169,8 +173,9 @@ const ProfileEdit = ({ onDone }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm text-slate-300">Designation</label>
+            <label htmlFor="profile-designation" className="text-sm text-slate-300">Designation</label>
             <input
+              id="profile-designation"
               type="text"
               value={form.designation}
               onChange={(e) => update("designation", e.target.value)}
@@ -179,8 +184,9 @@ const ProfileEdit = ({ onDone }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm text-slate-300">Date of Birth</label>
+            <label htmlFor="profile-dob" className="text-sm text-slate-300">Date of Birth</label>
             <input
+              id="profile-dob"
               type="date"
               value={form.dob}
               onChange={(e) => update("dob", e.target.value)}
@@ -189,8 +195,9 @@ const ProfileEdit = ({ onDone }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm text-slate-300">Gender</label>
+            <label htmlFor="profile-gender" className="text-sm text-slate-300">Gender</label>
             <select
+              id="profile-gender"
               value={form.gender}
               onChange={(e) => update("gender", e.target.value)}
               className="w-full rounded-lg border border-slate-600 bg-slate-900/50 px-3 py-2 text-white"
@@ -203,8 +210,9 @@ const ProfileEdit = ({ onDone }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm text-slate-300">Marital Status</label>
+            <label htmlFor="profile-marital" className="text-sm text-slate-300">Marital Status</label>
             <select
+              id="profile-marital"
               value={form.maritalStatus}
               onChange={(e) => update("maritalStatus", e.target.value)}
               className="w-full rounded-lg border border-slate-600 bg-slate-900/50 px-3 py-2 text-white"
@@ -216,9 +224,10 @@ const ProfileEdit = ({ onDone }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm text-slate-300">New Password (leave blank)</label>
+            <label htmlFor="profile-password" className="text-sm text-slate-300">New Password (leave blank)</label>
             <div className="relative">
               <input
+                id="profile-password"
                 type={showPassword ? "text" : "password"}
                 value={form.newPassword}
                 onChange={(e) => update("newPassword", e.target.value)}

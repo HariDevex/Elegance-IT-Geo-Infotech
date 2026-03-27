@@ -3,11 +3,14 @@ dotenv.config();
 
 export default {
   development: {
-    client: "better-sqlite3",
+    client: "pg",
     connection: {
-      filename: "./data/elegance.db",
+      host: "localhost",
+      port: 5432,
+      database: "mydb",
+      user: "myuser",
+      password: "Nobody009",
     },
-    useNullAsDefault: true,
     migrations: {
       directory: "./migrations",
       extension: "js",

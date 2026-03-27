@@ -537,13 +537,13 @@ const ChatWindow = () => {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-300">Group Name *</label>
-                <input type="text" value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} placeholder="Enter group name"
+                <label htmlFor="chat-group-name" className="block text-sm font-medium mb-1 text-gray-300">Group Name *</label>
+                <input id="chat-group-name" type="text" value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} placeholder="Enter group name"
                   className="w-full rounded-lg px-3 py-2 bg-[#182229] text-white border-none" maxLength={50} />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-300">Description</label>
-                <input type="text" value={newGroupDesc} onChange={(e) => setNewGroupDesc(e.target.value)} placeholder="Enter description"
+                <label htmlFor="chat-group-desc" className="block text-sm font-medium mb-1 text-gray-300">Description</label>
+                <input id="chat-group-desc" type="text" value={newGroupDesc} onChange={(e) => setNewGroupDesc(e.target.value)} placeholder="Enter description"
                   className="w-full rounded-lg px-3 py-2 bg-[#182229] text-white border-none" />
               </div>
               <div className="flex gap-3 pt-2">

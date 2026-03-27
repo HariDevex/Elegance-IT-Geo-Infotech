@@ -5,7 +5,7 @@ import { Download } from "lucide-react";
 import { exportToExcel } from "../utils/excel";
 import { Skeleton, SkeletonTable } from "./Skeleton";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const LoginLogs = () => {
   const [logs, setLogs] = useState([]);
@@ -68,7 +68,7 @@ const LoginLogs = () => {
         <h2 className="text-xl font-semibold text-white">Login Logs</h2>
         <button
           onClick={handleExport}
-          className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs transition-colors"
+          className="flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-xs transition-colors"
         >
           <Download size={14} />
           Export
@@ -119,7 +119,7 @@ const LoginLogs = () => {
                     <span
                       className={`px-2 py-1 rounded-full text-xs ${
                         log.status === "success"
-                          ? "bg-emerald-500/20 text-emerald-300"
+                          ? "bg-cyan-500/20 text-cyan-300"
                           : "bg-rose-500/20 text-rose-300"
                       }`}
                     >

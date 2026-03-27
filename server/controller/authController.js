@@ -8,43 +8,46 @@ dotenv.config();
 
 const createOrUpdateAttendanceOnLogin = async (userId, action = "checkin") => {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split("T")[0];
+    const today = new Date().toISOString().split("T")[0];
+    const now = new Date();
 
-    const existing = await db("attendance")
-      .where("user_id", userId)
-      .whereRaw("date(date) = ?", [todayStr])
-      .first();
-
-    if (action === "checkin") {
-      if (existing) {
+    try {
+      if (action === "checkin") {
         await db("attendance")
-          .where("id", existing.id)
-          .update({
-            status: "Present",
-            check_in_at: new Date(),
-            updated_at: db.fn.now(),
-          });
-      } else {
-        try {
+          .where("user_id", userId)
+          .where("date", today)
+          .update({ status: "Present", check_in_at: now, updated_at: now });
+        
+        const inserted = await db("attendance")
+          .where("user_id", userId)
+          .where("date", today)
+          .first();
+        
+        if (!inserted) {
           await db("attendance").insert({
             user_id: userId,
             date: today,
             status: "Present",
-            check_in_at: new Date(),
+            check_in_at: now,
+            created_at: now,
+            updated_at: now,
           });
-        } catch (e) {
-          // Ignore duplicate errors
+        }
+      } else if (action === "checkout") {
+        await db("attendance")
+          .where("user_id", userId)
+          .where("date", today)
+          .update({ check_out_at: now, updated_at: now });
+      }
+    } catch (e) {
+      if (e.code === "SQLITE_CONSTRAINT_UNIQUE") {
+        if (action === "checkin") {
+          await db("attendance")
+            .where("user_id", userId)
+            .where("date", today)
+            .update({ status: "Present", check_in_at: now, updated_at: now });
         }
       }
-    } else if (action === "checkout" && existing) {
-      await db("attendance")
-        .where("id", existing.id)
-        .update({
-          check_out_at: new Date(),
-          updated_at: db.fn.now(),
-        });
     }
   } catch (err) {
     console.error("Attendance update error:", err);

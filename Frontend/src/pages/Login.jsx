@@ -5,7 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import logoSrc from "../assets/Logo/EG.png";
 import { useAuth } from "../context/authContext";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 const VideoBackground = lazy(() => import("../components/VideoBackground"));
 
 const Login = () => {
@@ -92,7 +92,7 @@ const Login = () => {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 backdrop-blur-sm"
+                className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 backdrop-blur-sm"
                 placeholder="you@example.com"
                 required
               />
@@ -108,14 +108,14 @@ const Login = () => {
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 pr-12 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 pr-12 backdrop-blur-sm"
                   placeholder="Enter your password"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-200 hover:text-emerald-300 transition"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-200 hover:text-cyan-300 transition"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -123,18 +123,18 @@ const Login = () => {
             </div>
 
             <div className="flex items-center justify-between text-sm">
-              <a href="/Forgot-Password" className="text-emerald-400 hover:text-emerald-300 transition">
-                Forgot Password?
-              </a>
+              <a href="/Forgot-Password" className="text-cyan-400 hover:text-cyan-300 transition">
+              Forgot Password?
+            </a>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-lg font-semibold transition disabled:opacity-50 hover:shadow-lg hover:shadow-emerald-500/30"
+              className="w-full py-3 rounded-lg font-semibold transition disabled:opacity-50 hover:shadow-lg hover:shadow-cyan-500/30"
               style={{ 
-                background: 'linear-gradient(135deg, #02f5a1 0%, #00a86b 100%)',
-                color: '#07191e'
+                background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+                color: '#000000'
               }}
             >
               {loading ? "Signing in..." : "Sign In"}

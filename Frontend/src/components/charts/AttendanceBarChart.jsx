@@ -36,7 +36,7 @@ const AttendanceBarChart = ({ data }) => {
             borderRadius: '8px',
           }}
         />
-        <Bar dataKey="hours" fill="#02f5a1" radius={[8, 8, 0, 0]} name="Hours Worked" />
+        <Bar dataKey="hours" fill="#06b6d4" radius={[8, 8, 0, 0]} name="Hours Worked" />
       </BarChart>
     </ResponsiveContainer>
   );

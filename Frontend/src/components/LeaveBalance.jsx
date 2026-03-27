@@ -3,7 +3,7 @@ import axios from "axios";
 import { Award, Calendar } from "lucide-react";
 import { Skeleton, SkeletonGrid } from "./Skeleton";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const LeaveBalance = ({ compact = false }) => {
   const [balances, setBalances] = useState([]);
@@ -42,7 +42,7 @@ const LeaveBalance = ({ compact = false }) => {
     switch (type) {
       case "annual": return "from-blue-500 to-indigo-600";
       case "sick": return "from-rose-500 to-pink-600";
-      case "casual": return "from-emerald-500 to-teal-600";
+      case "casual": return "from-cyan-500 to-teal-600";
       case "unpaid": return "from-slate-500 to-gray-600";
       default: return "from-indigo-500 to-purple-600";
     }

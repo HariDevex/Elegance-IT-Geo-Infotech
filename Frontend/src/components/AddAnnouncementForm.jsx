@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useAuth } from "../context/authContext";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const roleOptions = [
   { value: "all", label: "All" },
@@ -89,7 +89,7 @@ const AddAnnouncementForm = ({ onCreated }) => {
         </div>
       )}
       {success && (
-        <div className="mb-4 p-3 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 text-sm">
+        <div className="mb-4 p-3 rounded-lg bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 text-sm">
           {success}
         </div>
       )}

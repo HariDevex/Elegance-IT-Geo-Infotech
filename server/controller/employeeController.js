@@ -50,8 +50,22 @@ const createEmployee = async (req, res, next) => {
       });
     }
 
-    // Check employee ID uniqueness
-    if (employeeId) {
+    // Check employee ID uniqueness - auto-generate if not provided
+    let finalEmployeeId = employeeId;
+    if (!finalEmployeeId) {
+      const lastUser = await db("users")
+        .whereNotNull("employee_id")
+        .where("employee_id", "like", "EMP%")
+        .orderBy("employee_id", "desc")
+        .first();
+      
+      if (lastUser && lastUser.employee_id) {
+        const num = parseInt(lastUser.employee_id.replace("EMP", "")) + 1;
+        finalEmployeeId = `EMP${num.toString().padStart(3, "0")}`;
+      } else {
+        finalEmployeeId = "EMP001";
+      }
+    } else {
       const existingId = await db("users").where("employee_id", employeeId).first();
       if (existingId) {
         return res.status(409).json({
@@ -71,7 +85,7 @@ const createEmployee = async (req, res, next) => {
         email: email.toLowerCase(),
         password: hashedPassword,
         role,
-        employee_id: employeeId || null,
+        employee_id: finalEmployeeId,
         dob: dob || null,
         gender: gender || null,
         marital_status: maritalStatus || null,

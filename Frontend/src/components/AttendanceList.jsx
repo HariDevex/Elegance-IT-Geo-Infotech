@@ -6,7 +6,7 @@ import { useAuth } from "../context/authContext";
 import { exportToExcel, getImageUrl } from "../utils/excel";
 import { Skeleton, SkeletonTable } from "./Skeleton";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const AttendanceList = () => {
   const [rows, setRows] = useState([]);
@@ -156,7 +156,7 @@ const AttendanceList = () => {
           />
           <button
             onClick={handleExport}
-            className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs transition-colors"
+            className="flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-xs transition-colors"
           >
             <Download size={14} />
             Export Excel
@@ -220,7 +220,7 @@ const AttendanceList = () => {
                           onClick={() => setStatus(emp._id, "Present")}
                           className={`px-3 py-1 rounded text-xs ${
                             emp.attendanceStatus === "Present"
-                              ? "bg-emerald-500/30 text-emerald-300"
+                              ? "bg-cyan-500/30 text-cyan-300"
                               : "bg-slate-700 text-slate-300 hover:text-white"
                           }`}
                         >

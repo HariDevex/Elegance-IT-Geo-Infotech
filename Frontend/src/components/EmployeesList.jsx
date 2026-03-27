@@ -5,7 +5,7 @@ import { Download } from "lucide-react";
 import { exportToExcel, getImageUrl } from "../utils/excel";
 import { Skeleton, SkeletonTable } from "./Skeleton";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const EmployeesList = ({ onAddNew, onView, onEdit }) => {
   const [employees, setEmployees] = useState([]);
@@ -111,7 +111,7 @@ const EmployeesList = ({ onAddNew, onView, onEdit }) => {
         <div className="flex gap-2">
           <button
             onClick={handleExport}
-            className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs transition-colors"
+            className="flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-xs transition-colors"
           >
             <Download size={14} />
             Export

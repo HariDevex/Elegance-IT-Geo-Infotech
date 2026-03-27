@@ -4,7 +4,7 @@ import axios from "axios";
 import { useAuth } from "../context/authContext";
 import { Skeleton, SkeletonTable } from "./Skeleton";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 const statusOptions = ["All", "Pending", "Approved", "Rejected"];
 
 const LeavesList = () => {
@@ -123,7 +123,7 @@ const LeavesList = () => {
           ))}
           <button
             onClick={() => setShowForm(true)}
-            className="rounded-lg px-3 py-2 text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-500"
+            className="rounded-lg px-3 py-2 text-sm font-semibold bg-cyan-600 text-white hover:bg-cyan-500"
           >
             + Apply
           </button>
@@ -185,7 +185,7 @@ const LeavesList = () => {
             <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg bg-slate-700 text-white text-sm hover:bg-slate-600">
               Cancel
             </button>
-            <button onClick={submitLeave} className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-500">
+            <button onClick={submitLeave} className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm hover:bg-cyan-500">
               Submit
             </button>
           </div>
@@ -228,7 +228,7 @@ const LeavesList = () => {
                   <td className="px-4 py-3">
                     {l.status === "Pending" && canApprove ? (
                       <div className="flex gap-2">
-                        <button onClick={() => updateStatus(l.id, "Approved")} className="text-emerald-400 hover:text-white text-xs">
+                        <button onClick={() => updateStatus(l.id, "Approved")} className="text-cyan-400 hover:text-white text-xs">
                           Approve
                         </button>
                         <button onClick={() => updateStatus(l.id, "Rejected")} className="text-rose-400 hover:text-white text-xs">
@@ -239,7 +239,7 @@ const LeavesList = () => {
                       <span
                         className={`px-2 py-1 rounded-full text-xs ${
                           l.status === "Approved"
-                            ? "bg-emerald-500/20 text-emerald-400"
+                            ? "bg-cyan-500/20 text-cyan-400"
                             : l.status === "Rejected"
                             ? "bg-rose-500/20 text-rose-400"
                             : "bg-amber-500/20 text-amber-400"

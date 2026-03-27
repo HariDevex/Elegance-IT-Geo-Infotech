@@ -7,7 +7,7 @@ import { getImageUrl } from "../utils/excel";
 import logoSrc from "../assets/Logo/EG.png";
 import NotificationBell from "./NotificationBell";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const menuItems = [
   { title: "Dashboard", key: "dashboard" },
@@ -51,8 +51,21 @@ const DashboardLayout = ({
   const dropdownRef = useRef(null);
 
   useEffect(() => {
-    if (user?.avatar || user?.profileImage) {
-      setProfileImage(user.avatar || user.profileImage);
+    const storedAvatar = localStorage.getItem("avatar");
+    
+    let avatarToUse = null;
+    
+    if (user?.avatar) {
+      avatarToUse = user.avatar;
+    } else if (user?.profileImage) {
+      avatarToUse = user.profileImage;
+    } else if (storedAvatar) {
+      avatarToUse = storedAvatar;
+    }
+    
+    if (avatarToUse) {
+      const fullUrl = avatarToUse.startsWith('http') ? avatarToUse : `${API_BASE}${avatarToUse}`;
+      setProfileImage(fullUrl);
     } else if (user?.name) {
       setProfileImage(null);
     }
@@ -87,9 +100,11 @@ const DashboardLayout = ({
           Authorization: `Bearer ${token}`,
         },
       });
-      const url = res.data?.avatarUrl || URL.createObjectURL(file);
-      setProfileImage(url);
-      updateAvatar(url);
+      const newAvatarUrl = res.data?.avatarUrl;
+      const fullAvatarUrl = newAvatarUrl.startsWith('http') ? newAvatarUrl : `${API_BASE}${newAvatarUrl}`;
+      setProfileImage(fullAvatarUrl);
+      updateAvatar(fullAvatarUrl);
+      localStorage.setItem("avatar", fullAvatarUrl);
     } catch (err) {
       setUploadError(err.response?.data?.error || "Upload failed");
     } finally {
@@ -161,10 +176,10 @@ const DashboardLayout = ({
             >
               <div className="h-10 w-10 rounded-full flex items-center justify-center font-semibold overflow-hidden border-2 border-transparent hover:border-white transition gradient-primary">
                   {profileImage ? (
-                    <img src={getImageUrl(profileImage)} alt="Profile" className="h-full w-full object-cover" />
+                    <img src={profileImage} alt="Profile" className="h-full w-full object-cover" />
                   ) : (
-                  <span>{(user?.name || "U").slice(0, 2).toUpperCase()}</span>
-                )}
+                    <span>{(user?.name || "U").slice(0, 2).toUpperCase()}</span>
+                  )}
               </div>
             </button>
 
@@ -173,7 +188,7 @@ const DashboardLayout = ({
                 <div className="flex items-center gap-3">
                   <div className="relative h-12 w-12 rounded-full flex items-center justify-center font-semibold overflow-hidden gradient-primary">
                     {profileImage ? (
-                      <img src={getImageUrl(profileImage)} alt="Profile" className="h-full w-full object-cover" />
+                      <img src={profileImage} alt="Profile" className="h-full w-full object-cover" />
                     ) : (
                       <span>{(user?.name || "U").slice(0, 2).toUpperCase()}</span>
                     )}

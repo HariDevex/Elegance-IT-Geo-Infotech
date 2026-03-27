@@ -4,7 +4,7 @@ import axios from "axios";
 import { Trash2, Plus, Lock } from "lucide-react";
 import { useAuth } from "../context/authContext";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const HolidayManagement = () => {
   const { user } = useAuth();
@@ -73,7 +73,7 @@ const HolidayManagement = () => {
 
   const getTypeBadge = (type) => {
     switch (type) {
-      case "public": return "bg-emerald-500/20 text-emerald-400 border-emerald-500/50";
+      case "public": return "bg-cyan-500/20 text-cyan-400 border-cyan-500/50";
       case "company": return "bg-blue-500/20 text-blue-400 border-blue-500/50";
       case "optional": return "bg-slate-500/20 text-slate-400 border-slate-500/50";
       default: return "bg-slate-500/20 text-slate-400 border-slate-500/50";
@@ -106,8 +106,9 @@ const HolidayManagement = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-slate-300 mb-1">Holiday Name *</label>
+                <label htmlFor="holiday-name" className="block text-sm text-slate-300 mb-1">Holiday Name *</label>
                 <input
+                  id="holiday-name"
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -117,8 +118,9 @@ const HolidayManagement = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm text-slate-300 mb-1">Date *</label>
+                <label htmlFor="holiday-date" className="block text-sm text-slate-300 mb-1">Date *</label>
                 <input
+                  id="holiday-date"
                   type="date"
                   value={form.date}
                   onChange={(e) => setForm({ ...form, date: e.target.value })}
@@ -127,8 +129,9 @@ const HolidayManagement = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm text-slate-300 mb-1">Type</label>
+                <label htmlFor="holiday-type" className="block text-sm text-slate-300 mb-1">Type</label>
                 <select
+                  id="holiday-type"
                   value={form.type}
                   onChange={(e) => setForm({ ...form, type: e.target.value })}
                   className="w-full rounded-lg border border-slate-600 bg-slate-900/50 px-3 py-2 text-white"
@@ -139,8 +142,9 @@ const HolidayManagement = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-slate-300 mb-1">Description</label>
+                <label htmlFor="holiday-desc" className="block text-sm text-slate-300 mb-1">Description</label>
                 <input
+                  id="holiday-desc"
                   type="text"
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}

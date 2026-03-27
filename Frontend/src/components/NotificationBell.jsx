@@ -4,7 +4,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { Skeleton } from "./Skeleton";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const NotificationBell = () => {
   const [notifications, setNotifications] = useState([]);
@@ -68,7 +68,7 @@ const NotificationBell = () => {
 
   const getTypeStyles = (type) => {
     switch (type) {
-      case "success": return "bg-emerald-500/20 border-emerald-500/50 text-emerald-400";
+      case "success": return "bg-cyan-500/20 border-cyan-500/50 text-cyan-400";
       case "warning": return "bg-yellow-500/20 border-yellow-500/50 text-yellow-400";
       case "error": return "bg-rose-500/20 border-rose-500/50 text-rose-400";
       default: return "bg-slate-700/50 border-slate-600 text-slate-300";
@@ -120,7 +120,7 @@ const NotificationBell = () => {
                   className={`px-4 py-3 border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors ${!notif.isRead ? "bg-slate-700/20" : ""}`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`w-2 h-2 rounded-full mt-2 ${notif.type === "success" ? "bg-emerald-400" : notif.type === "error" ? "bg-rose-400" : notif.type === "warning" ? "bg-yellow-400" : "bg-indigo-400"} ${!notif.isRead ? "animate-pulse" : ""}`} />
+                    <div className={`w-2 h-2 rounded-full mt-2 ${notif.type === "success" ? "bg-cyan-400" : notif.type === "error" ? "bg-rose-400" : notif.type === "warning" ? "bg-yellow-400" : "bg-indigo-400"} ${!notif.isRead ? "animate-pulse" : ""}`} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-white truncate">{notif.title}</p>
                       <p className="text-xs text-slate-400 mt-0.5">{notif.message}</p>

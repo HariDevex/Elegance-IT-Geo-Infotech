@@ -37,7 +37,7 @@ const EmployeeHome = ({ stats, loading }) => {
   }
 
   const statCards = [
-    { label: "Present This Month", value: stats?.monthPresent || 0, color: "#02f5a1", icon: CheckCircle },
+    { label: "Present This Month", value: stats?.monthPresent || 0, color: "#06b6d4", icon: CheckCircle },
     { label: "Absent This Month", value: stats?.monthAbsent || 0, color: "#ef4444", icon: XCircle },
     { label: "Pending Leaves", value: stats?.pendingLeaves || 0, color: "#f59e0b", icon: Clock },
     { label: "Approved Leaves", value: stats?.approvedLeaves || 0, color: "#3b82f6", icon: CalIcon },
