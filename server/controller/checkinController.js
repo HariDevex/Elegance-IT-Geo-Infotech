@@ -1,6 +1,18 @@
 import db from "../config/database.js";
 
 const MAX_CHECKIN_PER_DAY = 3;
+const LATE_THRESHOLD_HOUR = 9;
+const LATE_THRESHOLD_MINUTE = 15;
+
+const isLateCheckIn = (checkInTime) => {
+  if (!checkInTime) return false;
+  const checkIn = new Date(checkInTime);
+  const hour = checkIn.getHours();
+  const minute = checkIn.getMinutes();
+  if (hour > LATE_THRESHOLD_HOUR) return true;
+  if (hour === LATE_THRESHOLD_HOUR && minute > LATE_THRESHOLD_MINUTE) return true;
+  return false;
+};
 
 const getTodayCheckins = async (userId) => {
   const today = new Date().toISOString().split("T")[0];
@@ -14,10 +26,47 @@ const getTodayCheckins = async (userId) => {
   return checkins;
 };
 
+const updateAttendanceRecord = async (userId, checkInTime, checkOutTime) => {
+  const today = new Date().toISOString().split("T")[0];
+  const now = new Date();
+  
+  const existing = await db("attendance")
+    .where("user_id", userId)
+    .where("date", today)
+    .first();
+  
+  if (existing) {
+    const updates = { updated_at: now };
+    if (checkInTime && !existing.check_in_at) {
+      updates.check_in_at = checkInTime;
+      const isLate = isLateCheckIn(checkInTime);
+      updates.status = isLate ? "Late" : "On Time";
+    }
+    if (checkOutTime) {
+      updates.check_out_at = checkOutTime;
+    }
+    await db("attendance")
+      .where("id", existing.id)
+      .update(updates);
+  } else {
+    const isLate = checkInTime ? isLateCheckIn(checkInTime) : false;
+    await db("attendance").insert({
+      user_id: userId,
+      date: today,
+      status: checkInTime ? (isLate ? "Late" : "On Time") : "Present",
+      check_in_at: checkInTime || now,
+      check_out_at: checkOutTime || null,
+      created_at: now,
+      updated_at: now,
+    });
+  }
+};
+
 const checkin = async (req, res, next) => {
   try {
     const userId = req.user._id;
     const { note } = req.body;
+    const now = new Date();
 
     const todayCheckins = await getTodayCheckins(userId);
 
@@ -35,9 +84,11 @@ const checkin = async (req, res, next) => {
         user_id: userId,
         type: "checkin",
         note: note || null,
-        created_at: new Date(),
+        created_at: now,
       })
       .returning("*");
+
+    await updateAttendanceRecord(userId, now, null);
 
     const allCheckins = await getTodayCheckins(userId);
 
@@ -61,6 +112,7 @@ const checkout = async (req, res, next) => {
   try {
     const userId = req.user._id;
     const { note } = req.body;
+    const now = new Date();
 
     const lastCheckin = await db("checkin_checkout")
       .where("user_id", userId)
@@ -94,9 +146,11 @@ const checkout = async (req, res, next) => {
         type: "checkout",
         parent_id: lastCheckin.id,
         note: note || null,
-        created_at: new Date(),
+        created_at: now,
       })
       .returning("*");
+
+    await updateAttendanceRecord(userId, null, now);
 
     const checkinTime = new Date(lastCheckin.created_at);
     const checkoutTime = new Date(record.created_at);

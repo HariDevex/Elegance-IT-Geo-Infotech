@@ -1,5 +1,5 @@
-import { Calendar as CalIcon, Clock, CheckCircle, XCircle, Grid3x3 } from "lucide-react";
-import LeaveBalance from "./LeaveBalance";
+import { Calendar as CalIcon, Clock, CheckCircle, XCircle, TrendingUp } from "lucide-react";
+import MonthlyAttendanceChart from "./charts/MonthlyAttendanceChart";
 import AttendanceBarChart from "./charts/AttendanceBarChart";
 import CheckInOutChart from "./charts/CheckInOutChart";
 import { Skeleton, SkeletonChart } from "./Skeleton";
@@ -23,6 +23,7 @@ const EmployeeHome = ({ stats, loading, user }) => {
         </div>
         <SkeletonChart />
         <SkeletonChart />
+        <SkeletonChart />
       </div>
     );
   }
@@ -37,7 +38,7 @@ const EmployeeHome = ({ stats, loading, user }) => {
   const lastMonthStatCards = [
     { label: "Present", value: stats?.lastMonthPresent || 0, color: "#06b6d4", icon: CheckCircle },
     { label: "Absent", value: stats?.lastMonthAbsent || 0, color: "#ef4444", icon: XCircle },
-    { label: "Total Days", value: (stats?.lastMonthPresent || 0) + (stats?.lastMonthAbsent || 0), color: "#8b5cf6", icon: Grid3x3 },
+    { label: "Total", value: (stats?.lastMonthPresent || 0) + (stats?.lastMonthAbsent || 0), color: "#8b5cf6", icon: TrendingUp },
   ];
 
   const getWeekData = () => {
@@ -57,6 +58,10 @@ const EmployeeHome = ({ stats, loading, user }) => {
         checkOutHour: dayData.checkOutHour || 18,
       };
     });
+  };
+
+  const getMonthlyData = () => {
+    return stats?.monthlyAttendance || [];
   };
 
   return (
@@ -107,6 +112,15 @@ const EmployeeHome = ({ stats, loading, user }) => {
         ))}
       </div>
 
+      <div className="rounded-2xl p-6 border" style={{ backgroundColor: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>Last 3 Months Attendance</h3>
+        </div>
+        <div className="h-64">
+          <MonthlyAttendanceChart data={getMonthlyData()} />
+        </div>
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-2">
         <div 
           className="rounded-2xl p-6 border"
@@ -128,8 +142,6 @@ const EmployeeHome = ({ stats, loading, user }) => {
           </div>
         </div>
       </div>
-
-      <LeaveBalance />
     </section>
   );
 };
