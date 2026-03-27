@@ -2,8 +2,13 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { Search, Plus, X, Send, MoreVertical, Phone, Video, CheckCheck, Image as ImageIcon, Smile, MessageCircle, Mic, Paperclip } from "lucide-react";
+import chatBgLogo from "../assets/Logo/EGlogo.png";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+const isGroupId = (id) => id && id.includes("-") && id.length === 36;
+
+const EMOJIS = ["😀", "😂", "😍", "🥰", "😊", "😎", "🤔", "😅", "😭", "😤", "🥳", "😴", "🤗", "😇", "🙄", "😏", "👍", "👎", "👏", "🙌", "❤️", "💔", "✨", "🔥", "💯", "🎉", "🎊", "✅", "❌", "⚠️"];
 
 const SkeletonLoader = ({ className = "" }) => (
   <div className={`animate-pulse bg-gray-600 rounded ${className}`}></div>
@@ -44,9 +49,12 @@ const ChatWindow = () => {
   const [newGroupDesc, setNewGroupDesc] = useState("");
   const [creating, setCreating] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [unreadCounts, setUnreadCounts] = useState({});
   const [lastMessages, setLastMessages] = useState({});
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const [attachment, setAttachment] = useState(null);
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("user") || "{}");
@@ -136,7 +144,7 @@ const ChatWindow = () => {
     setLoadingMessages(true);
     try {
       const token = localStorage.getItem("token");
-      const isGroup = contactId.startsWith("grp-");
+      const isGroup = isGroupId(contactId);
       const res = await axios.get(`${API_BASE}/api/chat`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { contactId, type: isGroup ? "group" : "direct" },
@@ -179,9 +187,9 @@ const ChatWindow = () => {
 
   const send = async (e) => {
     e?.preventDefault();
-    if (!text.trim() || !activeContact) return;
+    if ((!text.trim() && !attachment) || !activeContact) return;
 
-    const isGroup = activeContact.startsWith("grp-");
+    const isGroup = isGroupId(activeContact);
     const tempId = `temp-${Date.now()}`;
     const newMsg = {
       _id: tempId,
@@ -189,6 +197,7 @@ const ChatWindow = () => {
       from: { _id: userId, name: user?.name || "You" },
       isYou: true,
       ts: new Date().toISOString(),
+      attachment: attachment,
     };
 
     setMessages((prev) => ({
@@ -196,18 +205,40 @@ const ChatWindow = () => {
       [activeContact]: [...(prev[activeContact] || []), newMsg],
     }));
     setText("");
+    setAttachment(null);
 
     try {
       const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("contactId", activeContact);
+      formData.append("type", isGroup ? "group" : "direct");
+      formData.append("text", text.trim());
+      if (attachment) {
+        formData.append("file", attachment);
+      }
       await axios.post(
         `${API_BASE}/api/chat`,
-        { contactId: activeContact, type: isGroup ? "group" : "direct", text: text.trim() },
-        { headers: { Authorization: `Bearer ${token}` } }
+        formData,
+        { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } }
       );
       loadMessages(activeContact);
     } catch {
       toast.error("Failed to send message");
     }
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAttachment(file);
+      setText((prev) => prev + ` [Attachment: ${file.name}]`);
+    }
+    e.target.value = "";
+  };
+
+  const insertEmoji = (emoji) => {
+    setText((prev) => prev + emoji);
+    setShowEmojiPicker(false);
   };
 
   const handleCreateGroup = async () => {
@@ -421,7 +452,7 @@ const ChatWindow = () => {
             <div className="flex-1 overflow-y-auto p-4 relative" style={{ backgroundColor: '#0d1117' }}>
               {/* Background Logo */}
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-5">
-                <img src="/src/assets/Logo/EGlogo.png" alt="" className="w-64 h-64 object-contain" />
+                <img src={chatBgLogo} alt="" className="w-64 h-64 object-contain" />
               </div>
 
               {loadingMessages ? (
@@ -486,29 +517,46 @@ const ChatWindow = () => {
             </div>
 
             {/* Input Area - Fixed */}
-            <form onSubmit={send} className="p-3 flex items-center gap-2 flex-shrink-0" style={{ backgroundColor: '#131c21' }}>
-              <button type="button" className="p-2 rounded-full hover:bg-[#182229] flex-shrink-0">
-                <Smile size={24} className="text-gray-400" />
-              </button>
-              <button type="button" className="p-2 rounded-full hover:bg-[#182229] flex-shrink-0">
-                <Paperclip size={24} className="text-gray-400" />
-              </button>
-              <input 
-                type="text" 
-                value={text} 
-                onChange={(e) => setText(e.target.value)} 
-                placeholder="Type a message..."
-                className="flex-1 px-4 py-2.5 rounded-2xl text-sm text-white bg-[#182229] border-none outline-none"
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-              />
-              {text.trim() ? (
-                <button type="submit" className="p-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#00a884', color: '#0d1117' }}>
-                  <Send size={20} />
+            <form onSubmit={send} className="p-3 flex flex-col gap-2 flex-shrink-0" style={{ backgroundColor: '#131c21' }}>
+              {showEmojiPicker && (
+                <div className="flex flex-wrap gap-1 p-2 bg-[#182229] rounded-lg max-w-xs">
+                  {EMOJIS.map((emoji) => (
+                    <button key={emoji} type="button" onClick={() => insertEmoji(emoji)} className="p-1 hover:bg-[#2a3338] rounded text-lg">
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="p-2 rounded-full hover:bg-[#182229] flex-shrink-0">
+                  <Smile size={24} className="text-gray-400" />
                 </button>
-              ) : (
-                <button type="button" className="p-2.5 rounded-full flex-shrink-0 bg-[#182229]">
-                  <Mic size={20} className="text-gray-400" />
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="p-2 rounded-full hover:bg-[#182229] flex-shrink-0">
+                  <Paperclip size={24} className="text-gray-400" />
                 </button>
+                <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} accept="image/*,.pdf,.doc,.docx,.txt" />
+                <input 
+                  type="text" 
+                  value={text} 
+                  onChange={(e) => setText(e.target.value)} 
+                  placeholder="Type a message..."
+                  className="flex-1 px-4 py-2.5 rounded-2xl text-sm text-white bg-[#182229] border-none outline-none"
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+                />
+                {(text.trim() || attachment) ? (
+                  <button type="submit" className="p-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#00a884', color: '#0d1117' }}>
+                    <Send size={20} />
+                  </button>
+                ) : (
+                  <button type="button" className="p-2.5 rounded-full flex-shrink-0 bg-[#182229]">
+                    <Mic size={20} className="text-gray-400" />
+                  </button>
+                )}
+              </div>
+              {attachment && (
+                <div className="text-xs text-gray-400 px-2">
+                  Attached: {attachment.name}
+                </div>
               )}
             </form>
           </>

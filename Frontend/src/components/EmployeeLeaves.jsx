@@ -3,8 +3,12 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useAuth } from "../context/authContext";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 const statusOptions = ["All", "Pending", "Approved", "Rejected"];
+const leaveTypeOptions = [
+  { value: "Sick", label: "Sick" },
+  { value: "Casual", label: "Casual" },
+];
 
 const EmployeeLeaves = () => {
   const [statusFilter, setStatusFilter] = useState("All");
@@ -49,6 +53,14 @@ const EmployeeLeaves = () => {
   }, [rows, statusFilter]);
 
   const submitLeave = async () => {
+    if (!form.type || !form.from || !form.to) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    if (form.from > form.to) {
+      toast.error("From date cannot be after To date");
+      return;
+    }
     try {
       const token = localStorage.getItem("token");
       await axios.post(
@@ -98,16 +110,19 @@ const EmployeeLeaves = () => {
           <h3 className="font-semibold text-white">New Leave Request</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
-              <label htmlFor="emp-leave-type" className="text-xs text-slate-400">Leave Type</label>
-              <input
+              <label htmlFor="emp-leave-type" className="text-xs text-slate-400"> Leave Type</label>
+              <select
                 id="emp-leave-type"
                 name="type"
-                type="text"
-                placeholder="Leave Type"
                 value={form.type}
                 onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
                 className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-white text-sm w-full"
-              />
+              >
+                <option value="">Select Leave Type</option>
+                {leaveTypeOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
             </div>
             <div className="space-y-1">
               <label htmlFor="emp-leave-from" className="text-xs text-slate-400">From</label>

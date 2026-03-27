@@ -4,7 +4,7 @@ import axios from "axios";
 import { useAuth } from "../context/authContext";
 import { Skeleton, SkeletonTable } from "./Skeleton";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 const statusOptions = ["All", "Pending", "Approved", "Rejected"];
 
 const LeavesList = () => {

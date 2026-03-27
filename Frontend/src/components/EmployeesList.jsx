@@ -5,7 +5,7 @@ import { Download } from "lucide-react";
 import { exportToExcel, getImageUrl } from "../utils/excel";
 import { Skeleton, SkeletonTable } from "./Skeleton";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const EmployeesList = ({ onAddNew, onView, onEdit }) => {
   const [employees, setEmployees] = useState([]);
@@ -166,9 +166,9 @@ const EmployeesList = ({ onAddNew, onView, onEdit }) => {
                   <tr key={emp._id || idx} className="border-t border-slate-700 hover:bg-slate-700/30">
                     <td className="px-4 py-3">{idx + 1}</td>
                     <td className="px-4 py-3">
-                      <div className="h-10 w-10 rounded-full bg-slate-700 overflow-hidden">
-                        {emp.profileImage ? (
-                          <img src={getImageUrl(emp.profileImage)} alt={emp.name} className="h-full w-full object-cover" />
+                      <div className="h-10 w-10 rounded-full bg-slate-700 overflow-hidden flex items-center justify-center">
+                        {emp.profileImage || emp.avatar ? (
+                          <img src={getImageUrl(emp.profileImage || emp.avatar)} alt={emp.name} className="h-full w-full object-cover" />
                         ) : (
                           <div className="h-full w-full flex items-center justify-center text-xs text-white">
                             {(emp.name || "NA").slice(0, 2).toUpperCase()}

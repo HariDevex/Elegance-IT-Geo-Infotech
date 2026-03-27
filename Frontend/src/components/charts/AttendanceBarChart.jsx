@@ -27,7 +27,7 @@ const AttendanceBarChart = ({ data }) => {
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data}>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-        <XAxis dataKey="name" stroke="var(--color-text-muted)" />
+        <XAxis dataKey="day" stroke="var(--color-text-muted)" />
         <YAxis stroke="var(--color-text-muted)" />
         <Tooltip
           contentStyle={{
@@ -36,7 +36,7 @@ const AttendanceBarChart = ({ data }) => {
             borderRadius: '8px',
           }}
         />
-        <Bar dataKey="hours" fill="#06b6d4" radius={[8, 8, 0, 0]} name="Hours Worked" />
+        <Bar dataKey="present" fill="#06b6d4" radius={[8, 8, 0, 0]} name="Attendance" />
       </BarChart>
     </ResponsiveContainer>
   );

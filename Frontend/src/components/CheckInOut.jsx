@@ -4,7 +4,7 @@ import axios from "axios";
 import { Download } from "lucide-react";
 import { exportToExcel } from "../utils/excel";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const CheckInOut = () => {
   const [records, setRecords] = useState([]);
@@ -80,13 +80,21 @@ const CheckInOut = () => {
       const res = await axios.get(`${API_BASE}/api/checkin/export`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.data.success && res.data.data.length > 0) {
-        exportToExcel(res.data.data, `checkin_checkout_${new Date().toISOString().split("T")[0]}`, "CheckIn/Out");
+      if (res.data.success && res.data.data && res.data.data.length > 0) {
+        const formattedData = res.data.data.map(item => ({
+          date: item.date || "",
+          checkin_time: item.checkin?.time || "",
+          checkout_time: item.checkout?.time || "",
+          duration_minutes: item.duration || "",
+          status: item.status || ""
+        }));
+        exportToExcel(formattedData, `checkin_checkout_${new Date().toISOString().split("T")[0]}`, "CheckIn/Out");
         toast.success("Excel downloaded!");
       } else {
         toast.error("No data to export");
       }
-    } catch {
+    } catch (err) {
+      console.error("Export error:", err);
       toast.error("Export failed");
     }
   };

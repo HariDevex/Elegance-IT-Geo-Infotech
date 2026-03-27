@@ -18,7 +18,7 @@ import CheckInOut from "../components/CheckInOut";
 import LoginLogs from "../components/LoginLogs";
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const AdminDashboard = () => {
   const [currentView, setCurrentView] = useState("dashboard");

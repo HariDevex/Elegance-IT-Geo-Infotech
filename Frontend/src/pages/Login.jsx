@@ -5,7 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import logoSrc from "../assets/Logo/EG.png";
 import { useAuth } from "../context/authContext";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 const VideoBackground = lazy(() => import("../components/VideoBackground"));
 
 const Login = () => {

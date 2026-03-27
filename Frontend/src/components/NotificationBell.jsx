@@ -4,7 +4,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { Skeleton } from "./Skeleton";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const NotificationBell = () => {
   const [notifications, setNotifications] = useState([]);

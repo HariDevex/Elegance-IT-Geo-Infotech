@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { Activity, Filter } from "lucide-react";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const ActivityLog = () => {
   const [logs, setLogs] = useState([]);
@@ -45,11 +45,14 @@ const ActivityLog = () => {
 
   const getActionColor = (action) => {
     switch (action) {
-      case "created": return "bg-cyan-500";
-      case "updated": return "bg-blue-500";
-      case "deleted": return "bg-rose-500";
-      case "approved": return "bg-teal-500";
-      case "rejected": return "bg-orange-500";
+      case "create": return "bg-cyan-500";
+      case "create": return "bg-cyan-500";
+      case "update": return "bg-blue-500";
+      case "delete": return "bg-rose-500";
+      case "approved":
+      case "approve": return "bg-teal-500";
+      case "rejected":
+      case "reject": return "bg-orange-500";
       case "login": return "bg-indigo-500";
       case "logout": return "bg-slate-500";
       default: return "bg-slate-500";

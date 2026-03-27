@@ -3,7 +3,7 @@ import axios from "axios";
 import { Award, Calendar } from "lucide-react";
 import { Skeleton, SkeletonGrid } from "./Skeleton";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const LeaveBalance = ({ compact = false }) => {
   const [balances, setBalances] = useState([]);

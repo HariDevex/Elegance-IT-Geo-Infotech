@@ -1,29 +1,31 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
-import { Trash2, Plus, Lock } from "lucide-react";
+import { Trash2, Plus, Lock, Calendar, RefreshCw } from "lucide-react";
 import { useAuth } from "../context/authContext";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const HolidayManagement = () => {
   const { user } = useAuth();
   const canManage = ["root", "admin", "manager", "hr", "teamlead"].includes(user?.role);
+  const canAutoPopulate = ["root", "admin", "manager"].includes(user?.role);
   const [holidays, setHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", date: "", type: "public", description: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [autoPopulating, setAutoPopulating] = useState(false);
 
   useEffect(() => {
     fetchHolidays();
-  }, []);
+  }, [selectedYear]);
 
   const fetchHolidays = async () => {
     try {
       const token = localStorage.getItem("token");
-      const year = new Date().getFullYear();
-      const res = await axios.get(`${API_BASE}/api/holidays?year=${year}`, {
+      const res = await axios.get(`${API_BASE}/api/holidays?year=${selectedYear}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.success) {
@@ -33,6 +35,26 @@ const HolidayManagement = () => {
       toast.error("Failed to fetch holidays");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAutoPopulate = async () => {
+    setAutoPopulating(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.post(
+        `${API_BASE}/api/holidays/auto-populate?years=2`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        toast.success("Holidays auto-populated!");
+        fetchHolidays();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to auto-populate holidays");
+    } finally {
+      setAutoPopulating(false);
     }
   };
 
@@ -75,6 +97,7 @@ const HolidayManagement = () => {
     switch (type) {
       case "public": return "bg-cyan-500/20 text-cyan-400 border-cyan-500/50";
       case "company": return "bg-blue-500/20 text-blue-400 border-blue-500/50";
+      case "sunday": return "bg-purple-500/20 text-purple-400 border-purple-500/50";
       case "optional": return "bg-slate-500/20 text-slate-400 border-slate-500/50";
       default: return "bg-slate-500/20 text-slate-400 border-slate-500/50";
     }
@@ -82,22 +105,44 @@ const HolidayManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <h2 className="text-xl font-semibold text-white">Holiday Management</h2>
-        {canManage ? (
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors"
+        <div className="flex items-center gap-3">
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            className="rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-white text-sm"
           >
-            <Plus size={16} />
-            Add Holiday
-          </button>
-        ) : (
-          <div className="flex items-center gap-2 text-slate-400 text-sm">
-            <Lock size={14} />
-            <span>Admin access required to add holidays</span>
-          </div>
-        )}
+            {[...Array(5)].map((_, i) => {
+              const year = new Date().getFullYear() - 2 + i;
+              return <option key={year} value={year}>{year}</option>;
+            })}
+          </select>
+          {canAutoPopulate && (
+            <button
+              onClick={handleAutoPopulate}
+              disabled={autoPopulating}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={autoPopulating ? "animate-spin" : ""} />
+              {autoPopulating ? "Populating..." : "Auto Populate (Sundays + Public)"}
+            </button>
+          )}
+          {canManage ? (
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors"
+            >
+              <Plus size={16} />
+              Add Holiday
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 text-slate-400 text-sm">
+              <Lock size={14} />
+              <span>Admin access required to add holidays</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {showForm && (

@@ -7,7 +7,7 @@ import { getImageUrl } from "../utils/excel";
 import logoSrc from "../assets/Logo/EG.png";
 import NotificationBell from "./NotificationBell";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const menuItems = [
   { title: "Dashboard", key: "dashboard" },
@@ -15,10 +15,10 @@ const menuItems = [
   { title: "My Attendance", key: "attendance" },
   { title: "Leave Request", key: "leaves" },
   { title: "Attendance", key: "attendanceManage", roles: ["root", "admin", "manager"] },
-  { title: "Leave Calendar", key: "leaveCalendar", roles: ["root", "admin", "manager"] },
-  { title: "Employees", key: "employees", children: [
+  { title: "Leave Calendar", key: "leaveCalendar" },
+  { title: "Employees", key: "employees", roles: ["root", "admin", "manager"], children: [
     { title: "Add Employee", key: "addEmployee", roles: ["root", "admin", "manager"] },
-    { title: "Employees List", key: "employeesList" },
+    { title: "Employees List", key: "employeesList", roles: ["root", "admin", "manager"] },
   ]},
   { title: "Check In/Out", key: "checkin", roles: ["root", "admin", "manager"] },
   { title: "Chat", key: "chat" },
@@ -155,18 +155,6 @@ const DashboardLayout = ({
 
         <div className="ml-auto flex items-center gap-3">
           <NotificationBell />
-
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ backgroundColor: 'var(--color-bg-tertiary)' }}>
-            <div className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold gradient-primary">
-              {(user?.name || "U").slice(0, 2).toUpperCase()}
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium leading-tight">{user?.name || "User"}</span>
-              <span className="text-xs capitalize leading-tight" style={{ color: 'var(--color-primary)' }}>
-                {user?.role || "Employee"}
-              </span>
-            </div>
-          </div>
 
           <div className="relative" ref={dropdownRef}>
             <button

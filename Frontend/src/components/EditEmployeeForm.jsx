@@ -1,9 +1,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
-import { Eye, EyeOff } from "lucide-react";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const EditEmployeeForm = ({ employee, onDone }) => {
   if (!employee) {
@@ -25,18 +23,21 @@ const EditEmployeeForm = ({ employee, onDone }) => {
     designation: employee.designation || "",
     salary: employee.salary || "",
     role: employee.role || "developer",
-    newPassword: "",
+
   });
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
 
   const update = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
+  const [submitting, setSubmitting] = useState(false);
+
   const onSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
     setError("");
     setSuccess("");
     setLoading(true);
@@ -67,6 +68,7 @@ const EditEmployeeForm = ({ employee, onDone }) => {
       toast.error(msg);
     } finally {
       setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -119,27 +121,6 @@ const EditEmployeeForm = ({ employee, onDone }) => {
               required
               className="w-full rounded-lg border border-slate-600 bg-slate-900/50 px-3 py-2 text-white"
             />
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="edit-password" className="text-sm text-slate-300">New Password (leave blank)</label>
-            <div className="relative">
-              <input
-                id="edit-password"
-                name="newPassword"
-                type={showPassword ? "text" : "password"}
-                value={form.newPassword}
-                onChange={(e) => update("newPassword", e.target.value)}
-                className="w-full rounded-lg border border-slate-600 bg-slate-900/50 px-3 py-2 pr-10 text-white"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
           </div>
 
           <div className="space-y-2">

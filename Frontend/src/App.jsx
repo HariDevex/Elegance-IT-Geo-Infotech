@@ -8,6 +8,7 @@ const EmployeeDashboard = lazy(() => import('./pages/EmployeeDashboard'))
 const RootDashboard = lazy(() => import('./pages/RootDashboard'))
 const ChangePassword = lazy(() => import('./pages/ChangePassword'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useAuth()
@@ -60,6 +61,7 @@ function App() {
 
         <Route path='/change-password' element={<ChangePassword />} />
         <Route path='/Forgot-Password' element={<ForgotPassword />} />
+        <Route path='/reset-password' element={<ResetPassword />} />
       </Routes>
       </Suspense>
     </BrowserRouter>
