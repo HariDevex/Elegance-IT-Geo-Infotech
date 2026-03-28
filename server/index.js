@@ -6,7 +6,9 @@ import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import https from "https";
 import http from "http";
+import fs from "fs";
 
 import authRouter from "./routes/auth.js";
 import employeeRouter from "./routes/employee.js";
@@ -33,6 +35,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
+
+const frontendDistPath = path.resolve(__dirname, "../Frontend/dist");
+
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+}
+
 const server = http.createServer(app);
 
 app.set('trust proxy', 1);
@@ -58,8 +67,11 @@ app.use(
     origin: [
       process.env.FRONTEND_URL || "*",
       "http://192.168.29.205",
+      "https://192.168.29.205",
       "http://192.168.29.205:5173",
+      "https://192.168.29.205:5173",
       "http://192.168.29.205:3000",
+      "https://192.168.29.205:3000",
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "Content-Length"],
@@ -68,8 +80,8 @@ app.use(
 );
 
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 500,
+  windowMs: 60 * 60 * 1000,
+  max: 50000,
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: false,
@@ -79,7 +91,7 @@ const globalLimiter = rateLimit({
 app.use("/api/", globalLimiter);
 
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 60 * 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
@@ -147,14 +159,20 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-app.use((req, res) => {
-  res.status(404).json({ success: false, error: "Route not found" });
-});
+if (fs.existsSync(frontendDistPath)) {
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(frontendDistPath, "index.html"));
+  });
+} else {
+  app.use((req, res) => {
+    res.status(404).json({ success: false, error: "Route not found" });
+  });
+}
 
 sentryErrorHandler(app);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 443;
 const HOST = process.env.HOST || "0.0.0.0";
 
 const startServer = async () => {
@@ -169,10 +187,13 @@ const startServer = async () => {
       logger.info(`🚀 Server running on http://${HOST}:${PORT}`);
       logger.info(`📚 API available at http://${HOST}:${PORT}/api`);
       logger.info(`🔌 WebSocket available at http://${HOST}:${PORT}`);
+      if (fs.existsSync(frontendDistPath)) {
+        logger.info(`🌐 Frontend available at http://${HOST}:${PORT}`);
+      }
     });
   } catch (error) {
     logger.error("Failed to start server", { error: error.message });
-    app.listen(PORT, HOST, () => {
+    server.listen(PORT, HOST, () => {
       console.log(`🚀 Server running on http://${HOST}:${PORT} (without optional features)`);
     });
   }

@@ -28,7 +28,10 @@ import {
   SkeletonHolidays,
   SkeletonAnnouncementsList,
   SkeletonChat,
-  Skeleton
+  Skeleton,
+  SkeletonForm,
+  SkeletonTable,
+  SkeletonList
 } from "../components/skeletons";
 import axios from "axios";
 import API_BASE from "../config/api.js";

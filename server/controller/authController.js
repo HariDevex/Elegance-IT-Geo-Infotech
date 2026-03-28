@@ -62,12 +62,18 @@ const login = async (req, res, next) => {
     const userAgent = req.get("user-agent") || "Unknown";
     const now = new Date();
 
-    // Allow login with email or employee_id
+    // Allow login with employee_id (priority) or email
     let user;
-    if (email.includes('@')) {
-      user = await db("users").where("email", email.toLowerCase()).first();
-    } else {
-      user = await db("users").where("employee_id", email.toUpperCase()).first();
+    const input = email.includes('@') ? email.toLowerCase() : email.toUpperCase();
+    
+    // Check employee_id first (priority)
+    if (!email.includes('@')) {
+      user = await db("users").where("employee_id", input).first();
+    }
+    
+    // If not found and looks like email, try email lookup
+    if (!user && email.includes('@')) {
+      user = await db("users").where("email", input).first();
     }
 
     if (!user) {

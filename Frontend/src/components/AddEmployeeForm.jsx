@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
-import { Eye, EyeOff, Info } from "lucide-react";
+import { Eye, EyeOff, Info, UserPlus, Copy, CheckCircle } from "lucide-react";
 import API_BASE from "../config/api.js";
 
 const BRANCHES = [
-  { value: "bengaluru", label: "Bengaluru", prefix: "EJB", hexCode: "68617269" },
-  { value: "krishnagiri", label: "Krishnagiri", prefix: "EJK", hexCode: "68617269" },
+  { value: "bengaluru", label: "Bengaluru", prefix: "EJB" },
+  { value: "krishnagiri", label: "Krishnagiri", prefix: "EJK" },
 ];
 
 const ROLES = [
@@ -17,7 +17,7 @@ const ROLES = [
   { value: "admin", label: "Admin" },
 ];
 
-const AddEmployeeForm = () => {
+const AddEmployeeForm = ({ onEmployeeAdded }) => {
   const emptyForm = {
     name: "",
     email: "",
@@ -36,9 +36,12 @@ const AddEmployeeForm = () => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [generatedEmployeeId, setGeneratedEmployeeId] = useState("");
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [newEmployeeId, setNewEmployeeId] = useState("");
+  const [newEmployeePassword, setNewEmployeePassword] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const update = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
@@ -46,17 +49,34 @@ const AddEmployeeForm = () => {
     if (form.branch) {
       const branchInfo = BRANCHES.find(b => b.value === form.branch);
       if (branchInfo) {
-        setGeneratedEmployeeId(`${branchInfo.prefix}${branchInfo.hexCode}*** (auto-generated)`);
+        // Show format preview
       }
-    } else {
-      setGeneratedEmployeeId("");
     }
   }, [form.branch]);
+
+  const copyToClipboard = (text) => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
+    setSuccessMsg("");
     setLoading(true);
 
     try {
@@ -75,12 +95,15 @@ const AddEmployeeForm = () => {
       });
 
       if (res.data.success) {
-        const employeeId = res.data.user?.employeeId || generatedEmployeeId;
-        setSuccess(`Employee added successfully! Login ID: ${employeeId}`);
+        const empId = res.data.user?.employeeId;
+        setNewEmployeeId(empId);
+        setNewEmployeePassword(form.password);
+        setSuccessMsg(`Employee added successfully!`);
         toast.success(`Employee added!`);
+        setShowSuccessModal(true);
         setForm(emptyForm);
         setFile(null);
-        setGeneratedEmployeeId("");
+        if (onEmployeeAdded) onEmployeeAdded();
       }
     } catch (err) {
       const msg = err.response?.data?.error || "Failed to add employee";
@@ -90,6 +113,9 @@ const AddEmployeeForm = () => {
       setLoading(false);
     }
   };
+
+  const currentYear = new Date().getFullYear();
+  const selectedBranch = BRANCHES.find(b => b.value === form.branch);
 
   return (
     <div className="space-y-6">
@@ -102,11 +128,8 @@ const AddEmployeeForm = () => {
           {error}
         </div>
       )}
-      {success && (
-        <div className="p-3 rounded-lg bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 text-sm">
-          {success}
-        </div>
-      )}
+
+
 
       <div className="p-4 rounded-lg border" style={{ backgroundColor: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}>
         <div className="flex items-start gap-3">
@@ -114,10 +137,9 @@ const AddEmployeeForm = () => {
           <div className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
             <p className="font-semibold text-white mb-1">Login Information:</p>
             <ul className="list-disc list-inside space-y-1">
-              <li>Employees will login using their <strong className="text-cyan-400">Employee ID</strong> (auto-generated based on branch)</li>
+              <li>Employees will login using their <strong className="text-cyan-400">Employee ID</strong> (auto-generated)</li>
               <li>Email is only used for sending notifications</li>
-              <li>Bengaluru branch: <strong className="text-cyan-400">EJB68617269***</strong></li>
-              <li>Krishnagiri branch: <strong className="text-cyan-400">EJK68617269***</strong></li>
+              <li>ID format: <strong className="text-cyan-400">{selectedBranch?.prefix || 'XXX'}{currentYear}XXX</strong> (10 characters)</li>
             </ul>
           </div>
         </div>
@@ -151,7 +173,7 @@ const AddEmployeeForm = () => {
             >
               <option value="">Select Branch</option>
               {BRANCHES.map(b => (
-                <option key={b.value} value={b.value}>{b.label} ({b.prefix})</option>
+                <option key={b.value} value={b.value}>{b.label} ({b.prefix}{currentYear}XXX)</option>
               ))}
             </select>
           </div>
@@ -176,16 +198,24 @@ const AddEmployeeForm = () => {
                 id="emp-id"
                 name="employeeId"
                 type="text"
-                value={generatedEmployeeId}
+                value={selectedBranch ? `${selectedBranch.prefix}${currentYear}???` : ""}
                 disabled
-                className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-cyan-400"
+                placeholder="Select branch to see ID format"
+                className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-cyan-400 font-mono"
               />
               {form.branch && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-cyan-400">
-                  Auto
+                <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="flex items-center gap-1">
+                    <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 text-xs">AUTO</span>
+                  </div>
                 </span>
               )}
             </div>
+            {form.branch && (
+              <p className="text-xs text-slate-500 mt-1">
+                Final ID will be shown after employee is created
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -322,11 +352,82 @@ const AddEmployeeForm = () => {
         <button
           type="submit"
           disabled={loading}
-          className="mt-4 inline-flex items-center justify-center rounded-lg bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-500 disabled:opacity-50"
+          className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 px-6 py-3 text-white font-semibold hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 transition-all"
         >
-          {loading ? "Adding..." : "Add Employee"}
+          {loading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              Adding Employee...
+            </>
+          ) : (
+            <>
+              <UserPlus size={20} />
+              Add Employee
+            </>
+          )}
         </button>
       </form>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-slate-900 border border-cyan-500/30 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl shadow-cyan-500/10">
+            <div className="text-center">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center">
+                <CheckCircle size={40} className="text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">Employee Added!</h3>
+              <p className="text-slate-400 mb-6">The employee has been successfully added to the system.</p>
+              
+              <div className="space-y-4">
+                <div className="bg-slate-800 rounded-xl p-4">
+                  <p className="text-sm text-slate-400 mb-2">Employee ID</p>
+                  <div className="flex items-center justify-center gap-3">
+                    <span className="text-2xl font-mono font-bold text-cyan-400">{newEmployeeId}</span>
+                    <button
+                      onClick={() => copyToClipboard(newEmployeeId)}
+                      className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-400 hover:text-white transition-colors"
+                      title="Copy to clipboard"
+                    >
+                      {copied ? <CheckCircle size={18} className="text-green-400" /> : <Copy size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-slate-800 rounded-xl p-4">
+                  <p className="text-sm text-slate-400 mb-2">Password</p>
+                  <div className="flex items-center justify-center gap-3">
+                    <span className="text-2xl font-mono font-bold text-cyan-400">{newEmployeePassword}</span>
+                    <button
+                      onClick={() => {
+                        copyToClipboard(newEmployeePassword);
+                        toast.success("Password copied!");
+                      }}
+                      className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-400 hover:text-white transition-colors"
+                      title="Copy password"
+                    >
+                      <Copy size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-500">Share these credentials with the employee for login</p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  setNewEmployeeId("");
+                  setNewEmployeePassword("");
+                }}
+                className="w-full py-3 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold hover:from-cyan-500 hover:to-blue-500 transition-all"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

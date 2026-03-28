@@ -18,6 +18,13 @@ const EmployeeDetails = ({ employee, onBack }) => {
 
   const avatarUrl = employee.avatar || employee.profileImage;
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "-";
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return "-";
+    return date.toLocaleDateString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  };
+
   return (
     <div className="bg-slate-900 rounded-2xl border border-slate-700 p-6 space-y-6">
       <div className="text-center">
@@ -47,7 +54,7 @@ const EmployeeDetails = ({ employee, onBack }) => {
       <div className="grid gap-3 md:grid-cols-2">
         <DetailRow label="Employee ID" value={employee.employeeId} />
         <DetailRow label="Email" value={employee.email} />
-        <DetailRow label="Date of Birth" value={employee.dob ? new Date(employee.dob).toLocaleDateString() : "-"} />
+        <DetailRow label="Date of Birth" value={formatDate(employee.dob)} />
         <DetailRow label="Gender" value={employee.gender} />
         <DetailRow label="Department" value={employee.department} />
         <DetailRow label="Designation" value={employee.designation} />

@@ -255,9 +255,10 @@ const DashboardLayout = ({
       <div className="flex-1 flex flex-col min-h-screen lg:ml-0">
         {/* Fixed Header */}
         <header 
-          className="sticky top-0 z-50 px-4 lg:px-8 py-4 shadow-md flex items-center gap-4"
+          className="sticky top-0 z-50 shadow-md"
           style={{ backgroundColor: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border)' }}
         >
+          <div className="px-4 lg:px-8 py-4 flex items-center gap-4">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="lg:hidden p-2 rounded-lg transition-colors"
@@ -340,6 +341,7 @@ const DashboardLayout = ({
                 </div>
               )}
             </div>
+          </div>
           </div>
         </header>
 

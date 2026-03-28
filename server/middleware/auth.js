@@ -59,6 +59,7 @@ const requireRole = (...allowedRoles) => {
     }
 
     const userRole = req.user.role || req.user.user?.role;
+    console.log('[DEBUG requireRole] userRole:', userRole, 'allowedRoles:', allowedRoles, 'req.user:', req.user);
     
     if (!userRole) {
       return res.status(401).json({
@@ -73,6 +74,7 @@ const requireRole = (...allowedRoles) => {
     }
     
     if (!allowedRoles.includes(userRole)) {
+      console.log('[DEBUG requireRole] Access denied for role:', userRole, 'allowed:', allowedRoles);
       return res.status(403).json({
         success: false,
         error: "Access denied. Insufficient permissions.",

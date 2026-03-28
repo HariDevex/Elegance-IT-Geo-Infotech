@@ -53,52 +53,37 @@ const createEmployee = async (req, res, next) => {
       }
     }
 
-    // Branch-based employee ID generation: Prefix + HexCode + Sequential Number
+    // Employee ID generation: Prefix + Year + Random 3-digit Number (10 chars total)
+    // Example: EJB2026001, EJK2026002
     const BRANCH_CONFIG = {
-      bengaluru: { prefix: "EJB", hexCode: "68617269" },  // "hari"
-      krishnagiri: { prefix: "EJK", hexCode: "68617269" },
+      bengaluru: { prefix: "EJB" },
+      krishnagiri: { prefix: "EJK" },
     };
     
     let finalEmployeeId;
     let branchDepartment = department || "";
     
-    if (branch && BRANCH_CONFIG[branch]) {
-      const { prefix, hexCode } = BRANCH_CONFIG[branch];
-      
-      // Find last employee with this prefix+hexcode pattern
-      const lastUser = await db("users")
-        .whereNotNull("employee_id")
-        .where("employee_id", "like", `${prefix}${hexCode}%`)
-        .orderBy("employee_id", "desc")
-        .first();
-      
-      if (lastUser && lastUser.employee_id) {
-        const currentNum = parseInt(lastUser.employee_id.replace(`${prefix}${hexCode}`, ""));
-        finalEmployeeId = `${prefix}${hexCode}${(currentNum + 1).toString().padStart(3, "0")}`;
-      } else {
-        finalEmployeeId = `${prefix}${hexCode}001`;
-      }
-      
-      if (!department) {
-        branchDepartment = branch.charAt(0).toUpperCase() + branch.slice(1);
-      }
-    } else {
-      // Default: auto-generate with EJB prefix
-      const defaultPrefix = "EJB";
-      const defaultHex = "68617269";
-      
-      const lastUser = await db("users")
-        .whereNotNull("employee_id")
-        .where("employee_id", "like", `${defaultPrefix}${defaultHex}%`)
-        .orderBy("employee_id", "desc")
-        .first();
-      
-      if (lastUser && lastUser.employee_id) {
-        const currentNum = parseInt(lastUser.employee_id.replace(`${defaultPrefix}${defaultHex}`, ""));
-        finalEmployeeId = `${defaultPrefix}${defaultHex}${(currentNum + 1).toString().padStart(3, "0")}`;
-      } else {
-        finalEmployeeId = `${defaultPrefix}${defaultHex}001`;
-      }
+    const branchKey = branch ? branch.toLowerCase() : null;
+    const branchInfo = branchKey && BRANCH_CONFIG[branchKey] ? BRANCH_CONFIG[branchKey] : null;
+    const prefix = branchInfo ? branchInfo.prefix : "EJB";
+    const year = new Date().getFullYear();
+    
+    // Generate random 3-digit number
+    const randomNum = Math.floor(Math.random() * 900) + 100;
+    finalEmployeeId = `${prefix}${year}${randomNum}`;
+    
+    // Ensure uniqueness
+    let exists = await db("users").where("employee_id", finalEmployeeId).first();
+    let attempts = 0;
+    while (exists && attempts < 10) {
+      const newRandom = Math.floor(Math.random() * 900) + 100;
+      finalEmployeeId = `${prefix}${year}${newRandom}`;
+      exists = await db("users").where("employee_id", finalEmployeeId).first();
+      attempts++;
+    }
+    
+    if (branch && !department) {
+      branchDepartment = branch.charAt(0).toUpperCase() + branch.slice(1);
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);

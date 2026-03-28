@@ -10,8 +10,9 @@
     "db:migrate": "knex migrate:latest --knexfile knexfile.js",
     "db:seed": "node seeds/seed.js",
     "db:rollback": "knex migrate:rollback --knexfile knexfile.js",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --detectOpenHandles --forceExit",
-    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage --detectOpenHandles --forceExit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "node tests/e2e.test.js",
     "lint": "eslint ."
   },
@@ -43,25 +44,10 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@vue/test-utils": "^2.4.6",
     "eslint": "^8.57.0",
     "jest": "^29.7.0",
-    "supertest": "^6.3.4"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "transform": {},
-    "moduleFileExtensions": [
-      "js",
-      "json"
-    ],
-    "testMatch": [
-      "**/tests/**/*.test.js"
-    ],
-    "collectCoverageFrom": [
-      "controller/**/*.js",
-      "middleware/**/*.js",
-      "utils/**/*.js",
-      "!node_modules/**"
-    ]
+    "supertest": "^6.3.4",
+    "vitest": "^4.1.2"
   }
 }

@@ -66,6 +66,19 @@ const ProfileEdit = ({ onDone }) => {
 
     try {
       const token = localStorage.getItem("token");
+      let userId = user?._id;
+      
+      if (!userId) {
+        const profileRes = await axios.get(`${API_BASE}/api/auth/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!profileRes.data.user?._id) {
+          throw new Error("User ID not found");
+        }
+        userId = profileRes.data.user._id;
+        updateUser(profileRes.data.user);
+      }
+      
       const updates = { ...form };
       if (!updates.newPassword) delete updates.newPassword;
       if (!updates.dob) delete updates.dob;
@@ -74,7 +87,7 @@ const ProfileEdit = ({ onDone }) => {
         if (updates[k] === "" || updates[k] === null) delete updates[k];
       });
 
-      const res = await axios.put(`${API_BASE}/api/employees/${user._id}`, updates, {
+      const res = await axios.put(`${API_BASE}/api/employees/${userId}`, updates, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

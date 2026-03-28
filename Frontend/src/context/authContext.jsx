@@ -11,6 +11,16 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
+      
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch {
+          localStorage.removeItem("user");
+        }
+      }
+      
       if (!token) {
         setLoading(false);
         return;
@@ -21,8 +31,10 @@ export const AuthProvider = ({ children }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUser(res.data.user);
+        localStorage.setItem("user", JSON.stringify(res.data.user));
       } catch {
         localStorage.removeItem("token");
+        localStorage.removeItem("user");
       } finally {
         setLoading(false);
       }
@@ -33,12 +45,14 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback((userData) => {
     setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem("token");
     localStorage.removeItem("avatar");
+    localStorage.removeItem("user");
   }, []);
 
   const updateAvatar = useCallback((avatarUrl) => {
