@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense, useEffect } from "react";
+import React, { useState, lazy, Suspense, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../config/axios.js";
 import { Eye, EyeOff, Shield, Lock, User, Loader2 } from "lucide-react";
@@ -74,11 +74,27 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    const trimmedEmail = employeeId.trim();
+    if (!trimmedEmail) {
+      setError("Email is required");
+      return;
+    }
+    const emailRegex = /^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setError("Invalid email");
+      return;
+    }
+    if (!password) {
+      setError("Password is required");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await api.post(`/auth/login`, {
-        employee_id: employeeId.trim(),
+        employee_id: trimmedEmail,
         password,
         rememberMe,
       });
@@ -179,7 +195,7 @@ const Login = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} noValidate className="space-y-5">
             <div>
               <label htmlFor="login-employee-id" className="block text-sm font-medium text-slate-200 mb-2">
                 Employee ID
@@ -194,7 +210,7 @@ const Login = () => {
                   value={employeeId}
                   onChange={(e) => setEmployeeId(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 backdrop-blur-sm"
-                  placeholder="EJB2026001"
+                  placeholder="Email"
                   required
                 />
               </div>
@@ -214,7 +230,7 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 pr-12 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 backdrop-blur-sm"
-                  placeholder="Enter your password"
+                  placeholder="Password"
                   required
                 />
                 <button

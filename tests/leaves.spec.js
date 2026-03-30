@@ -137,12 +137,14 @@ test.describe('Leaves API', () => {
 
   test('POST /leaves - Valid Leave Types', async ({ request }) => {
     const leaveTypes = ['Annual Leave', 'Sick Leave', 'Casual Leave', 'unpaid'];
+    let dayOffset = 60;
     
     for (const leaveType of leaveTypes) {
       const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + Math.floor(Math.random() * 100) + 60);
+      futureDate.setDate(futureDate.getDate() + dayOffset);
       const endDate = new Date(futureDate);
-      endDate.setDate(endDate.getDate() + Math.floor(Math.random() * 5) + 2);
+      endDate.setDate(endDate.getDate() + 5);
+      dayOffset += 10;
       
       const res = await request.post(`${API_BASE}/leaves`, {
         headers: { 

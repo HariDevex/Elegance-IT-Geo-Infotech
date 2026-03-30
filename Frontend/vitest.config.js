@@ -7,6 +7,9 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/tests/setup.js'],
+    esbuild: {
+      jsx: 'automatic',
+    },
     coverage: {
       reporter: ['text', 'html'],
       exclude: [

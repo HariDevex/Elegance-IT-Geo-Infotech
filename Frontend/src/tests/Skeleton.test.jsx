@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { Skeleton, SkeletonGrid } from '../components/Skeleton';
+import React from 'react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import { Skeleton, SkeletonGrid } from '../components/Skeleton'
 
 describe('Skeleton Components', () => {
   it('renders Skeleton with default props', () => {

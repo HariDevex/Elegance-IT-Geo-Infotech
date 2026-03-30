@@ -173,9 +173,9 @@ test.describe('📋 Leave API', () => {
 
   test('Create leave application', async ({ request }) => {
     const future = new Date();
-    future.setDate(future.getDate() + 30);
-    const nextFuture = new Date();
-    nextFuture.setDate(nextFuture.getDate() + 35);
+    future.setDate(future.getDate() + 200 + Math.floor(Math.random() * 50));
+    const nextFuture = new Date(future);
+    nextFuture.setDate(nextFuture.getDate() + 3);
     
     const res = await request.post(`${BASE_URL}/leaves`, {
       headers: { Authorization: `Bearer ${devToken}`, 'Content-Type': 'application/json' },

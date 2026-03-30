@@ -25,12 +25,13 @@ const getAttendanceStatus = (checkInTime) => {
 const createOrUpdateAttendance = async (req, res, next) => {
   try {
     const { userId, date, status, action } = req.body;
+    const targetUserId = userId || req.user._id;
 
-    if (!userId || !date) {
+    if (!targetUserId || !date) {
       return res.status(400).json({ success: false, error: "Missing required fields" });
     }
 
-    const self = userId === req.user._id;
+    const self = targetUserId === req.user._id;
     if (!self && !canWrite(req.user.role)) {
       return res.status(403).json({ success: false, error: "Not authorized" });
     }

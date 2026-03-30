@@ -1,6 +1,7 @@
+import React from 'react'
 import './Skeleton.css'
 
-export const Skeleton = ({ className = "", variant = "text" }) => {
+export const Skeleton = ({ className = "", variant = "text", dataTestId = "skeleton" }) => {
   const variants = {
     text: "h-3.5",
     title: "h-5",
@@ -16,7 +17,10 @@ export const Skeleton = ({ className = "", variant = "text" }) => {
   };
 
   return (
-    <div className={`skeleton ${variants[variant]} ${className}`} />
+    <div
+      data-testid={dataTestId ?? undefined}
+      className={`skeleton ${variants[variant]} ${className}`}
+    />
   );
 };
 
@@ -31,9 +35,9 @@ export const SkeletonText = ({ lines = 3, className = "" }) => (
 export const SkeletonCard = ({ className = "", children }) => (
   <div className={`skeleton-card ${className}`}>
     <div className="space-y-3">
-      <Skeleton variant="title" className="w-1/2" />
-      <Skeleton variant="text" />
-      <Skeleton variant="text" className="w-3/4" />
+      <Skeleton dataTestId="skeleton" variant="title" className="w-1/2" />
+      <Skeleton dataTestId={null} variant="text" />
+      <Skeleton dataTestId={null} variant="text" className="w-3/4" />
     </div>
     {children}
   </div>
@@ -86,13 +90,16 @@ export const SkeletonList = ({ items = 5, className = "" }) => (
   </div>
 );
 
-export const SkeletonGrid = ({ items = 6, cols = 3, className = "" }) => (
+export const SkeletonGrid = ({ items = 6, count, cols = 3, className = "" }) => {
+  const total = count ?? items;
+  return (
   <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${cols} gap-4 ${className}`}>
-    {[...Array(items)].map((_, i) => (
+    {[...Array(total)].map((_, i) => (
       <SkeletonCard key={i} />
     ))}
   </div>
-);
+  );
+};
 
 export const SkeletonStatCard = ({ className = "" }) => (
   <div className={`skeleton-card p-5 ${className}`}>
