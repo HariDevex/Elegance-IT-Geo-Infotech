@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { Activity, Filter } from "lucide-react";
@@ -13,9 +13,9 @@ const ActivityLog = () => {
 
   useEffect(() => {
     fetchLogs();
-  }, [pagination.page, filters]);
+  }, [fetchLogs, pagination.page, filters]);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -41,7 +41,7 @@ const ActivityLog = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.page, filters]);
 
   const getActionColor = (action) => {
     switch (action) {

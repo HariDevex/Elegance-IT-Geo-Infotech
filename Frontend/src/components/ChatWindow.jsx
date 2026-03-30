@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { Search, Plus, X, Send, MoreVertical, Phone, Video, CheckCheck, Image as ImageIcon, Smile, MessageCircle, Mic, Paperclip } from "lucide-react";
@@ -102,7 +102,7 @@ const ChatWindow = () => {
       }
     };
     loadContacts();
-  }, [userId]);
+  }, [userId, activeContact]);
 
   useEffect(() => {
     const loadGroups = async () => {
@@ -137,7 +137,7 @@ const ChatWindow = () => {
     );
   }, [searchQuery, customGroups]);
 
-  const loadMessages = async (contactId = activeContact) => {
+  const loadMessages = useCallback(async (contactId = activeContact) => {
     if (!contactId) return;
     setLoadingMessages(true);
     try {
@@ -157,18 +157,18 @@ const ChatWindow = () => {
     } catch { /* empty */ } finally {
       setLoadingMessages(false);
     }
-  };
+  }, [activeContact]);
 
   useEffect(() => {
     if (activeContact) loadMessages();
-  }, [activeContact]);
+  }, [activeContact, loadMessages]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (activeContact) loadMessages(activeContact);
     }, 5000);
     return () => clearInterval(interval);
-  }, [activeContact]);
+  }, [activeContact, loadMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

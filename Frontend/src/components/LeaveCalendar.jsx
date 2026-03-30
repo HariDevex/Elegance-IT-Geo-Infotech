@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight, Calendar as CalIcon } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -13,9 +13,9 @@ const LeaveCalendar = () => {
 
   useEffect(() => {
     fetchData();
-  }, [currentDate]);
+  }, [fetchData, currentDate]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -41,7 +41,7 @@ const LeaveCalendar = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentDate]);
 
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();

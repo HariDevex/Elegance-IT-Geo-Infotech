@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { Trash2, Plus, Lock, Calendar, RefreshCw } from "lucide-react";
@@ -20,9 +20,9 @@ const HolidayManagement = () => {
 
   useEffect(() => {
     fetchHolidays();
-  }, [selectedYear]);
+  }, [fetchHolidays, selectedYear]);
 
-  const fetchHolidays = async () => {
+  const fetchHolidays = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(`${API_BASE}/api/holidays?year=${selectedYear}`, {
@@ -36,7 +36,7 @@ const HolidayManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedYear]);
 
   const handleAutoPopulate = async () => {
     setAutoPopulating(true);

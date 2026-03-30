@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Brain, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Clock, Users, Loader2 } from "lucide-react";
 import axios from "axios";
 import API_BASE from "../config/api.js";
@@ -10,9 +10,9 @@ const AIAttendanceInsights = () => {
 
   useEffect(() => {
     fetchInsights();
-  }, [timeRange]);
+  }, [fetchInsights, timeRange]);
 
-  const fetchInsights = async () => {
+  const fetchInsights = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -28,7 +28,7 @@ const AIAttendanceInsights = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [timeRange]);
 
   const getTrendIcon = (trend) => {
     if (trend === "up") return <TrendingUp size={16} className="text-green-500" />;

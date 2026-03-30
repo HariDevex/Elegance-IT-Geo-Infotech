@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';

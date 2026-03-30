@@ -51,7 +51,7 @@ const Loader = ({ onComplete }) => {
       clearInterval(textTimer)
       clearTimeout(completeTimer)
     }
-  }, [onComplete])
+  }, [onComplete, loadingTexts.length])
 
   useEffect(() => {
     const canvas = canvasRef.current

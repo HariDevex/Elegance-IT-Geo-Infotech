@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useAuth } from "../context/authContext";
@@ -20,7 +20,7 @@ const EmployeeLeaves = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -43,11 +43,11 @@ const EmployeeLeaves = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const filtered = useMemo(() => {
     if (statusFilter === "All") return rows;

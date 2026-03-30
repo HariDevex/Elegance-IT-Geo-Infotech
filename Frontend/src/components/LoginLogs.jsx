@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { Download } from "lucide-react";
@@ -11,7 +11,7 @@ const LoginLogs = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ status: "", search: "" });
 
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -27,11 +27,11 @@ const LoginLogs = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter.status]);
 
   useEffect(() => {
     loadLogs();
-  }, [filter.status]);
+  }, [loadLogs, filter.status]);
 
   const handleExport = async () => {
     try {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useAuth } from "../context/authContext";
@@ -16,7 +16,7 @@ const LeavesList = () => {
   const { user } = useAuth();
   const canApprove = ["admin", "manager", "root"].includes(user?.role);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -45,11 +45,11 @@ const LeavesList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, search]);
 
   useEffect(() => {
     load();
-  }, [statusFilter]);
+  }, [load, statusFilter]);
 
   const filtered = useMemo(() => {
     return rows.filter(

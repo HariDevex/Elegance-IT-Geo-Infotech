@@ -15,7 +15,7 @@ const EmployeesList = ({ onAddNew, onView, onEdit }) => {
   const [deleteId, setDeleteId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -34,11 +34,11 @@ const EmployeesList = ({ onAddNew, onView, onEdit }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, pagination.page]);
 
   useEffect(() => {
     fetchEmployees();
-  }, [search, pagination.page]);
+  }, [fetchEmployees, search, pagination.page]);
 
   const handleExport = useCallback(async () => {
     try {
@@ -73,7 +73,7 @@ const EmployeesList = ({ onAddNew, onView, onEdit }) => {
     } catch (err) {
       toast.error(err.response?.data?.error || "Failed to delete");
     }
-  }, [deleteId]);
+  }, [deleteId, fetchEmployees]);
 
   const confirmDelete = (id) => {
     setDeleteId(id);
