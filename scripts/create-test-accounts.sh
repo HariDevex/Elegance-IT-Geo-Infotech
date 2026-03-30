@@ -6,7 +6,8 @@ echo "Creating Test Accounts for QA Testing"
 echo "=============================================="
 
 # Configuration
-API_URL="${API_URL:-http://192.168.29.205/api}"
+# Default API_URL points to local host and backend port used by `npm start` in server/.
+API_URL="${API_URL:-http://192.168.29.205:5000/api}"
 ROOT_EMAIL="${ROOT_EMAIL:-mrnobody@elegance.com}"
 ROOT_PASSWORD="${ROOT_PASSWORD:-mrnobody009}"
 

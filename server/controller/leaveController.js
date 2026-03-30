@@ -116,7 +116,7 @@ const listLeaves = async (req, res, next) => {
     const { status, userId } = req.query;
 
     let query = db("leaves")
-      .join("users", "leaves.user_id", "users.id")
+      .join("users", "leaves.user_id", "users.employee_id")
       .select(
         "leaves.id",
         "leaves.type",
@@ -125,7 +125,7 @@ const listLeaves = async (req, res, next) => {
         "leaves.description",
         "leaves.status",
         "leaves.created_at",
-        "users.id as user_id",
+        "users.employee_id as user_id",
         "users.name as user_name",
         "users.employee_id",
         "users.department",

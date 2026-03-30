@@ -23,14 +23,14 @@ const config = {
     },
   },
   production: {
-    client: "pg",
-    connection: connectionString,
-    ssl: { rejectUnauthorized: false },
+    client,
+    connection: connectionString || "./data/elegance.db",
+    ssl: client === "pg" ? { rejectUnauthorized: false } : false,
     migrations: {
       directory: "./migrations",
       extension: "js",
     },
-    pool: { min: 2, max: 10 },
+    pool: client === "pg" ? { min: 2, max: 10 } : undefined,
   },
 };
 

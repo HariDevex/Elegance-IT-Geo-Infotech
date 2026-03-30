@@ -12,7 +12,7 @@ export default defineConfig({
   ],
   
   use: {
-    baseURL: 'http://localhost:5000/api',
+    baseURL: 'http://192.168.29.205/api',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },

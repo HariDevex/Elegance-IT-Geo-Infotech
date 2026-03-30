@@ -10,6 +10,7 @@
     "test": "tests"
   },
   "dependencies": {
+    "@opencode-ai/sdk": "^1.3.5",
     "playwright": "^1.58.2",
     "playwright-core": "^1.58.2"
   },

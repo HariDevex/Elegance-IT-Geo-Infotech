@@ -1,18 +1,18 @@
 import { test, expect } from '@playwright/test';
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'http://192.168.29.205/api';
 let adminToken = '';
 let devToken = '';
 
 test.describe('Leaves API', () => {
   test.beforeAll(async ({ request }) => {
     const adminLogin = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     adminToken = (await adminLogin.json()).token;
     
     const devLogin = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'developer@elegance.com', password: 'dev123456' }
+      data: { employee_id: 'EJB2026006', password: 'dev123456' }
     });
     devToken = (await devLogin.json()).token;
   });

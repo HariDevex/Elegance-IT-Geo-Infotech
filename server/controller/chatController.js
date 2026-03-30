@@ -53,7 +53,7 @@ const createGroup = async (req, res, next) => {
 const listGroups = async (req, res, next) => {
   try {
     const groups = await db("chat_groups")
-      .leftJoin("users", "chat_groups.created_by", "users.id")
+      .leftJoin("users", "chat_groups.created_by", "users.employee_id")
       .select(
         "chat_groups.id",
         "chat_groups.name",
@@ -125,12 +125,12 @@ const getMessages = async (req, res, next) => {
 
     if (type === "group") {
       messages = await db("chat_messages")
-        .join("users", "chat_messages.from_user", "users.id")
+        .join("users", "chat_messages.from_user", "users.employee_id")
         .select(
           "chat_messages.id",
           "chat_messages.text",
           "chat_messages.ts",
-          "users.id as from_id",
+          "users.employee_id as from_id",
           "users.name as from_name"
         )
         .where("chat_messages.to_group", contactId)
@@ -138,13 +138,13 @@ const getMessages = async (req, res, next) => {
         .limit(500);
     } else {
       messages = await db("chat_messages")
-        .join("users", "chat_messages.from_user", "users.id")
+        .join("users", "chat_messages.from_user", "users.employee_id")
         .select(
           "chat_messages.id",
           "chat_messages.text",
           "chat_messages.ts",
           "chat_messages.to_user",
-          "users.id as from_id",
+          "users.employee_id as from_id",
           "users.name as from_name"
         )
         .where((builder) => {
@@ -224,7 +224,7 @@ const sendMessage = async (req, res, next) => {
         .returning("*");
     }
 
-    const sender = await db("users").where("id", req.user._id).first();
+    const sender = await db("users").where("employee_id", req.user._id).first();
 
     res.status(201).json({
       success: true,
@@ -234,7 +234,7 @@ const sendMessage = async (req, res, next) => {
         ts: message.ts,
         attachment: message.attachment,
         from: {
-          _id: sender.id,
+          _id: sender.employee_id,
           name: sender.name,
         },
         isYou: true,

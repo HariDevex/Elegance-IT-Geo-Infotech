@@ -34,13 +34,27 @@ const createEmployee = async (req, res, next) => {
       });
     }
 
+    // Validate and format DOB
+    let formattedDob = null;
+    if (dob) {
+      const dobDate = new Date(dob + 'T00:00:00.000Z'); // Treat as UTC date
+      if (isNaN(dobDate.getTime())) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid date of birth format",
+        });
+      }
+      // Store as YYYY-MM-DD format
+      formattedDob = dobDate.toISOString().split('T')[0];
+    }
+
     // Check permission to create this role
     if (req.user.role !== "root" && !canManageRole(req.user.role, role)) {
       return res.status(403).json({
         success: false,
-        error: "Not authorized to create this role",
-      });
-    }
+          error: "Not authorized to create this role",
+        });
+      }
 
     // Check if email exists
     if (email) {
@@ -96,7 +110,7 @@ const createEmployee = async (req, res, next) => {
         password: hashedPassword,
         role,
         employee_id: finalEmployeeId,
-        dob: dob || null,
+        dob: formattedDob,
         gender: gender || null,
         marital_status: maritalStatus || null,
         designation: designation || null,
@@ -162,7 +176,7 @@ const listEmployees = async (req, res, next) => {
 
     const buildQuery = (q) => {
       if (!canViewAll) {
-        q = q.where("id", req.user._id);
+        q = q.where("employee_id", req.user._id);
       }
       if (search) {
         const searchTerm = `%${search}%`;
@@ -188,15 +202,17 @@ const listEmployees = async (req, res, next) => {
     const users = await buildQuery(
       db("users")
         .select(
-          "id",
+          "employee_id",
           "name",
           "email",
           "role",
           "employee_id",
           "dob",
           "gender",
+          "marital_status",
           "department",
           "designation",
+          "salary",
           "profile_image",
           "avatar",
           "attendance_status",
@@ -207,18 +223,22 @@ const listEmployees = async (req, res, next) => {
         .offset(offset)
     );
 
+    const canViewSalary = ["root", "admin", "manager"].includes(req.user.role);
+
     res.json({
       success: true,
       users: users.map((u) => ({
-        _id: u.id,
+        _id: u.employee_id,
         name: u.name,
         email: u.email,
         role: u.role,
         employeeId: u.employee_id,
         dob: u.dob,
         gender: u.gender,
+        maritalStatus: u.marital_status,
         department: u.department,
         designation: u.designation,
+        salary: canViewSalary ? u.salary : undefined,
         profileImage: u.profile_image,
         avatar: u.avatar,
         attendanceStatus: u.attendance_status,
@@ -257,6 +277,19 @@ const updateEmployee = async (req, res, next) => {
       updates.salary = parseFloat(updates.salary);
     }
 
+    // Validate and format DOB
+    if (updates.dob) {
+      const dobDate = new Date(updates.dob + 'T00:00:00.000Z'); // Treat as UTC date
+      if (isNaN(dobDate.getTime())) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid date of birth format",
+        });
+      }
+      // Store as YYYY-MM-DD format
+      updates.dob = dobDate.toISOString().split('T')[0];
+    }
+
     // Handle password update separately
     if (updates.newPassword) {
       updates.password = await bcrypt.hash(updates.newPassword, 12);
@@ -275,7 +308,7 @@ const updateEmployee = async (req, res, next) => {
 
     // Handle file upload
     if (req.file) {
-      const oldImage = await db("users").where("id", id).first();
+      const oldImage = await db("users").where("employee_id", id).first();
       if (oldImage?.profile_image) {
         await deleteFile(oldImage.profile_image);
       }
@@ -412,7 +445,7 @@ const deleteEmployee = async (req, res, next) => {
       });
     }
 
-    const deleted = await db("users").where("id", id).del();
+    const deleted = await db("users").where("employee_id", id).del();
 
     if (!deleted) {
       return res.status(404).json({

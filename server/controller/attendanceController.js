@@ -34,7 +34,7 @@ const createOrUpdateAttendance = async (req, res, next) => {
       return res.status(403).json({ success: false, error: "Not authorized" });
     }
 
-    const user = await db("users").where("id", userId).first();
+    const user = await db("users").where("employee_id", userId).first();
     if (!user) {
       return res.status(404).json({ success: false, error: "User not found" });
     }
@@ -151,7 +151,7 @@ const listAttendance = async (req, res, next) => {
     }
     
     const attendanceQuery = db("attendance")
-      .join("users", "attendance.user_id", "users.id")
+      .join("users", "attendance.user_id", "users.employee_id")
       .select(
         "attendance.id",
         "attendance.user_id",

@@ -6,7 +6,7 @@ const getHolidays = async (req, res, next) => {
     const { year, type } = req.query;
     const targetYear = year || new Date().getFullYear();
 
-    let query = db("holidays").where("year", targetYear);
+    let query = db("holidays");
 
     if (type) {
       query = query.where("type", type);
@@ -14,15 +14,20 @@ const getHolidays = async (req, res, next) => {
 
     const holidays = await query.orderBy("date");
 
+    const filteredHolidays = holidays.filter(h => {
+      const holidayYear = new Date(h.date).getFullYear().toString();
+      return holidayYear === targetYear;
+    });
+
     res.json({
       success: true,
-      holidays: holidays.map(h => ({
+      holidays: filteredHolidays.map(h => ({
         _id: h.id,
         name: h.name,
         date: h.date,
         type: h.type,
         description: h.description,
-        year: h.year,
+        year: new Date(h.date).getFullYear(),
       })),
     });
   } catch (error) {

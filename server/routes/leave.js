@@ -17,6 +17,8 @@ const createLeaveSchema = {
   },
   from: { required: true },
   to: { required: true },
+  reason: { maxLength: 500 },
+  notes: { maxLength: 1000 },
 };
 
 router.use(authMiddleware);

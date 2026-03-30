@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'http://192.168.29.205/api';
 
 test.describe('Security Tests - Authentication', () => {
   test('Invalid Token - 401', async ({ request }) => {
@@ -41,9 +41,9 @@ test.describe('Security Tests - SQL Injection', () => {
       "1; DROP TABLE users--"
     ];
     
-    for (const email of payloads) {
+    for (const empId of payloads) {
       const res = await request.post(`${API_BASE}/auth/login`, {
-        data: { email, password: 'anything' }
+        data: { employee_id: empId, password: 'anything' }
       });
       expect(res.status()).toBe(401);
       const data = await res.json();
@@ -53,7 +53,7 @@ test.describe('Security Tests - SQL Injection', () => {
 
   test('SQL Injection in Employee Search', async ({ request }) => {
     const adminLogin = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     const token = (await adminLogin.json()).token;
     
@@ -71,7 +71,7 @@ test.describe('Security Tests - SQL Injection', () => {
 
   test('SQL Injection in Leave Reason', async ({ request }) => {
     const devLogin = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'developer@elegance.com', password: 'dev123456' }
+      data: { employee_id: 'EJB2026006', password: 'dev123456' }
     });
     const token = (await devLogin.json()).token;
     
@@ -105,7 +105,7 @@ test.describe('Security Tests - SQL Injection', () => {
 test.describe('Security Tests - XSS Injection', () => {
   test('XSS in Employee Name', async ({ request }) => {
     const adminLogin = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     const token = (await adminLogin.json()).token;
     
@@ -142,7 +142,7 @@ test.describe('Security Tests - XSS Injection', () => {
 
   test('XSS in Leave Reason', async ({ request }) => {
     const devLogin = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'developer@elegance.com', password: 'dev123456' }
+      data: { employee_id: 'EJB2026006', password: 'dev123456' }
     });
     const token = (await devLogin.json()).token;
     
@@ -174,7 +174,7 @@ test.describe('Security Tests - XSS Injection', () => {
 
   test('XSS in Announcement', async ({ request }) => {
     const adminLogin = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     const token = (await adminLogin.json()).token;
     
@@ -201,7 +201,7 @@ test.describe('Security Tests - XSS Injection', () => {
 test.describe('Security Tests - Input Validation', () => {
   test('Long Input Rejected', async ({ request }) => {
     const adminLogin = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     const token = (await adminLogin.json()).token;
     
@@ -223,7 +223,7 @@ test.describe('Security Tests - Input Validation', () => {
 
   test('Invalid Email Format', async ({ request }) => {
     const adminLogin = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     const token = (await adminLogin.json()).token;
     
@@ -245,7 +245,7 @@ test.describe('Security Tests - Input Validation', () => {
 
   test('Invalid UUID Format - 404', async ({ request }) => {
     const adminLogin = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     const token = (await adminLogin.json()).token;
     
@@ -257,7 +257,7 @@ test.describe('Security Tests - Input Validation', () => {
 
   test('Malformed JSON', async ({ request }) => {
     const adminLogin = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     const token = (await adminLogin.json()).token;
     
@@ -277,7 +277,7 @@ test.describe('Security Tests - Rate Limiting', () => {
     const results = [];
     for (let i = 0; i < 20; i++) {
       const res = await request.post(`${API_BASE}/auth/login`, {
-        data: { email: 'wrong@email.com', password: 'wrong' }
+        data: { employee_id: 'WRONG', password: 'wrong' }
       });
       results.push(res.status());
     }
@@ -291,7 +291,7 @@ test.describe('Security Tests - Rate Limiting', () => {
 test.describe('Security Tests - Privilege Escalation', () => {
   test('Developer Cannot Create Employee', async ({ request }) => {
     const devLogin = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'developer@elegance.com', password: 'dev123456' }
+      data: { employee_id: 'EJB2026006', password: 'dev123456' }
     });
     const token = (await devLogin.json()).token;
     
@@ -313,7 +313,7 @@ test.describe('Security Tests - Privilege Escalation', () => {
 
   test('Cannot Escalate to Root Role', async ({ request }) => {
     const adminLogin = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     const token = (await adminLogin.json()).token;
     

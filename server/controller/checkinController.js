@@ -1,4 +1,5 @@
 import db from "../config/database.js";
+import { logActivity } from "./activityLogController.js";
 
 const MAX_CHECKIN_PER_DAY = 3;
 const LATE_THRESHOLD_HOUR = 9;
@@ -103,6 +104,8 @@ const checkin = async (req, res, next) => {
       todayCount: allCheckins.length,
       maxAllowed: MAX_CHECKIN_PER_DAY,
     });
+
+    await logActivity(userId, "checkin", "attendance", record.id, { note }, req.ip);
   } catch (error) {
     next(error);
   }
@@ -170,6 +173,8 @@ const checkout = async (req, res, next) => {
         durationMinutes: duration,
       },
     });
+
+    await logActivity(userId, "checkout", "attendance", record.id, { note, durationMinutes: duration }, req.ip);
   } catch (error) {
     next(error);
   }
@@ -241,7 +246,7 @@ const exportCheckinExcel = async (req, res, next) => {
     const { from, to, userId } = req.query;
 
     let query = db("checkin_checkout")
-      .join("users", "checkin_checkout.user_id", "users.id")
+      .join("users", "checkin_checkout.user_id", "users.employee_id")
       .select(
         "users.employee_id",
         "users.name",

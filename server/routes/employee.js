@@ -37,13 +37,16 @@ const upload = multer({
 const router = express.Router();
 
 const createEmployeeSchema = {
-  name: { required: true, minLength: 2 },
-  email: { type: "email" },
-  password: { required: true, minLength: 6 },
+  name: { required: true, minLength: 2, maxLength: 100 },
+  email: { type: "email", maxLength: 255 },
+  password: { required: true, minLength: 6, maxLength: 128 },
   role: {
     required: true,
     enum: ["admin", "manager", "teamlead", "developer", "hr"],
   },
+  designation: { maxLength: 100 },
+  department: { maxLength: 100 },
+  branch: { maxLength: 100 },
 };
 
 router.use(authMiddleware);

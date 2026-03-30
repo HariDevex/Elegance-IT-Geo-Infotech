@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'http://192.168.29.205/api';
 
 test.describe('Performance Tests', () => {
   test('Health endpoint responds within 1000ms', async ({ request }) => {
@@ -15,7 +15,7 @@ test.describe('Performance Tests', () => {
   test('Login responds within 2000ms', async ({ request }) => {
     const startTime = Date.now();
     const res = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     const duration = Date.now() - startTime;
     
@@ -25,7 +25,7 @@ test.describe('Performance Tests', () => {
 
   test('Employee list responds within 2000ms', async ({ request }) => {
     const loginRes = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     const token = (await loginRes.json()).token;
     
@@ -41,7 +41,7 @@ test.describe('Performance Tests', () => {
 
   test('Profile endpoint responds within 1000ms', async ({ request }) => {
     const loginRes = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     const token = (await loginRes.json()).token;
     
@@ -57,7 +57,7 @@ test.describe('Performance Tests', () => {
 
   test('Multiple sequential requests complete', async ({ request }) => {
     const loginRes = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     const token = (await loginRes.json()).token;
     
@@ -102,7 +102,7 @@ test.describe('Health & Status Checks', () => {
 test.describe('Data Integrity Tests', () => {
   test('Employee IDs are unique across all employees', async ({ request }) => {
     const loginRes = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     const token = (await loginRes.json()).token;
     
@@ -119,7 +119,7 @@ test.describe('Data Integrity Tests', () => {
 
   test('Created employee persists and can be retrieved', async ({ request }) => {
     const loginRes = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     const token = (await loginRes.json()).token;
     
@@ -155,7 +155,7 @@ test.describe('Data Integrity Tests', () => {
 test.describe('Edge Cases', () => {
   test('Empty search returns results', async ({ request }) => {
     const loginRes = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     const token = (await loginRes.json()).token;
     
@@ -169,7 +169,7 @@ test.describe('Edge Cases', () => {
 
   test('Special characters in search', async ({ request }) => {
     const loginRes = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     const token = (await loginRes.json()).token;
     
@@ -181,7 +181,7 @@ test.describe('Edge Cases', () => {
 
   test('Large page number handled', async ({ request }) => {
     const loginRes = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     const token = (await loginRes.json()).token;
     

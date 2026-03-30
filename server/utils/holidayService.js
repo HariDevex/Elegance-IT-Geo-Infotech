@@ -72,7 +72,6 @@ const populateHolidaysForYear = async (year) => {
     try {
       const existing = await db("holidays")
         .where("date", holiday.date)
-        .where("type", holiday.type)
         .first();
       
       if (existing) {
@@ -83,7 +82,6 @@ const populateHolidaysForYear = async (year) => {
       await db("holidays").insert({
         name: holiday.name,
         date: holiday.date,
-        type: holiday.type,
         description: holiday.description,
         year: parseInt(year),
       });

@@ -21,7 +21,7 @@ const getActivityLogs = async (req, res, next) => {
     const offset = (page - 1) * limit;
 
     let query = db("activity_logs")
-      .leftJoin("users", "activity_logs.user_id", "users.id")
+      .leftJoin("users", "activity_logs.user_id", "users.employee_id")
       .select(
         "activity_logs.*",
         "users.name as user_name",

@@ -6,6 +6,8 @@ import { uploadFile, deleteFile } from "../utils/supabaseStorage.js";
 import { sendPasswordResetEmail } from "../utils/emailService.js";
 import { config } from "../config/appConfig.js";
 import { logActivity } from "./activityLogController.js";
+import aiSecurity from "../utils/aiSecurity.js";
+import { blacklistToken } from "../utils/tokenBlacklist.js";
 
 const createOrUpdateAttendanceOnLogin = async (userId, action = "checkin") => {
   try {
@@ -57,28 +59,24 @@ const createOrUpdateAttendanceOnLogin = async (userId, action = "checkin") => {
 
 const login = async (req, res, next) => {
   try {
-    const { email, password, rememberMe } = req.body;
+    const { employee_id, password, rememberMe } = req.body;
     const ip = req.ip || req.connection.remoteAddress;
     const userAgent = req.get("user-agent") || "Unknown";
     const now = new Date();
 
-    // Allow login with employee_id (priority) or email
-    let user;
-    const input = email.includes('@') ? email.toLowerCase() : email.toUpperCase();
-    
-    // Check employee_id first (priority)
-    if (!email.includes('@')) {
-      user = await db("users").where("employee_id", input).first();
+    if (!employee_id) {
+      return res.status(400).json({
+        success: false,
+        error: "Employee ID is required",
+      });
     }
-    
-    // If not found and looks like email, try email lookup
-    if (!user && email.includes('@')) {
-      user = await db("users").where("email", input).first();
-    }
+
+    const input = employee_id.toUpperCase();
+    const user = await db("users").where("employee_id", input).first();
 
     if (!user) {
       await db("login_attempts").insert({
-        email: email,
+        email: input,
         ip_address: ip,
         user_agent: userAgent,
         success: false,
@@ -86,14 +84,14 @@ const login = async (req, res, next) => {
       });
       return res.status(401).json({
         success: false,
-        error: "Invalid credentials",
+        error: "Invalid Employee ID",
       });
     }
 
     // Check if account is locked
     if (user.locked_until && new Date(user.locked_until) > now) {
       await db("login_attempts").insert({
-        email: email,
+        email: input,
         ip_address: ip,
         user_agent: userAgent,
         success: false,
@@ -114,19 +112,34 @@ const login = async (req, res, next) => {
       });
     }
 
+    // AI Security: Check for brute force attacks from this IP
+    // const bruteForceCheck = await aiSecurity.detectBruteForce(ip, userAgent);
+    // if (bruteForceCheck.shouldBlock) {
+    //   await aiSecurity.logSecurityEvent(
+    //     user.employee_id,
+    //     "BRUTE_FORCE_BLOCKED",
+    //     "critical",
+    //     { ip, userAgent, attempts: bruteForceCheck.attempts }
+    //   );
+    //   return res.status(429).json({
+    //     success: false,
+    //     error: "Too many requests from this IP. Temporary block applied.",
+    //   });
+    // }
+
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       const failedAttempts = (user.failed_attempts || 0) + 1;
       const lockUntil = failedAttempts >= 5 ? new Date(now.getTime() + 15 * 60 * 1000) : null;
 
-      await db("users").where("id", user.id).update({
+      await db("users").where("employee_id", user.employee_id).update({
         failed_attempts: failedAttempts,
         locked_until: lockUntil,
       });
 
       await db("login_attempts").insert({
-        email: email,
+        email: input,
         ip_address: ip,
         user_agent: userAgent,
         success: false,
@@ -163,7 +176,7 @@ const login = async (req, res, next) => {
     }
 
     // Reset failed attempts on successful login
-    await db("users").where("id", user.id).update({
+    await db("users").where("employee_id", user.employee_id).update({
       failed_attempts: 0,
       locked_until: null,
       last_login_at: now,
@@ -172,13 +185,13 @@ const login = async (req, res, next) => {
 
     const tokenExpiry = rememberMe ? "30d" : config.JWT_EXPIRES_IN;
     const token = jwt.sign(
-      { _id: user.id, role: user.role },
+      { _id: user.employee_id, role: user.role },
       config.JWT_SECRET,
       { expiresIn: tokenExpiry }
     );
 
     const refreshToken = jwt.sign(
-      { _id: user.id, type: "refresh" },
+      { _id: user.employee_id, type: "refresh" },
       config.JWT_SECRET,
       { expiresIn: "30d" }
     );
@@ -188,7 +201,7 @@ const login = async (req, res, next) => {
     const deviceType = userAgent.toLowerCase().includes("mobile") ? "mobile" : "desktop";
     
     await db("login_sessions").insert({
-      user_id: user.id,
+      user_id: user.employee_id,
       token_hash: crypto.createHash("sha256").update(token).digest("hex"),
       ip_address: ip,
       user_agent: userAgent,
@@ -198,21 +211,28 @@ const login = async (req, res, next) => {
     });
 
     await db("login_logs").insert({
-      user_id: user.id,
+      user_id: user.employee_id,
       ip_address: ip,
       user_agent: userAgent,
       status: "success",
     });
 
-    await db("login_attempts").insert({
-      email: email,
-      ip_address: ip,
-      user_agent: userAgent,
-      success: true,
-    });
+    await createOrUpdateAttendanceOnLogin(user.employee_id, "checkin");
+    await logActivity(user.employee_id, "login", "auth", user.employee_id, { email: user.email, device: deviceType }, ip);
 
-    await createOrUpdateAttendanceOnLogin(user.id, "checkin");
-    await logActivity(user.id, "login", "auth", user.id, { email: user.email, device: deviceType }, ip);
+    // AI Security: Analyze login pattern
+    // const loginAnalysis = await aiSecurity.analyzeLoginPattern(user.employee_id, ip, userAgent);
+    // const riskReport = await aiSecurity.generateRiskReport(user.employee_id);
+
+    // Log security event if high risk
+    // if (loginAnalysis.riskLevel === "high" || riskReport.riskScore > 50) {
+    //   await aiSecurity.logSecurityEvent(
+    //     user.employee_id,
+    //     "HIGH_RISK_LOGIN",
+    //     loginAnalysis.riskLevel,
+    //     { ip, userAgent, riskScore: riskReport.riskScore, factors: loginAnalysis }
+    //   );
+    // }
 
     res.json({
       success: true,
@@ -222,7 +242,7 @@ const login = async (req, res, next) => {
       mustChangePassword,
       passwordExpiring,
       user: {
-        _id: user.id,
+        _id: user.employee_id,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -232,6 +252,18 @@ const login = async (req, res, next) => {
         department: user.department,
         designation: user.designation,
       },
+      security: {
+        riskLevel: "low",
+        isNewDevice: true,
+        riskScore: 0,
+      },
+    });
+
+    await db("login_attempts").insert({
+      email: email,
+      ip_address: ip,
+      user_agent: userAgent,
+      success: true,
     });
   } catch (error) {
     next(error);
@@ -272,7 +304,7 @@ const refreshAccessToken = async (req, res, next) => {
       });
     }
 
-    const user = await db("users").where("id", decoded._id).first();
+    const user = await db("users").where("employee_id", decoded._id).first();
 
     if (!user) {
       return res.status(401).json({
@@ -282,13 +314,13 @@ const refreshAccessToken = async (req, res, next) => {
     }
 
     const newToken = jwt.sign(
-      { _id: user.id, role: user.role },
+      { _id: user.employee_id, role: user.role },
       config.JWT_SECRET,
       { expiresIn: config.JWT_EXPIRES_IN }
     );
 
     const newRefreshToken = jwt.sign(
-      { _id: user.id, type: "refresh" },
+      { _id: user.employee_id, type: "refresh" },
       config.JWT_SECRET,
       { expiresIn: "30d" }
     );
@@ -315,7 +347,7 @@ const getLoginLogs = async (req, res, next) => {
     const { from, to, userId, status } = req.query;
 
     let query = db("login_logs")
-      .join("users", "login_logs.user_id", "users.id")
+      .join("users", "login_logs.user_id", "users.employee_id")
       .select(
         "login_logs.id",
         "login_logs.ip_address",
@@ -410,7 +442,7 @@ const exportAttendanceExcel = async (req, res, next) => {
     const { from, to, userId } = req.query;
 
     let query = db("attendance")
-      .join("users", "attendance.user_id", "users.id")
+      .join("users", "attendance.user_id", "users.employee_id")
       .select(
         "users.employee_id",
         "users.name",
@@ -454,7 +486,7 @@ const exportLoginLogsExcel = async (req, res, next) => {
     const { from, to, userId, status } = req.query;
 
     let query = db("login_logs")
-      .join("users", "login_logs.user_id", "users.id")
+      .join("users", "login_logs.user_id", "users.employee_id")
       .select(
         "users.employee_id",
         "users.name",
@@ -629,7 +661,7 @@ const resetUserPassword = async (req, res, next) => {
       });
     }
 
-    const user = await db("users").where("id", userId).first();
+    const user = await db("users").where("employee_id", userId).first();
 
     if (!user) {
       return res.status(404).json({
@@ -648,7 +680,7 @@ const resetUserPassword = async (req, res, next) => {
     const hashedNewPassword = await bcrypt.hash(newPassword, 12);
 
     await db("users")
-      .where("id", userId)
+      .where("employee_id", userId)
       .update({
         password: hashedNewPassword,
         updated_at: db.fn.now(),
@@ -700,7 +732,7 @@ const getPasswordHistory = async (req, res, next) => {
     res.json({
       success: true,
       user: user ? {
-        _id: user.id,
+        _id: user.employee_id,
         name: user.name,
         email: user.email,
         employeeId: user.employee_id,
@@ -761,21 +793,22 @@ const getAllPasswordHistory = async (req, res, next) => {
 
 const forgotPassword = async (req, res, next) => {
   try {
-    const { email } = req.body;
+    const { employee_id } = req.body;
 
-    if (!email) {
+    if (!employee_id) {
       return res.status(400).json({
         success: false,
-        error: "Email is required",
+        error: "Employee ID is required",
       });
     }
 
-    const user = await db("users").where("email", email.toLowerCase()).first();
+    const input = employee_id.toUpperCase();
+    const user = await db("users").where("employee_id", input).first();
 
     if (!user) {
       return res.json({
         success: true,
-        message: "If an account exists with this email, a password reset request has been sent.",
+        message: "If an account exists with this Employee ID, a password reset request has been sent.",
       });
     }
 
@@ -783,7 +816,7 @@ const forgotPassword = async (req, res, next) => {
     const resetTokenExpiry = new Date(Date.now() + 3600000);
 
     await db("users")
-      .where("id", user.id)
+      .where("employee_id", user.employee_id)
       .update({
         reset_token: resetToken,
         reset_token_expiry: resetTokenExpiry,
@@ -793,7 +826,7 @@ const forgotPassword = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: "If an account exists with this email, a password reset request has been sent.",
+      message: "If an account exists with this Employee ID, a password reset request has been sent.",
     });
   } catch (error) {
     next(error);
@@ -833,7 +866,7 @@ const resetPassword = async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     await db("users")
-      .where("id", user.id)
+      .where("employee_id", user.employee_id)
       .update({
         password: hashedPassword,
         reset_token: null,
@@ -886,9 +919,9 @@ const uploadAvatar = async (req, res, next) => {
 const getProfile = async (req, res, next) => {
   try {
     const user = await db("users")
-      .where("id", req.user._id)
+      .where("employee_id", req.user._id)
       .select(
-        "id",
+        "employee_id",
         "name",
         "email",
         "role",
@@ -916,7 +949,7 @@ const getProfile = async (req, res, next) => {
     res.json({
       success: true,
       user: {
-        _id: user.id,
+        _id: user.employee_id,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -986,6 +1019,14 @@ const terminateSession = async (req, res, next) => {
       });
     }
 
+    if (session.token_hash) {
+      await db("token_blacklist").insert({
+        token_hash: session.token_hash,
+        expires_at: session.expires_at,
+        blacklisted_at: new Date(),
+      }).catch(() => {});
+    }
+
     await db("login_sessions")
       .where("id", sessionId)
       .update({ is_active: false });
@@ -1004,6 +1045,20 @@ const terminateAllSessions = async (req, res, next) => {
     const userId = req.user._id;
     const currentToken = req.headers.authorization?.replace("Bearer ", "");
     const currentTokenHash = currentToken ? crypto.createHash("sha256").update(currentToken).digest("hex") : null;
+
+    const sessionsToTerminate = await db("login_sessions")
+      .where("user_id", userId)
+      .where("is_active", true)
+      .where("token_hash", "!=", currentTokenHash)
+      .select("token_hash", "expires_at");
+
+    for (const session of sessionsToTerminate) {
+      await db("token_blacklist").insert({
+        token_hash: session.token_hash,
+        expires_at: session.expires_at,
+        blacklisted_at: new Date(),
+      }).catch(() => {});
+    }
 
     await db("login_sessions")
       .where("user_id", userId)

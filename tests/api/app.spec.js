@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = 'http://192.168.29.205/api';
 
 let rootToken = '';
 let adminToken = '';
@@ -9,7 +9,7 @@ let devToken = '';
 test.describe('🔐 API Authentication', () => {
   test('Login with employee ID returns token', async ({ request }) => {
     const res = await request.post(`${BASE_URL}/auth/login`, {
-      data: { email: 'EJB2026001', password: 'mrnobody009' }
+      data: { employee_id: 'EJB2026001', password: 'mrnobody009' }
     });
     expect(res.ok()).toBeTruthy();
     const data = await res.json();
@@ -20,7 +20,7 @@ test.describe('🔐 API Authentication', () => {
 
   test('Login with email returns token', async ({ request }) => {
     const res = await request.post(`${BASE_URL}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     expect(res.ok()).toBeTruthy();
     const data = await res.json();
@@ -31,7 +31,7 @@ test.describe('🔐 API Authentication', () => {
 
   test('Invalid credentials rejected', async ({ request }) => {
     const res = await request.post(`${BASE_URL}/auth/login`, {
-      data: { email: 'wrong@email.com', password: 'wrongpass' }
+      data: { employee_id: 'WRONG', password: 'wrongpass' }
     });
     expect(res.ok()).toBeFalsy();
     const data = await res.json();
@@ -40,7 +40,7 @@ test.describe('🔐 API Authentication', () => {
 
   test('SQL injection in login blocked', async ({ request }) => {
     const res = await request.post(`${BASE_URL}/auth/login`, {
-      data: { email: "' OR '1'='1", password: "' OR '1'='1" }
+      data: { employee_id: "' OR '1'='1", password: "' OR '1'='1" }
     });
     const data = await res.json();
     expect(data.success).toBe(false);
@@ -49,7 +49,7 @@ test.describe('🔐 API Authentication', () => {
   test('Profile endpoint returns user data', async ({ request }) => {
     if (!adminToken) {
       const loginRes = await request.post(`${BASE_URL}/auth/login`, {
-        data: { email: 'admin@elegance.com', password: 'admin123' }
+        data: { employee_id: 'EJB2026002', password: 'admin123' }
       });
       adminToken = (await loginRes.json()).token;
     }
@@ -66,7 +66,7 @@ test.describe('🔐 API Authentication', () => {
 test.describe('👥 Employee API', () => {
   test.beforeAll(async ({ request }) => {
     const res = await request.post(`${BASE_URL}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     adminToken = (await res.json()).token;
   });
@@ -159,7 +159,7 @@ test.describe('👥 Employee API', () => {
 test.describe('📋 Leave API', () => {
   test.beforeAll(async ({ request }) => {
     const res = await request.post(`${BASE_URL}/auth/login`, {
-      data: { email: 'developer@elegance.com', password: 'dev123456' }
+      data: { employee_id: 'EJB2026006', password: 'dev123456' }
     });
     devToken = (await res.json()).token;
   });
@@ -212,7 +212,7 @@ test.describe('📋 Leave API', () => {
 test.describe('📅 Attendance API', () => {
   test.beforeAll(async ({ request }) => {
     const res = await request.post(`${BASE_URL}/auth/login`, {
-      data: { email: 'developer@elegance.com', password: 'dev123456' }
+      data: { employee_id: 'EJB2026006', password: 'dev123456' }
     });
     devToken = (await res.json()).token;
   });
@@ -242,7 +242,7 @@ test.describe('📅 Attendance API', () => {
 test.describe('🎯 RBAC Tests', () => {
   test('Developer cannot access admin routes', async ({ request }) => {
     const loginRes = await request.post(`${BASE_URL}/auth/login`, {
-      data: { email: 'developer@elegance.com', password: 'dev123456' }
+      data: { employee_id: 'EJB2026006', password: 'dev123456' }
     });
     devToken = (await loginRes.json()).token;
     
@@ -254,7 +254,7 @@ test.describe('🎯 RBAC Tests', () => {
 
   test('Admin can manage employees', async ({ request }) => {
     const loginRes = await request.post(`${BASE_URL}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     adminToken = (await loginRes.json()).token;
     
@@ -273,7 +273,7 @@ test.describe('🎯 RBAC Tests', () => {
 test.describe('🛡️ Security Tests', () => {
   test('XSS sanitization', async ({ request }) => {
     const loginRes = await request.post(`${BASE_URL}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     adminToken = (await loginRes.json()).token;
     
@@ -294,7 +294,7 @@ test.describe('🛡️ Security Tests', () => {
 
   test('Input length validation', async ({ request }) => {
     const loginRes = await request.post(`${BASE_URL}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     adminToken = (await loginRes.json()).token;
     
@@ -316,7 +316,7 @@ test.describe('🛡️ Security Tests', () => {
     const responses = [];
     for (let i = 0; i < 10; i++) {
       const res = await request.post(`${BASE_URL}/auth/login`, {
-        data: { email: 'wrong@email.com', password: 'wrong' }
+        data: { employee_id: 'WRONG', password: 'wrong' }
       });
       responses.push(res.status());
     }
@@ -329,7 +329,7 @@ test.describe('🛡️ Security Tests', () => {
 test.describe('📊 Database Integration', () => {
   test('Employee IDs are unique', async ({ request }) => {
     const loginRes = await request.post(`${BASE_URL}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     adminToken = (await loginRes.json()).token;
     
@@ -344,7 +344,7 @@ test.describe('📊 Database Integration', () => {
 
   test('Created employee persists', async ({ request }) => {
     const loginRes = await request.post(`${BASE_URL}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     adminToken = (await loginRes.json()).token;
     

@@ -44,17 +44,17 @@ const upload = multer({
 const router = express.Router();
 
 const loginSchema = {
-  email: { required: true },
-  password: { required: true },
+  employee_id: { required: true, maxLength: 50 },
+  password: { required: true, maxLength: 128 },
 };
 
 const changePasswordSchema = {
-  oldPassword: { required: true },
-  newPassword: { required: true, minLength: 6 },
+  oldPassword: { required: true, maxLength: 128 },
+  newPassword: { required: true, minLength: 6, maxLength: 128 },
 };
 
 const forgotPasswordSchema = {
-  email: { required: true },
+  employee_id: { required: true, maxLength: 50 },
 };
 
 router.post("/login", sanitizeInput, validate(loginSchema), login);

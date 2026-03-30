@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test';
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'http://192.168.29.205/api';
 
 const CREDENTIALS = {
-  root: { email: 'EJB2026001', password: 'mrnobody009' },
-  admin: { email: 'EJB2026002', password: 'admin123' },
-  manager: { email: 'EJB2026003', password: 'manager123' },
-  hr: { email: 'EJB2026004', password: 'hr123456' },
-  teamlead: { email: 'EJB2026005', password: 'teamlead123' },
-  developer: { email: 'EJB2026006', password: 'dev123456' },
+  root: { employee_id: 'EJB2026001', password: 'mrnobody009' },
+  admin: { employee_id: 'EJB2026002', password: 'admin123' },
+  manager: { employee_id: 'EJB2026003', password: 'manager123' },
+  hr: { employee_id: 'EJB2026004', password: 'hr123456' },
+  teamlead: { employee_id: 'EJB2026005', password: 'teamlead123' },
+  developer: { employee_id: 'EJB2026006', password: 'dev123456' },
 };
 
 async function getToken(request, creds) {

@@ -10,8 +10,9 @@ import { validate, sanitizeInput } from "../middleware/validator.js";
 const router = express.Router();
 
 const createAnnouncementSchema = {
-  title: { required: true, minLength: 3 },
-  message: { required: true, minLength: 10 },
+  title: { required: true, minLength: 3, maxLength: 200 },
+  message: { required: true, minLength: 10, maxLength: 5000 },
+  priority: { enum: ["low", "medium", "high"], maxLength: 20 },
 };
 
 router.use(authMiddleware);

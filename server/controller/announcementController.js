@@ -37,7 +37,7 @@ const createAnnouncement = async (req, res, next) => {
 
     // Get creator info
     const creator = await db("users")
-      .where("id", req.user._id)
+      .where("employee_id", req.user._id)
       .first();
 
     res.status(201).json({
@@ -69,7 +69,7 @@ const listAnnouncements = async (req, res, next) => {
     const userDepartment = req.user.department;
 
     const announcements = await db("announcements")
-      .leftJoin("users", "announcements.created_by", "users.id")
+      .leftJoin("users", "announcements.created_by", "users.employee_id")
       .select(
         "announcements.id",
         "announcements.title",
@@ -77,7 +77,7 @@ const listAnnouncements = async (req, res, next) => {
         "announcements.audience_roles",
         "announcements.audience_departments",
         "announcements.created_at",
-        "users.id as creator_id",
+        "users.employee_id as creator_id",
         "users.name as creator_name",
         "users.role as creator_role"
       )

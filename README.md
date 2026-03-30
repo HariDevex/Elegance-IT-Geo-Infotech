@@ -76,6 +76,17 @@ Elegance EMS is a comprehensive employee management platform designed for modern
 | Toast Notifications | Non-intrusive feedback system |
 | Excel Export | Export data to Excel with one click |
 
+### AI-Powered Features
+
+| Feature | Description |
+|---------|-------------|
+| **AI Security Engine | Real-time threat detection, brute force protection, login anomaly detection |
+| **Smart Search | Unified search across employees, leaves, and announcements |
+| **HR Chatbot | AI assistant for leave, attendance, and policy queries |
+| **Attendance Insights | Pattern analysis, anomaly detection, trend predictions |
+| **Leave Prediction | Pattern analysis and team forecasting |
+| **Token Blacklist | Session termination and force logout capability |
+
 ---
 
 ## 🛠 Tech Stack
@@ -231,6 +242,16 @@ Elegance/
 | `/api/holidays` | GET, POST, DELETE |
 | `/api/activity-logs` | GET |
 | `/api/auth/sessions` | GET, DELETE |
+
+### AI Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/ai/attendance-insights` | AI-powered attendance analysis |
+| GET | `/api/ai/search?q=query` | Smart unified search |
+| GET | `/api/ai/leave-prediction` | Leave predictions & forecasts |
+| POST | `/api/ai/chat` | HR Chatbot conversation |
+| DELETE | `/api/ai/chat/:conversationId` | Clear chat history |
 
 ---
 

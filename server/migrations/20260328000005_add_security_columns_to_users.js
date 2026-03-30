@@ -1,4 +1,6 @@
 export async function up(knex) {
+  const isSqlite = knex.client.config.client === 'better-sqlite3';
+  
   await knex.schema.alterTable("users", (table) => {
     table.timestamp("last_login_at").nullable();
     table.integer("login_count").defaultTo(0);
@@ -10,7 +12,11 @@ export async function up(knex) {
     table.timestamp("locked_until").nullable();
     table.string("secret_question", 500).nullable();
     table.string("secret_answer_hash", 255).nullable();
-    table.jsonb("login_security").nullable();
+    if (isSqlite) {
+      table.text("login_security").nullable();
+    } else {
+      table.jsonb("login_security").nullable();
+    }
   });
 }
 

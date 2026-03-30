@@ -24,12 +24,15 @@ import documentRouter from "./routes/document.js";
 import activityLogRouter from "./routes/activityLog.js";
 import twoFactorRouter from "./routes/twoFactor.js";
 import oauthRouter from "./routes/oauth.js";
+import aiRouter from "./routes/ai.js";
+import { cacheMiddleware } from "./utils/responseCache.js";
 import { errorHandler, requestLogger } from "./middleware/errorHandler.js";
 import { validateInputLength } from "./middleware/validator.js";
 import { initSentry, sentryErrorHandler } from "./utils/sentry.js";
 import { connectRedis } from "./utils/redis.js";
 import { initSocketIO } from "./utils/socket.js";
 import logger from "./utils/logger.js";
+import { securityMiddleware, aiThreatDetection } from "./utils/aiSecurity.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
@@ -42,7 +45,40 @@ if (fs.existsSync(frontendDistPath)) {
   app.use(express.static(frontendDistPath));
 }
 
-const server = http.createServer(app);
+// --- HTTPS support -------------------------------------------------------
+// Toggle via USE_HTTPS=true. Defaults to HTTP to avoid reverse-proxy 502s when upstream expects plain HTTP.
+const USE_HTTPS = process.env.USE_HTTPS === "true";
+const SSL_CERT_PATH = process.env.SSL_CERT_PATH || path.resolve(__dirname, "ssl/server.crt");
+const SSL_KEY_PATH = process.env.SSL_KEY_PATH || path.resolve(__dirname, "ssl/server.key");
+const certsPresent = fs.existsSync(SSL_CERT_PATH) && fs.existsSync(SSL_KEY_PATH);
+const enableHttps = USE_HTTPS && certsPresent;
+
+let server;
+let redirectServer;
+
+if (USE_HTTPS) {
+  if (!certsPresent) {
+    logger.warn("⚠️ USE_HTTPS=true but certificate files are missing; falling back to HTTP.");
+    server = http.createServer(app);
+  } else {
+    const sslOptions = {
+      cert: fs.readFileSync(SSL_CERT_PATH),
+      key: fs.readFileSync(SSL_KEY_PATH),
+    };
+    server = https.createServer(sslOptions, app);
+    // optional HTTP->HTTPS redirect on port 80
+    redirectServer = http.createServer((req, res) => {
+      const host = (req.headers.host || "").split(":")[0];
+      const targetPort = PORT === 443 ? "" : `:${PORT}`;
+      res.writeHead(301, { Location: `https://${host}${targetPort}${req.url}` });
+      res.end();
+    });
+    logger.info("✅ HTTPS enabled using provided certificate");
+  }
+} else {
+  server = http.createServer(app);
+  logger.info("ℹ️ USE_HTTPS not set; running over HTTP (expect TLS at proxy)");
+}
 
 app.set('trust proxy', 1);
 
@@ -92,7 +128,7 @@ app.use("/api/", globalLimiter);
 
 const authLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 100,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
   validate: { xForwardedForHeader: false },
@@ -100,6 +136,19 @@ const authLimiter = rateLimit({
 });
 app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/forgot-password", authLimiter);
+
+const sensitiveEndpointLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
+  message: { success: false, error: "Too many requests, please try again later." },
+});
+
+app.use("/api/employees", sensitiveEndpointLimiter);
+app.use("/api/leaves", sensitiveEndpointLimiter);
+app.use("/api/announcements", sensitiveEndpointLimiter);
 
 app.use(express.json({ 
   limit: "50mb",
@@ -119,6 +168,11 @@ app.use((err, req, res, next) => {
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 app.use("/api/", validateInputLength);
+app.use("/api/", securityMiddleware);
+
+app.use("/api/holidays", cacheMiddleware({ ttl: 60000, keyPrefix: "holidays" }));
+app.use("/api/announcements", cacheMiddleware({ ttl: 30000, keyPrefix: "announcements" }));
+app.use("/api/leave-balance", cacheMiddleware({ ttl: 60000, keyPrefix: "leave-balance" }));
 
 app.use(compression());
 
@@ -144,6 +198,7 @@ app.use("/api/documents", documentRouter);
 app.use("/api/activity-logs", activityLogRouter);
 app.use("/api/auth/2fa", twoFactorRouter);
 app.use("/api/auth/oauth", oauthRouter);
+app.use("/api/ai", aiRouter);
 
 app.get("/api/health", (req, res) => {
   res.json({ 
@@ -174,6 +229,7 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 443;
 const HOST = process.env.HOST || "0.0.0.0";
+const REDIRECT_PORT = process.env.REDIRECT_PORT || 80;
 
 const startServer = async () => {
   try {
@@ -184,13 +240,20 @@ const startServer = async () => {
     logger.info("Socket.io initialized");
 
     server.listen(PORT, HOST, () => {
-      logger.info(`🚀 Server running on http://${HOST}:${PORT}`);
-      logger.info(`📚 API available at http://${HOST}:${PORT}/api`);
-      logger.info(`🔌 WebSocket available at http://${HOST}:${PORT}`);
+      const scheme = enableHttps ? "https" : "http";
+      logger.info(`🚀 Server running on ${scheme}://${HOST}:${PORT}`);
+      logger.info(`📚 API available at ${scheme}://${HOST}:${PORT}/api`);
+      logger.info(`🔌 WebSocket available at ${scheme}://${HOST}:${PORT}`);
       if (fs.existsSync(frontendDistPath)) {
-        logger.info(`🌐 Frontend available at http://${HOST}:${PORT}`);
+        logger.info(`🌐 Frontend available at ${scheme}://${HOST}:${PORT}`);
       }
     });
+
+    if (redirectServer) {
+      redirectServer.listen(REDIRECT_PORT, HOST, () => {
+        logger.info(`↪️  HTTP to HTTPS redirect enabled on http://${HOST}:${REDIRECT_PORT}`);
+      });
+    }
   } catch (error) {
     logger.error("Failed to start server", { error: error.message });
     server.listen(PORT, HOST, () => {

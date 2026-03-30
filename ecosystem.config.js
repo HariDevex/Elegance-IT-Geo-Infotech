@@ -18,11 +18,11 @@ module.exports = {
     },
     {
       name: "elegance-frontend",
-      script: "npm",
-      args: "run dev",
+      script: "npx",
+      args: "serve dist -l 8080 -s .",
       cwd: "/mnt/663EE6F93EE6C0E3/Developer/006/Elegance1/Frontend",
       env: {
-        NODE_ENV: "development",
+        NODE_ENV: "production",
       },
       error_file: "/home/mrnobody/.pm2/logs/elegance-frontend-error.log",
       out_file: "/home/mrnobody/.pm2/logs/elegance-frontend-out.log",

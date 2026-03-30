@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { config } from "../config/appConfig.js";
+import { isTokenBlacklisted } from "../utils/tokenBlacklist.js";
 
 const ROLES = {
   ROOT: "root",
@@ -19,9 +20,10 @@ const ROLE_HIERARCHY = {
   [ROLES.DEVELOPER]: 1,
 };
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");
+    console.log('[DEBUG auth] authHeader:', authHeader);
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
@@ -31,11 +33,24 @@ const authMiddleware = (req, res, next) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
+    console.log('[DEBUG auth] token:', token.substring(0, 50) + '...');
+
+    const blacklisted = await isTokenBlacklisted(token);
+    console.log('[DEBUG auth] blacklisted:', blacklisted);
+    if (blacklisted) {
+      return res.status(401).json({
+        success: false,
+        error: "Token has been revoked. Please login again.",
+      });
+    }
+
     const decoded = jwt.verify(token, config.JWT_SECRET);
+    console.log('[DEBUG auth] decoded:', decoded);
     req.user = decoded;
     req.user.role = decoded.role;
     next();
   } catch (error) {
+    console.log('[DEBUG auth] error:', error.message);
     if (error.name === "TokenExpiredError") {
       return res.status(401).json({
         success: false,

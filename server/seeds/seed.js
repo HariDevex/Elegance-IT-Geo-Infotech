@@ -15,13 +15,22 @@ export async function seed(knex) {
       12
     );
 
+    const generateEmployeeId = () => {
+      const prefix = "EJB";
+      const year = new Date().getFullYear();
+      const randomNum = Math.floor(Math.random() * 900) + 100;
+      return `${prefix}${year}${randomNum}`;
+    };
+
+    const newEmployeeId = generateEmployeeId();
+
     const [rootUser] = await knex("users")
       .insert({
         name: process.env.DEFAULT_NAME || "Admin",
         email: process.env.DEFAULT_EMAIL || "admin@elegance.com",
         password: hashedPassword,
         role: "root",
-        employee_id: "EMP001",
+        employee_id: newEmployeeId,
         department: "Administration",
         designation: "System Administrator",
       })

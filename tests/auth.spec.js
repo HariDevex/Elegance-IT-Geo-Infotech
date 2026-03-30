@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'http://192.168.29.205/api';
 const CREDENTIALS = {
-  root: { email: 'EJB2026001', password: 'mrnobody009' },
-  admin: { email: 'EJB2026002', password: 'admin123' },
-  dev: { email: 'EJB2026006', password: 'dev123456' },
+  root: { employee_id: 'EJB2026001', password: 'mrnobody009' },
+  admin: { employee_id: 'EJB2026002', password: 'admin123' },
+  dev: { employee_id: 'EJB2026006', password: 'dev123456' },
 };
 
 let rootToken = '';
@@ -25,9 +25,9 @@ test.describe('Authentication API', () => {
     rootToken = data.token;
   });
 
-  test('Login with Email - Success', async ({ request }) => {
+  test('Login with Employee ID - Admin', async ({ request }) => {
     const res = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'admin123' }
+      data: { employee_id: 'EJB2026002', password: 'admin123' }
     });
     expect(res.ok()).toBeTruthy();
     const data = await res.json();
@@ -47,7 +47,7 @@ test.describe('Authentication API', () => {
 
   test('Invalid Credentials - Wrong Password', async ({ request }) => {
     const res = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com', password: 'wrongpassword' }
+      data: { employee_id: 'EJB2026002', password: 'wrongpassword' }
     });
     expect(res.status()).toBe(401);
     const data = await res.json();
@@ -56,7 +56,7 @@ test.describe('Authentication API', () => {
 
   test('Invalid Credentials - Non-existent User', async ({ request }) => {
     const res = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'nonexistent@elegance.com', password: 'password' }
+      data: { employee_id: 'NONEXISTENT', password: 'password' }
     });
     expect(res.status()).toBe(401);
     const data = await res.json();
@@ -65,7 +65,7 @@ test.describe('Authentication API', () => {
 
   test('Missing Password', async ({ request }) => {
     const res = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: 'admin@elegance.com' }
+      data: { employee_id: 'EJB2026002' }
     });
     expect([400, 401]).toContain(res.status());
   });
@@ -86,7 +86,7 @@ test.describe('Authentication API', () => {
 
   test('SQL Injection in Login', async ({ request }) => {
     const res = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@elegance.com' OR '1'='1", password: "' OR '1'='1" }
+      data: { employee_id: "EJB2026002' OR '1'='1", password: "' OR '1'='1" }
     });
     expect(res.status()).toBe(401);
     const data = await res.json();
