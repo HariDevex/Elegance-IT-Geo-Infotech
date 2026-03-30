@@ -78,8 +78,8 @@ const RootDashboard = () => {
             root: employees.filter((e) => e.role === "root").length,
           },
         });
-      } catch {
-      } finally {
+      } catch { /* empty */ }
+    finally {
         setLoadingStats(false);
       }
     };
@@ -112,8 +112,6 @@ const RootDashboard = () => {
   };
 
   const renderContent = () => {
-    const skeleton = getSkeletonForView(currentView);
-
     switch (currentView) {
       case "profileEdit":
         return <ProfileEdit onDone={() => setCurrentView("dashboard")} />;

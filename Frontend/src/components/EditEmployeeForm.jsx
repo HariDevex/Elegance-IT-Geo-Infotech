@@ -4,6 +4,24 @@ import axios from "axios";
 import API_BASE from "../config/api.js";
 
 const EditEmployeeForm = ({ employee, onDone }) => {
+  const [form, setForm] = useState({
+    name: employee?.name || "",
+    email: employee?.email || "",
+    employeeId: employee?.employeeId || "",
+    dob: employee?.dob ? employee.dob.slice(0, 10) : "",
+    gender: employee?.gender || "",
+    maritalStatus: employee?.maritalStatus || "",
+    department: employee?.department || "",
+    designation: employee?.designation || "",
+    salary: employee?.salary || "",
+    role: employee?.role || "developer",
+  });
+  const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
   if (!employee) {
     return (
       <div className="bg-slate-900 rounded-2xl border border-slate-700 p-6">
@@ -12,27 +30,7 @@ const EditEmployeeForm = ({ employee, onDone }) => {
     );
   }
 
-  const [form, setForm] = useState({
-    name: employee.name || "",
-    email: employee.email || "",
-    employeeId: employee.employeeId || "",
-    dob: employee.dob ? employee.dob.slice(0, 10) : "",
-    gender: employee.gender || "",
-    maritalStatus: employee.maritalStatus || "",
-    department: employee.department || "",
-    designation: employee.designation || "",
-    salary: employee.salary || "",
-    role: employee.role || "developer",
-
-  });
-  const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-
   const update = (field, value) => setForm((f) => ({ ...f, [field]: value }));
-
-  const [submitting, setSubmitting] = useState(false);
 
   const onSubmit = async (e) => {
     e.preventDefault();

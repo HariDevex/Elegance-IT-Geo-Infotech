@@ -1,4 +1,5 @@
-import { expect, afterEach, vi } from 'vitest';
+/* eslint-disable no-unused-vars */
+import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
@@ -7,6 +8,7 @@ afterEach(() => {
   localStorage.clear();
 });
 
+/* eslint-disable no-undef */
 global.localStorage = {
   getItem: vi.fn(),
   setItem: vi.fn(),
@@ -14,4 +16,5 @@ global.localStorage = {
   clear: vi.fn(),
 };
 
+/* eslint-disable no-undef */
 global.fetch = vi.fn();

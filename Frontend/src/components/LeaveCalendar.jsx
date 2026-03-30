@@ -36,7 +36,7 @@ const LeaveCalendar = () => {
       if (holidaysRes.data.success) {
         setHolidays(holidaysRes.data.holidays || []);
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to fetch data");
     } finally {
       setLoading(false);

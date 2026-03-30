@@ -42,7 +42,7 @@ const AdminDashboard = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [stats, setStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
-  const [dataLoading, setDataLoading] = useState({});
+  const [dataLoading] = useState({});
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -79,8 +79,8 @@ const AdminDashboard = () => {
             hr: employees.filter((e) => e.role === "hr").length,
           },
         });
-      } catch {
-      } finally {
+      } catch { /* empty */ }
+    finally {
         setLoadingStats(false);
       }
     };

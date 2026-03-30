@@ -1,12 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
-
-const mockFormData = {
-  name: 'John Doe',
-  email: 'john@example.com',
-  password: 'SecurePass123!',
-  role: 'developer',
-  department: 'Engineering',
-};
+import { describe, it, expect } from 'vitest';
 
 describe('Form Validation', () => {
   const validateEmail = (email) => {

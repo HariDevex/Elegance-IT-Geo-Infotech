@@ -4,7 +4,7 @@ import AttendanceBarChart from "./charts/AttendanceBarChart";
 import CheckInOutChart from "./charts/CheckInOutChart";
 import { Skeleton, SkeletonChart } from "./Skeleton";
 
-const EmployeeHome = ({ stats, loading, user }) => {
+const EmployeeHome = ({ stats, loading }) => {
   if (loading) {
     return (
       <div className="space-y-6">

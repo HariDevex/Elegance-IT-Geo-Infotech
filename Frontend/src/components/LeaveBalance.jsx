@@ -21,8 +21,8 @@ const LeaveBalance = ({ compact = false }) => {
       if (res.data.success) {
         setBalances(res.data.balances || []);
       }
-    } catch {
-    } finally {
+    } catch { /* empty */ }
+    finally {
       setLoading(false);
     }
   };

@@ -89,11 +89,6 @@ const SessionManagement = () => {
     });
   };
 
-  const isCurrentSession = (session) => {
-    const currentToken = localStorage.getItem("token");
-    return session.isCurrent;
-  };
-
   if (loading) {
     return (
       <div className="space-y-4">

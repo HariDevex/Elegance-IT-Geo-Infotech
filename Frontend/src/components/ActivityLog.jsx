@@ -36,7 +36,7 @@ const ActivityLog = () => {
           pages: res.data.pagination.pages,
         });
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to fetch activity logs");
     } finally {
       setLoading(false);
@@ -45,7 +45,6 @@ const ActivityLog = () => {
 
   const getActionColor = (action) => {
     switch (action) {
-      case "create": return "bg-cyan-500";
       case "create": return "bg-cyan-500";
       case "update": return "bg-blue-500";
       case "delete": return "bg-rose-500";

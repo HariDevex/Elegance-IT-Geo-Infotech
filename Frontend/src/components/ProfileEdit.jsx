@@ -31,7 +31,6 @@ const ProfileEdit = ({ onDone }) => {
       newPassword: "",
     });
   }, [user]);
-  const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");

@@ -73,7 +73,7 @@ const AIChatbot = ({ isOpen, onClose, minimized, onMinimize }) => {
           setSuggestions(response.data.response.suggestions);
         }
       }
-    } catch (error) {
+    } catch {
       const errorMessage = {
         id: Date.now() + 1,
         role: "assistant",

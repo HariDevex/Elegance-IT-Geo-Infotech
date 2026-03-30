@@ -34,7 +34,7 @@ const AttendanceList = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setEmployees(res.data.users || []);
-    } catch {}
+    } catch { /* empty */ }
   };
 
   const loadData = async (selectedDate) => {

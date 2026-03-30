@@ -36,7 +36,6 @@ const AddEmployeeForm = ({ onEmployeeAdded }) => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [newEmployeeId, setNewEmployeeId] = useState("");
@@ -76,7 +75,6 @@ const AddEmployeeForm = ({ onEmployeeAdded }) => {
   const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setSuccessMsg("");
     setLoading(true);
 
     try {
@@ -98,7 +96,6 @@ const AddEmployeeForm = ({ onEmployeeAdded }) => {
         const empId = res.data.user?.employeeId;
         setNewEmployeeId(empId);
         setNewEmployeePassword(form.password);
-        setSuccessMsg(`Employee added successfully!`);
         toast.success(`Employee added!`);
         setShowSuccessModal(true);
         setForm(emptyForm);

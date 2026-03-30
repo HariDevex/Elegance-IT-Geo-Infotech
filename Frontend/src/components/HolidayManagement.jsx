@@ -31,7 +31,7 @@ const HolidayManagement = () => {
       if (res.data.success) {
         setHolidays(res.data.holidays || []);
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to fetch holidays");
     } finally {
       setLoading(false);
@@ -88,7 +88,7 @@ const HolidayManagement = () => {
       });
       toast.success("Holiday deleted");
       fetchHolidays();
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete holiday");
     }
   };

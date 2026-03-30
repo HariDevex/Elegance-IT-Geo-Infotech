@@ -6,7 +6,6 @@ import API_BASE from "../config/api.js";
 
 const Calendar = ({ onDateClick }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [events, setEvents] = useState([]);
   const [leaves, setLeaves] = useState([]);
   const [holidays, setHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +19,6 @@ const Calendar = ({ onDateClick }) => {
     try {
       const token = localStorage.getItem("token");
       const year = currentDate.getFullYear();
-      const month = String(currentDate.getMonth() + 1).padStart(2, "0");
 
       const [holidaysRes, leavesRes] = await Promise.all([
         axios.get(`${API_BASE}/api/holidays?year=${year}`, {
@@ -37,8 +35,8 @@ const Calendar = ({ onDateClick }) => {
       if (leavesRes.data.success) {
         setLeaves(leavesRes.data.leaves || []);
       }
-    } catch {
-    } finally {
+    } catch { /* empty */ }
+    finally {
       setLoading(false);
     }
   };

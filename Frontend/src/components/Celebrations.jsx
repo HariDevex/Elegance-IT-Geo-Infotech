@@ -21,8 +21,6 @@ const Celebrations = () => {
       if (res.data.success) {
         const employees = res.data.users || [];
         const today = new Date();
-        const currentMonth = today.getMonth();
-        const currentDay = today.getDate();
 
         const celebrations = [];
 
@@ -78,8 +76,8 @@ const Celebrations = () => {
         celebrations.sort((a, b) => a.daysUntil - b.daysUntil);
         setUpcoming(celebrations.slice(0, 10));
       }
-    } catch {
-    } finally {
+    } catch { /* empty */ }
+    finally {
       setLoading(false);
     }
   };

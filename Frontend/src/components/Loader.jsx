@@ -4,7 +4,6 @@ import logoSrc from '../assets/Logo/EG.png'
 
 const Loader = ({ onComplete }) => {
   const [progress, setProgress] = useState(0)
-  const [phase, setPhase] = useState('init')
   const [textIndex, setTextIndex] = useState(0)
   const [fadeOut, setFadeOut] = useState(false)
   const [logoLoaded, setLogoLoaded] = useState(false)
@@ -25,7 +24,6 @@ const Loader = ({ onComplete }) => {
     img.src = logoSrc
     img.onload = () => setLogoLoaded(true)
 
-    const initTimer = setTimeout(() => setPhase('logo'), 200)
     const progressTimer = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
@@ -49,7 +47,6 @@ const Loader = ({ onComplete }) => {
     }, 3500)
 
     return () => {
-      clearTimeout(initTimer)
       clearInterval(progressTimer)
       clearInterval(textTimer)
       clearTimeout(completeTimer)

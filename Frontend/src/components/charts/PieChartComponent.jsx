@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const PieChartComponent = ({ data, centerText, centerValue }) => {
+const PieChartComponent = ({ data }) => {
   const [Charts, setCharts] = useState(null);
 
   useEffect(() => {

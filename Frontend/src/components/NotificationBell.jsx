@@ -34,14 +34,14 @@ const NotificationBell = () => {
         setNotifications(res.data.notifications || []);
         setUnreadCount(res.data.unreadCount || 0);
       }
-    } catch {}
+    } catch { /* empty */ }
   };
 
   const markAsRead = async (id) => {
     try {
       await api.put(`/notifications/${id}/read`, {});
       fetchNotifications();
-    } catch (error) {
+    } catch {
       toast.error("Failed to mark as read");
     }
   };
@@ -51,17 +51,8 @@ const NotificationBell = () => {
       await api.put(`/notifications/read-all`, {});
       fetchNotifications();
       toast.success("All notifications marked as read");
-    } catch (error) {
+    } catch {
       toast.error("Failed to mark all as read");
-    }
-  };
-
-  const getTypeStyles = (type) => {
-    switch (type) {
-      case "success": return "bg-cyan-500/20 border-cyan-500/50 text-cyan-400";
-      case "warning": return "bg-yellow-500/20 border-yellow-500/50 text-yellow-400";
-      case "error": return "bg-rose-500/20 border-rose-500/50 text-rose-400";
-      default: return "bg-slate-700/50 border-slate-600 text-slate-300";
     }
   };
 

@@ -66,7 +66,7 @@ const PageLoader = () => (
 
 function App() {
   const [isLoading, setIsLoading] = useState(true)
-  const { user, loading: authLoading } = useAuth()
+  const { loading: authLoading } = useAuth()
 
   useEffect(() => {
     if (!authLoading) {

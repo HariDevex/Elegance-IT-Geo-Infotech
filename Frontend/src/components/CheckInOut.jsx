@@ -94,18 +94,11 @@ const CheckInOut = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.success && res.data.data && res.data.data.length > 0) {
-        const formattedData = res.data.data.map(item => ({
-          date: item.date || "",
-          checkin_time: item.checkin?.time || "",
-          checkout_time: item.checkout?.time || "",
-          duration_minutes: item.duration || "",
-          status: item.status || ""
-        }));
         toast.success("Excel downloaded!");
       } else {
         toast.error("No data to export");
       }
-    } catch (err) {
+    } catch {
       toast.error("Export failed");
     }
   };

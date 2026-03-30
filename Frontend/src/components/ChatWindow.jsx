@@ -49,7 +49,6 @@ const ChatWindow = () => {
   const [creating, setCreating] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [unreadCounts, setUnreadCounts] = useState({});
   const [lastMessages, setLastMessages] = useState({});
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -98,7 +97,7 @@ const ChatWindow = () => {
         if (!activeContact && contacts.length > 0) {
           setActiveContact(contacts[0].id);
         }
-      } catch {} finally {
+      } catch { /* empty */ } finally {
         setLoadingContacts(false);
       }
     };
@@ -115,7 +114,7 @@ const ChatWindow = () => {
         if (res.data.success) {
           setCustomGroups(res.data.groups || []);
         }
-      } catch {}
+      } catch { /* empty */ }
     };
     loadGroups();
   }, []);
@@ -155,7 +154,7 @@ const ChatWindow = () => {
         const lastMsg = msgs[msgs.length - 1];
         setLastMessages((prev) => ({ ...prev, [contactId]: lastMsg }));
       }
-    } catch {} finally {
+    } catch { /* empty */ } finally {
       setLoadingMessages(false);
     }
   };
