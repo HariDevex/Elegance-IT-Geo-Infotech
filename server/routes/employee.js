@@ -51,7 +51,7 @@ const createEmployeeSchema = {
 
 router.use(authMiddleware);
 
-router.get("/:id", validateUUID("id"), getEmployee);
+router.get("/:id", getEmployee);
 
 router.post("/", 
   requireRole(ROLES.ROOT, ROLES.ADMIN, ROLES.MANAGER, ROLES.HR), 
@@ -66,7 +66,6 @@ router.get("/",
 );
 
 router.put("/:id", 
-  validateUUID("id"),
   canManageUser, 
   sanitizeInput, 
   upload.single("profileImage"), 
@@ -74,13 +73,11 @@ router.put("/:id",
 );
 
 router.put("/:id/attendance", 
-  validateUUID("id"),
   requireRole(ROLES.ROOT, ROLES.ADMIN, ROLES.MANAGER), 
   updateAttendance
 );
 
 router.delete("/:id", 
-  validateUUID("id"),
   requireRole(ROLES.ROOT, ROLES.ADMIN), 
   deleteEmployee
 );

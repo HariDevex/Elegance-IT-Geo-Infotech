@@ -261,6 +261,9 @@ const updateEmployee = async (req, res, next) => {
     const { id } = req.params;
     const updates = { ...req.body };
 
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const queryField = uuidRegex.test(id) ? "id" : "employee_id";
+
     // Remove fields that shouldn't be updated directly
     delete updates.password;
     delete updates._id;
@@ -333,7 +336,7 @@ const updateEmployee = async (req, res, next) => {
     updates.updated_at = db.fn.now();
 
     const [user] = await db("users")
-      .where("id", id)
+      .where(queryField, id)
       .update(updates)
       .returning([
         "id",
@@ -405,8 +408,11 @@ const updateAttendance = async (req, res, next) => {
       });
     }
 
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const queryField = uuidRegex.test(id) ? "id" : "employee_id";
+
     const [user] = await db("users")
-      .where("id", id)
+      .where(queryField, id)
       .update({
         attendance_status: status,
         updated_at: db.fn.now(),
@@ -469,8 +475,11 @@ const getEmployee = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const queryField = uuidRegex.test(id) ? "id" : "employee_id";
+
     const user = await db("users")
-      .where("id", id)
+      .where(queryField, id)
       .select(
         "id",
         "name",

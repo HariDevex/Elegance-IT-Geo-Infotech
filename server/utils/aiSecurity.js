@@ -180,6 +180,7 @@ class AISecurityEngine {
       await db("activity_logs").insert({
         user_id: userId,
         action: eventType,
+        module: "security",
         details: JSON.stringify(details),
         ip_address: details.ip,
         created_at: db.fn.now(),
