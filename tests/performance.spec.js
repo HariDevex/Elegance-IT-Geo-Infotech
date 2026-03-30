@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const API_BASE = 'http://192.168.29.205/api';
+const API_BASE = 'http://localhost:5001/api';
 
 test.describe('Performance Tests', () => {
   test('Health endpoint responds within 1000ms', async ({ request }) => {

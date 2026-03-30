@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const API_BASE = 'http://192.168.29.205/api';
+const API_BASE = 'http://localhost:5001/api';
 const CREDENTIALS = {
   root: { employee_id: 'EJB2026001', password: 'mrnobody009' },
   admin: { employee_id: 'EJB2026002', password: 'admin123' },

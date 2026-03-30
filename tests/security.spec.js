@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const API_BASE = 'http://192.168.29.205/api';
+const API_BASE = 'http://localhost:5001/api';
 
 test.describe('Security Tests - Authentication', () => {
   test('Invalid Token - 401', async ({ request }) => {

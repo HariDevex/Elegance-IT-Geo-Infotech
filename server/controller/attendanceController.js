@@ -77,6 +77,8 @@ const createOrUpdateAttendance = async (req, res, next) => {
         .where("user_id", targetUserId)
         .where("date", dateStr)
         .update({ check_out_at: now, updated_at: now });
+    } else if (!action && !status) {
+      return res.status(400).json({ success: false, error: "Missing required fields" });
     } else if (status) {
       const existing = await db("attendance")
         .where("user_id", targetUserId)
