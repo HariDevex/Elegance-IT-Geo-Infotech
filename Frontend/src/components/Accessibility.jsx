@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useState, useEffect } from 'react';
 
 export function SkipLink() {
@@ -15,7 +16,7 @@ export function LiveRegion() {
   const [announcement, setAnnouncement] = useState('');
 
   useEffect(() => {
-    window.announceToScreenReader = (message, priority = 'polite') => {
+    window.announceToScreenReader = (message) => {
       setAnnouncement('');
       setTimeout(() => setAnnouncement(message), 100);
     };
@@ -47,6 +48,7 @@ export function useFocusTrap(ref, isActive) {
     
     const firstElement = focusableElements[0];
     const lastElement = focusableElements[focusableElements.length - 1];
+    const element = ref.current;
 
     const handleTabKey = (e) => {
       if (e.key !== 'Tab') return;
@@ -60,11 +62,11 @@ export function useFocusTrap(ref, isActive) {
       }
     };
 
-    ref.current.addEventListener('keydown', handleTabKey);
+    element.addEventListener('keydown', handleTabKey);
     firstElement?.focus();
 
     return () => {
-      ref.current?.removeEventListener('keydown', handleTabKey);
+      element?.removeEventListener('keydown', handleTabKey);
     };
   }, [isActive, ref]);
 }
