@@ -182,7 +182,11 @@ const Login = () => {
           </div>
 
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-rose-500/20 border border-rose-500/50 text-rose-400 text-sm flex items-center gap-2">
+            <div 
+              className="mb-4 p-3 rounded-lg bg-rose-500/20 border border-rose-500/50 text-rose-400 text-sm flex items-center gap-2" 
+              role="alert"
+              aria-live="assertive"
+            >
               <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
               {error}
             </div>
@@ -237,6 +241,7 @@ const Login = () => {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-200 hover:text-cyan-300 transition"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
