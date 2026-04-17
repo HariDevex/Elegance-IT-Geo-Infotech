@@ -8,7 +8,8 @@ router.use(authMiddleware);
 
 router.get("/types", getLeaveTypes);
 
-router.get("/balance/:userId?", getBalances);
+router.get("/balance", getBalances);
+router.get("/balance/:userId", getBalances);
 
 router.put("/balance", setBalance);
 
