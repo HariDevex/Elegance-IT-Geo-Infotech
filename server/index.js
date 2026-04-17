@@ -37,6 +37,17 @@ import { securityMiddleware, aiThreatDetection } from "./utils/aiSecurity.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || "0.0.0.0";
+
+console.log("=== Server Startup ===");
+console.log(`PORT: ${PORT}`);
+console.log(`HOST: ${HOST}`);
+console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+console.log(`DATABASE_URL set: ${!!process.env.DATABASE_URL}`);
+console.log(`REDIS_URL set: ${!!process.env.REDIS_URL}`);
+console.log("========================");
+
 const app = express();
 
 const frontendDistPath = path.resolve(__dirname, "../Frontend/dist");
@@ -235,10 +246,16 @@ const PORT = process.env.PORT || 443;
 const HOST = process.env.HOST || "0.0.0.0";
 const REDIRECT_PORT = process.env.REDIRECT_PORT || 80;
 
+console.log("Starting server initialization...");
+
 const startServer = async () => {
   try {
-    await connectRedis();
-    logger.info("Redis connection initialized");
+    const redisConnected = await connectRedis();
+    if (redisConnected) {
+      logger.info("Redis connection initialized");
+    } else {
+      logger.info("Redis not configured, continuing without Redis");
+    }
 
     initSocketIO(server);
     logger.info("Socket.io initialized");
@@ -259,10 +276,15 @@ const startServer = async () => {
       });
     }
   } catch (error) {
-    logger.error("Failed to start server", { error: error.message });
-    server.listen(PORT, HOST, () => {
-      console.log(`🚀 Server running on http://${HOST}:${PORT} (without optional features)`);
-    });
+    logger.error("Failed to start server with optional features", { error: error.message });
+    if (server) {
+      server.listen(PORT, HOST, () => {
+        console.log(`🚀 Server running on http://${HOST}:${PORT}`);
+      });
+    } else {
+      console.error("Server object not created. Check HTTPS/SSL configuration.");
+      process.exit(1);
+    }
   }
 };
 
