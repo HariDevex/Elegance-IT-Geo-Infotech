@@ -14,8 +14,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "node tests/e2e.test.js",
-    "lint": "eslint .",
-    "postinstall": "npm run db:migrate"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@sentry/node": "^10.49.0",
