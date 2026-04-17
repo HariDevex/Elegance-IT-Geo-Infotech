@@ -242,8 +242,6 @@ if (fs.existsSync(frontendDistPath)) {
 sentryErrorHandler(app);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 443;
-const HOST = process.env.HOST || "0.0.0.0";
 const REDIRECT_PORT = process.env.REDIRECT_PORT || 80;
 
 console.log("Starting server initialization...");
