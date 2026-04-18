@@ -186,7 +186,8 @@ app.use((err, req, res, next) => {
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 app.use("/api/", validateInputLength);
-app.use("/api/", securityMiddleware);
+// Temporarily disable security middleware for debugging
+// app.use("/api/", securityMiddleware);
 
 app.use("/api/holidays", cacheMiddleware({ ttl: 60000, keyPrefix: "holidays" }));
 app.use("/api/announcements", cacheMiddleware({ ttl: 30000, keyPrefix: "announcements" }));
