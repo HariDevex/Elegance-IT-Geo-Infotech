@@ -25,5 +25,11 @@
         }
       ]
     }
-  ]
+  ],
+  "env": {
+    "VITE_API_BASE_URL": "https://YOUR-RENDER-BACKEND.onrender.com"
+  },
+  "buildEnv": {
+    "VITE_API_BASE_URL": "https://YOUR-RENDER-BACKEND.onrender.com"
+  }
 }

@@ -109,17 +109,17 @@ app.use(helmet({
   },
 }));
 
+const corsOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://localhost:8081",
+  "http://192.168.1.10:8081",
+  "https://192.168.1.10:8081",
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: [
-      process.env.FRONTEND_URL || "*",
-      "http://192.168.29.205",
-      "https://192.168.29.205",
-      "http://192.168.29.205:5173",
-      "https://192.168.29.205:5173",
-      "http://192.168.29.205:3000",
-      "https://192.168.29.205:3000",
-    ],
+    origin: corsOrigins.length > 0 ? corsOrigins : "*",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "Content-Length"],
     credentials: true,
@@ -230,7 +230,7 @@ app.get("/health", (req, res) => {
 });
 
 if (fs.existsSync(frontendDistPath)) {
-  app.get("*", (req, res) => {
+  app.get("{*path}", (req, res) => {
     res.sendFile(path.join(frontendDistPath, "index.html"));
   });
 } else {

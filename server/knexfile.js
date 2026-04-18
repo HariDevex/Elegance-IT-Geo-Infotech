@@ -4,8 +4,12 @@ dotenv.config();
 const connectionString = process.env.DATABASE_URL || process.env.DB_URL;
 
 let client = "pg";
-if (connectionString && connectionString.includes(".db")) {
+let sslConfig = false;
+
+if (connectionString && connectionString.includes(".db") && !connectionString.includes("supabase")) {
   client = "better-sqlite3";
+} else if (connectionString && connectionString.includes("supabase.co")) {
+  sslConfig = { rejectUnauthorized: false };
 }
 
 const config = {
@@ -25,7 +29,7 @@ const config = {
   production: {
     client,
     connection: connectionString || "./data/elegance.db",
-    ssl: client === "pg" ? { rejectUnauthorized: false } : false,
+    ssl: sslConfig,
     migrations: {
       directory: "./migrations",
       extension: "js",

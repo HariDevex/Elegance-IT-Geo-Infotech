@@ -75,14 +75,9 @@ const Login = () => {
     e.preventDefault();
     setError("");
 
-    const trimmedEmail = employeeId.trim();
-    if (!trimmedEmail) {
-      setError("Email is required");
-      return;
-    }
-    const emailRegex = /^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/;
-    if (!emailRegex.test(trimmedEmail)) {
-      setError("Invalid email");
+    const trimmedEmployeeId = employeeId.trim();
+    if (!trimmedEmployeeId) {
+      setError("Employee ID or email is required");
       return;
     }
     if (!password) {
@@ -94,7 +89,7 @@ const Login = () => {
 
     try {
       const res = await api.post(`/auth/login`, {
-        employee_id: trimmedEmail,
+        employee_id: trimmedEmployeeId,
         password,
         rememberMe,
       });
