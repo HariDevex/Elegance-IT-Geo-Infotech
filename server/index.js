@@ -158,6 +158,7 @@ const corsOrigins = [
   "http://localhost:8081",
   "http://192.168.1.10:8081",
   "https://192.168.1.10:8081",
+  "https://elegance-ems-haridevx.vercel.app",
 ].filter(Boolean);
 
 app.use(
