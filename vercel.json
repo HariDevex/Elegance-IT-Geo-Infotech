@@ -27,9 +27,6 @@
     }
   ],
   "env": {
-    "VITE_API_BASE_URL": "https://elegance-server.onrender.com"
-  },
-  "buildEnv": {
-    "VITE_API_BASE_URL": "https://elegance-server.onrender.com"
+    "VITE_API_BASE_URL": "https://haridevx-eg-server.onrender.com"
   }
 }
