@@ -54,44 +54,6 @@ console.log("========================");
 const env = process.env.NODE_ENV || "development";
 const db = knex(knexConfig[env]);
 
-async function initDatabase() {
-  try {
-    console.log("🔄 Running database migrations...");
-    await db.migrate.latest();
-    console.log("✅ Migrations completed");
-
-    const users = await db("users").count("* as count").first();
-    if (users.count === 0) {
-      console.log("🔄 Seeding database...");
-      const bcrypt = await import("bcryptjs");
-      const hashedPassword = await bcrypt.default.hash("Rootadmmin@$123", 12);
-      const employeeId = `EJB${new Date().getFullYear()}${(Math.floor(Math.random() * 900) + 100)}`;
-      
-      await db("users").insert({
-        id: employeeId,
-        name: "Admin",
-        email: "rootharidevx@elegance.com",
-        password: hashedPassword,
-        role: "root",
-        employee_id: employeeId,
-        department: "Administration",
-        designation: "System Administrator",
-        is_active: true,
-        failed_attempts: 0,
-        login_count: 0,
-        created_at: new Date(),
-        updated_at: new Date(),
-      });
-      console.log("✅ Database seeded with admin user");
-    }
-  } catch (error) {
-    console.error("⚠️ Database initialization warning:", error.message);
-    console.log("Continuing without database initialization...");
-  }
-}
-
-initDatabase();
-
 const app = express();
 
 const frontendDistPath = path.resolve(__dirname, "../Frontend/dist");

@@ -3,19 +3,10 @@ dotenv.config();
 
 const connectionString = process.env.DATABASE_URL || process.env.DB_URL;
 
-let client = "pg";
-let sslConfig = { rejectUnauthorized: false };
-
-// Use SQLite for local .db files, PostgreSQL for Supabase
-if (connectionString && connectionString.includes(".db") && !connectionString.includes("supabase")) {
-  client = "better-sqlite3";
-  sslConfig = false;
-}
-
 const config = {
   development: {
-    client,
-    connection: connectionString || "./data/elegance.db",
+    client: "better-sqlite3",
+    connection: "./data/elegance.db",
     useNullAsDefault: true,
     migrations: {
       directory: "./migrations",
@@ -28,8 +19,8 @@ const config = {
   },
   production: {
     client: "pg",
-    connection: connectionString || process.env.DATABASE_URL,
-    ssl: sslConfig,
+    connection: connectionString,
+    ssl: { rejectUnauthorized: false },
     migrations: {
       directory: "./migrations",
       extension: "js",
