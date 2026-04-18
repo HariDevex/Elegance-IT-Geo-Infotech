@@ -10,6 +10,9 @@ import https from "https";
 import http from "http";
 import fs from "fs";
 
+import knex from "knex";
+import knexConfig from "./knexfile.js";
+
 import authRouter from "./routes/auth.js";
 import employeeRouter from "./routes/employee.js";
 import attendanceRouter from "./routes/attendance.js";
@@ -47,6 +50,46 @@ console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
 console.log(`DATABASE_URL set: ${!!process.env.DATABASE_URL}`);
 console.log(`REDIS_URL set: ${!!process.env.REDIS_URL}`);
 console.log("========================");
+
+const env = process.env.NODE_ENV || "development";
+const db = knex(knexConfig[env]);
+
+async function initDatabase() {
+  try {
+    console.log("🔄 Running database migrations...");
+    await db.migrate.latest();
+    console.log("✅ Migrations completed");
+
+    const users = await db("users").count("* as count").first();
+    if (users.count === 0) {
+      console.log("🔄 Seeding database...");
+      const bcrypt = await import("bcryptjs");
+      const hashedPassword = await bcrypt.default.hash("admin123", 12);
+      const employeeId = `EJB${new Date().getFullYear()}${(Math.floor(Math.random() * 900) + 100)}`;
+      
+      await db("users").insert({
+        id: employeeId,
+        name: "Admin",
+        email: "admin@elegance.com",
+        password: hashedPassword,
+        role: "root",
+        employee_id: employeeId,
+        department: "Administration",
+        designation: "System Administrator",
+        is_active: true,
+        failed_attempts: 0,
+        login_count: 0,
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
+      console.log("✅ Database seeded with admin user");
+    }
+  } catch (error) {
+    console.error("❌ Database initialization failed:", error.message);
+  }
+}
+
+initDatabase();
 
 const app = express();
 
