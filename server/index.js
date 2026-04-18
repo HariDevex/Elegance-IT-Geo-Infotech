@@ -85,7 +85,8 @@ async function initDatabase() {
       console.log("✅ Database seeded with admin user");
     }
   } catch (error) {
-    console.error("❌ Database initialization failed:", error.message);
+    console.error("⚠️ Database initialization warning:", error.message);
+    console.log("Continuing without database initialization...");
   }
 }
 
