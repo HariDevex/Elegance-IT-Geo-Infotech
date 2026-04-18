@@ -5,6 +5,8 @@ build/
 .env
 .env.local
 .env.production
+.env.credentials
+.env.production.example
 
 # Uploads
 server/uploads/*
@@ -26,6 +28,9 @@ Thumbs.db
 elegance.db
 
 # Test artifacts & reports
-reports/html/data/
+reports/
 test-results/
 .vercel
+
+# Misc
+.opencode/
