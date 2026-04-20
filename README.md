@@ -34,6 +34,10 @@
 
 ---
 
+<img width="1922" height="959" alt="it" src="https://github.com/user-attachments/assets/3555eb5c-d686-496e-8204-b28c2d30d165" />
+---
+<img width="3444" height="3516" alt="diagram" src="https://github.com/user-attachments/assets/25d4eae6-68e8-4229-94f8-aec8bd878a0a" />
+
 ## ✨ Features
 
 ### 🔐 Authentication & Security
