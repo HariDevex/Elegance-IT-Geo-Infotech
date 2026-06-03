@@ -5,8 +5,11 @@ const connectionString = process.env.DATABASE_URL || process.env.DB_URL;
 
 const pgConfig = (conn) => ({
   client: "pg",
-  connection: conn,
-  ssl: { rejectUnauthorized: false },
+  connection: {
+    connectionString: conn,
+    ssl: { rejectUnauthorized: false },
+    family: 4,
+  },
   migrations: { directory: "./migrations", extension: "js" },
   pool: { min: 2, max: 10 },
 });
