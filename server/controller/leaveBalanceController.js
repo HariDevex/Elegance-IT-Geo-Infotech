@@ -113,7 +113,7 @@ const setBalance = async (req, res, next) => {
     const { userId, leaveType, totalDays, year } = req.body;
     const targetYear = year || new Date().getFullYear();
 
-    if (!["root", "admin", "manager"].includes(req.user.role)) {
+    if (!["root", "admin", "manager", "teamlead", "hr"].includes(req.user.role)) {
       return res.status(403).json({ success: false, error: "Not authorized" });
     }
 

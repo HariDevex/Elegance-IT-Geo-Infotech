@@ -11,5 +11,5 @@ export const isLateCheckIn = (checkInTime) => {
   return false;
 };
 
-export const canViewAll = (role) => ["root", "admin", "manager"].includes(role);
-export const canWrite = (role) => ["root", "admin", "manager"].includes(role);
+export const canViewAll = (role) => ["root", "admin", "manager", "teamlead", "hr"].includes(role);
+export const canWrite = (role) => ["root", "admin", "manager", "teamlead", "hr"].includes(role);

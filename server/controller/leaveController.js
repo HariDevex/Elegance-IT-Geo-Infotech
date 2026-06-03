@@ -5,7 +5,7 @@ import { logActivity } from "./activityLogController.js";
 import { invalidateCache } from "../utils/responseCache.js";
 import crypto from "crypto";
 
-const canApprove = (role) => ["root", "admin", "manager"].includes(role);
+const canApprove = (role) => ["root", "admin", "manager", "teamlead", "hr"].includes(role);
 
 const VALID_LEAVE_TYPES = ["Annual Leave", "Sick Leave", "Casual Leave", "unpaid"];
 

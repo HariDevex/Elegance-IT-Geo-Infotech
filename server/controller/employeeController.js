@@ -221,7 +221,7 @@ const listEmployees = async (req, res, next) => {
         .offset(offset)
     );
 
-    const canViewSalary = ["root", "admin", "manager"].includes(req.user.role);
+    const canViewSalary = ["root", "admin", "manager", "teamlead", "hr"].includes(req.user.role);
 
     res.json({
       success: true,

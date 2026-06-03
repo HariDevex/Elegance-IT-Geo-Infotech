@@ -8,7 +8,7 @@ const getDocuments = async (req, res, next) => {
     let userId = req.user.id;
 
     if (req.params.userId) {
-      if (!["root", "admin", "manager"].includes(req.user.role)) {
+      if (!["root", "admin", "manager", "teamlead", "hr"].includes(req.user.role)) {
         return res.status(403).json({ success: false, error: "Not authorized" });
       }
       const user = await db("users").where("employee_id", req.params.userId).select("id").first();
