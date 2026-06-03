@@ -15,11 +15,6 @@ export async function seed(knex) {
       return;
     }
 
-    const hashedPassword = await bcrypt.hash(
-      process.env.DEFAULT_PASSWORD || "admin123",
-      12
-    );
-
     const generateEmployeeId = () => {
       const prefix = "EJB";
       const year = new Date().getFullYear();
@@ -28,6 +23,8 @@ export async function seed(knex) {
     };
 
     const newEmployeeId = generateEmployeeId();
+
+    const hashedPassword = await bcrypt.hash(newEmployeeId, 12);
 
     const [rootUser] = await knex("users")
       .insert({
@@ -43,9 +40,7 @@ export async function seed(knex) {
 
     console.log(`✅ Root user created:`);
     console.log(`   Employee ID: ${rootUser.employee_id}`);
-    console.log(`   Email: ${rootUser.email}`);
-    console.log(`   Password: ${process.env.DEFAULT_PASSWORD || "admin123"}`);
-    console.log("\n⚠️  Please change this password after first login!");
+    console.log(`   Password: ${rootUser.employee_id}`);
   } catch (error) {
     console.error("❌ Seed failed:", error);
     throw error;

@@ -38,4 +38,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
 
 ENTRYPOINT ["tini", "--"]
 
-CMD ["sh", "-c", "npx knex migrate:latest --knexfile knexfile.js && node index.js"]
+CMD ["sh", "-c", "npx knex migrate:latest --knexfile knexfile.js && node seeds/seed.js && node index.js"]
