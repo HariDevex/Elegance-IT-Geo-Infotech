@@ -8,7 +8,6 @@ const pgConfig = (conn) => ({
   connection: {
     connectionString: conn,
     ssl: { rejectUnauthorized: false },
-    family: 4,
   },
   migrations: { directory: "./migrations", extension: "js" },
   pool: { min: 2, max: 10 },
