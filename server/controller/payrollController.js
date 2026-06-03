@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { logActivity } from "./activityLogController.js";
 
 const canManagePayroll = (role) => ["root", "admin", "manager"].includes(role);
+const canViewAllPayroll = (role) => ["root", "admin", "manager"].includes(role);
 
 const processPayroll = async (req, res, next) => {
   try {
@@ -81,7 +82,11 @@ const listPayroll = async (req, res, next) => {
       .select("payroll.*", "users.name as user_name", "users.employee_id", "users.department")
       .orderBy("payroll.created_at", "desc");
 
-    if (userId) query.where("payroll.user_id", userId);
+    if (canViewAllPayroll(req.user.role)) {
+      if (userId) query.where("payroll.user_id", userId);
+    } else {
+      query.where("payroll.user_id", req.user.id);
+    }
     if (status) query.where("payroll.status", status);
 
     const [{ count }] = await query.clone().clearSelect().count("* as count");
@@ -106,6 +111,10 @@ const getPayroll = async (req, res, next) => {
       .first();
 
     if (!record) return res.status(404).json({ success: false, error: "Payroll record not found" });
+
+    if (!canViewAllPayroll(req.user.role) && record.user_id !== req.user.id) {
+      return res.status(403).json({ success: false, error: "Access denied" });
+    }
 
     res.json({ success: true, payroll: record });
   } catch (error) {

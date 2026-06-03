@@ -27,6 +27,13 @@ const sqliteConfig = {
 
 const config = {
   development: connectionString ? pgConfig(connectionString) : sqliteConfig,
+  test: {
+    client: "better-sqlite3",
+    connection: "./data/elegance_test.db",
+    useNullAsDefault: true,
+    migrations: { directory: "./migrations", extension: "js" },
+    seeds: { directory: "./seeds", extension: "js" },
+  },
   production: pgConfig(connectionString),
 };
 

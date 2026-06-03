@@ -85,7 +85,6 @@ const HolidayManagement = () => {
     switch (type) {
       case "public": return "bg-cyan-500/20 text-cyan-400 border-cyan-500/50";
       case "company": return "bg-blue-500/20 text-blue-400 border-blue-500/50";
-      case "sunday": return "bg-purple-500/20 text-purple-400 border-purple-500/50";
       case "optional": return "bg-slate-500/20 text-slate-400 border-slate-500/50";
       default: return "bg-slate-500/20 text-slate-400 border-slate-500/50";
     }
@@ -113,7 +112,7 @@ const HolidayManagement = () => {
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium transition-colors disabled:opacity-50"
             >
               <RefreshCw size={16} className={autoPopulating ? "animate-spin" : ""} />
-              {autoPopulating ? "Populating..." : "Auto Populate (Sundays + Public)"}
+              {autoPopulating ? "Populating..." : "Auto Populate (Public Holidays)"}
             </button>
           )}
           {canManage ? (

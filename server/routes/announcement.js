@@ -13,7 +13,7 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-router.post("/", requireRole(ROLES.ROOT, ROLES.ADMIN), sanitizeInput, validate(announcementSchema), createAnnouncement);
+router.post("/", requireRole(ROLES.ROOT, ROLES.ADMIN, ROLES.MANAGER, ROLES.TEAMLEAD), sanitizeInput, validate(announcementSchema), createAnnouncement);
 
 router.get("/", listAnnouncements);
 

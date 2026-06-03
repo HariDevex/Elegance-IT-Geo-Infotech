@@ -1,4 +1,5 @@
 import db from "../config/database.js";
+import crypto from "crypto";
 
 const DEFAULT_LEAVE_TYPES = [
   { type: "annual", label: "Annual Leave", defaultDays: 18 },
@@ -8,6 +9,7 @@ const DEFAULT_LEAVE_TYPES = [
 ];
 
 const getOrCreateBalance = async (userId, leaveType, year) => {
+  console.log(`DEBUG: getOrCreateBalance - userId=${userId}, type=${leaveType}, year=${year}`);
   let balance = await db("leave_balances")
     .where("user_id", userId)
     .where("leave_type", leaveType)
@@ -16,16 +18,19 @@ const getOrCreateBalance = async (userId, leaveType, year) => {
 
   if (!balance) {
     const leaveConfig = DEFAULT_LEAVE_TYPES.find(l => l.type === leaveType) || { defaultDays: 0 };
-    [balance] = await db("leave_balances")
+    const id = crypto.randomUUID();
+    console.log(`DEBUG: Creating new balance with id=${id}`);
+    await db("leave_balances")
       .insert({
+        id,
         user_id: userId,
         leave_type: leaveType,
         total_days: leaveConfig.defaultDays,
         used_days: 0,
         pending_days: 0,
         year,
-      })
-      .returning("*");
+      });
+    balance = await db("leave_balances").where("id", id).first();
   }
 
   return balance;
@@ -77,26 +82,28 @@ const getBalances = async (req, res, next) => {
 
 const updateBalance = async (userId, leaveType, days, year, increment = true) => {
   const balance = await getOrCreateBalance(userId, leaveType, year);
+  console.log(`DEBUG: updateBalance - balanceId=${balance?.id}, currentUsed=${balance?.used_days}`);
+  const currentUsed = balance.used_days || 0;
+  const newUsed = increment ? currentUsed + days : currentUsed - days;
   
-  await db("leave_balances")
+  const updated = await db("leave_balances")
     .where("id", balance.id)
     .update({
-      used_days: increment 
-        ? db.raw("used_days + ?", [days])
-        : db.raw("used_days - ?", [days]),
+      used_days: newUsed,
       updated_at: db.fn.now(),
     });
+  console.log(`DEBUG: updateBalance - rowsUpdated=${updated}, newUsed=${newUsed}`);
 };
 
 const updatePendingBalance = async (userId, leaveType, days, year, increment = true) => {
   const balance = await getOrCreateBalance(userId, leaveType, year);
+  const currentPending = balance.pending_days || 0;
+  const newPending = increment ? currentPending + days : currentPending - days;
   
   await db("leave_balances")
     .where("id", balance.id)
     .update({
-      pending_days: increment 
-        ? db.raw("pending_days + ?", [days])
-        : db.raw("pending_days - ?", [days]),
+      pending_days: newPending,
       updated_at: db.fn.now(),
     });
 };

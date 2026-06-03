@@ -2,11 +2,25 @@ import db from "../config/database.js";
 import { createNotification } from "./notificationController.js";
 import { updateBalance, getOrCreateBalance } from "./leaveBalanceController.js";
 import { logActivity } from "./activityLogController.js";
+import { invalidateCache } from "../utils/responseCache.js";
 import crypto from "crypto";
 
 const canApprove = (role) => ["root", "admin", "manager"].includes(role);
 
 const VALID_LEAVE_TYPES = ["Annual Leave", "Sick Leave", "Casual Leave", "unpaid"];
+
+const countWeekdays = (from, to) => {
+  let count = 0;
+  const current = new Date(from);
+  current.setHours(0, 0, 0, 0);
+  const end = new Date(to);
+  end.setHours(0, 0, 0, 0);
+  while (current <= end) {
+    if (current.getDay() !== 0) count++;
+    current.setDate(current.getDate() + 1);
+  }
+  return count;
+};
 
 const createLeave = async (req, res, next) => {
   try {
@@ -221,7 +235,7 @@ const updateLeaveStatus = async (req, res, next) => {
     const year = new Date(leave.from_date).getFullYear();
     const fromDate = new Date(leave.from_date);
     const toDate = new Date(leave.to_date);
-    const days = Math.ceil((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1;
+    const days = countWeekdays(fromDate, toDate) || 1;
 
     // Map leave type to balance type
     const leaveTypeMap = {
@@ -241,6 +255,9 @@ const updateLeaveStatus = async (req, res, next) => {
       // If rejecting an already approved leave, deduct from used
       await updateBalance(leave.user_id, balanceType, -days, year);
     }
+
+    // Invalidate leave balance cache
+    invalidateCache("leave-balance");
 
     // Send notification
     const user = await db("users").where("id", leave.user_id).first();

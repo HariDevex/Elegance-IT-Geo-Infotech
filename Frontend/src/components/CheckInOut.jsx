@@ -8,7 +8,7 @@ const CheckInOut = () => {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
-  const [todayStats, setTodayStats] = useState({ checkinCount: 0, maxAllowed: 3, remaining: 3 });
+  const [todayStats, setTodayStats] = useState({ checkinCount: 0, maxAllowed: 1, remaining: 1 });
   const [error, setError] = useState("");
 
   const loadRecords = async () => {
@@ -52,7 +52,14 @@ const CheckInOut = () => {
         {}
       );
       if (res.data.success) {
-        toast.success(`Checked in! (${res.data.todayCount}/${res.data.maxAllowed} today)`);
+        const maxAllowed = res.data.maxAllowed || 1;
+        const todayCount = res.data.todayCount || 0;
+        setTodayStats({
+          checkinCount: todayCount,
+          maxAllowed,
+          remaining: Math.max(0, maxAllowed - todayCount),
+        });
+        toast.success(`Checked in! (${todayCount}/${maxAllowed} today)`);
         loadRecords();
       }
     } catch (err) {
@@ -82,8 +89,16 @@ const CheckInOut = () => {
 
   const handleExport = async () => {
     try {
-      const res = await api.get("/checkin/export");
-      if (res.data.success && res.data.data && res.data.data.length > 0) {
+      const res = await api.get("/checkin/export", { responseType: "blob" });
+      if (res.data instanceof Blob && res.data.size > 0) {
+        const url = URL.createObjectURL(res.data);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `checkin-export-${new Date().toISOString().split("T")[0]}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
         toast.success("Excel downloaded!");
       } else {
         toast.error("No data to export");

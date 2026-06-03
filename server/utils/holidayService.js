@@ -56,7 +56,7 @@ const getSundaysForYear = (year) => {
 };
 
 const getAllHolidaysForYear = (year) => {
-  return [...getPublicHolidaysForYear(year), ...getSundaysForYear(year)];
+  return [...getPublicHolidaysForYear(year)];
 };
 
 const populateHolidaysForYear = async (year) => {

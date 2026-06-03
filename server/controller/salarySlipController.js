@@ -52,6 +52,8 @@ const generateSlip = async (req, res, next) => {
   }
 };
 
+const canViewAllSlips = (role) => ["root", "admin", "manager"].includes(role);
+
 const listSlips = async (req, res, next) => {
   try {
     const { userId, year, page, limit } = req.query;
@@ -65,7 +67,11 @@ const listSlips = async (req, res, next) => {
       .orderBy("salary_slips.year", "desc")
       .orderBy("salary_slips.month", "desc");
 
-    if (userId) query.where("salary_slips.user_id", userId);
+    if (canViewAllSlips(req.user.role)) {
+      if (userId) query.where("salary_slips.user_id", userId);
+    } else {
+      query.where("salary_slips.user_id", req.user.id);
+    }
     if (year) query.where("salary_slips.year", parseInt(year));
 
     const [{ count }] = await query.clone().clearSelect().count("* as count");

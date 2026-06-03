@@ -1,6 +1,8 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import toast from "react-hot-toast";
+import { io } from "socket.io-client";
 import api from "../config/axios";
+import API_BASE from "../config/api";
 
 const isGroupId = (id) => id && id.includes("-") && id.length === 36;
 
@@ -17,6 +19,14 @@ export default function useChat() {
   const [showSearch, setShowSearch] = useState(false);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [lastMessages, setLastMessages] = useState({});
+  const socketRef = useRef(null);
+  const activeContactRef = useRef(activeContact);
+
+  useEffect(() => {
+    activeContactRef.current = activeContact;
+  }, [activeContact]);
+
+  const userId = user?._id;
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("user") || "{}");
@@ -35,7 +45,57 @@ export default function useChat() {
     }
   }, []);
 
-  const userId = user?._id;
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const serverUrl = API_BASE || window.location.origin;
+    const socket = io(serverUrl, {
+      auth: { token },
+      transports: ["websocket", "polling"],
+    });
+
+    socket.on("connect", () => console.log("Socket connected"));
+    socket.on("connect_error", (err) => console.error("Socket error:", err.message));
+
+    socket.on("chat:receive", (data) => {
+      const contactId = data.from;
+      const newMsg = {
+        _id: `socket-${Date.now()}`,
+        text: data.text,
+        from: { _id: data.from, name: data.fromName },
+        isYou: data.from === userId,
+        ts: data.timestamp,
+      };
+      setMessages((prev) => ({
+        ...prev,
+        [contactId]: [...(prev[contactId] || []), newMsg],
+      }));
+      setLastMessages((prev) => ({ ...prev, [contactId]: newMsg }));
+    });
+
+    socket.on("chat:receiveGroup", (data) => {
+      const contactId = data.groupId;
+      const newMsg = {
+        _id: `socket-${Date.now()}`,
+        text: data.text,
+        from: { _id: data.from, name: data.fromName },
+        isYou: data.from === userId,
+        ts: data.timestamp,
+      };
+      setMessages((prev) => ({
+        ...prev,
+        [contactId]: [...(prev[contactId] || []), newMsg],
+      }));
+      setLastMessages((prev) => ({ ...prev, [contactId]: newMsg }));
+    });
+
+    socketRef.current = socket;
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [userId]);
 
   useEffect(() => {
     const loadContacts = async () => {
@@ -134,13 +194,6 @@ export default function useChat() {
     if (activeContact) loadMessages();
   }, [activeContact, loadMessages]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (activeContact) loadMessages(activeContact);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [activeContact, loadMessages]);
-
   const activeName = useMemo(() => {
     const data = [
       ...directContacts.filter((c) => c.id === activeContact),
@@ -180,15 +233,28 @@ export default function useChat() {
       if (attachment) {
         formData.append("file", attachment);
       }
-      await api.post("/chat", formData, {
+      const res = await api.post("/chat", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      loadMessages(activeContact);
+
+      if (socketRef.current?.connected) {
+        if (isGroup) {
+          socketRef.current.emit("chat:sendGroup", {
+            groupId: activeContact,
+            text,
+          });
+        } else {
+          socketRef.current.emit("chat:send", {
+            to: activeContact,
+            text,
+          });
+        }
+      }
     } catch (err) {
       console.error("Failed to send message:", err);
       toast.error("Failed to send message");
     }
-  }, [activeContact, userId, user, loadMessages]);
+  }, [activeContact, userId, user]);
 
   const handleCreateGroup = useCallback(async (name, description) => {
     try {

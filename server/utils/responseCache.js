@@ -65,7 +65,7 @@ export const cacheMiddleware = (options = {}) => {
   const { ttl = 300000, keyPrefix = "api" } = options;
 
   return (req, res, next) => {
-    if (req.method !== "GET") {
+    if (req.method !== "GET" || process.env.NODE_ENV === "test") {
       return next();
     }
 

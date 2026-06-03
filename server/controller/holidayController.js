@@ -7,7 +7,7 @@ const getHolidays = async (req, res, next) => {
     const { year, type } = req.query;
     const targetYear = year || new Date().getFullYear();
 
-    let query = db("holidays");
+    let query = db("holidays").where("type", "!=", "sunday");
 
     if (type) {
       query = query.where("type", type);
@@ -103,6 +103,7 @@ const getUpcomingHolidays = async (req, res, next) => {
     const holidays = await db("holidays")
       .where("date", ">=", today)
       .where("year", year)
+      .where("type", "!=", "sunday")
       .orderBy("date")
       .limit(10);
 
@@ -130,6 +131,8 @@ const autoPopulateHolidays = async (req, res, next) => {
     
     let results;
     
+    await db("holidays").where("type", "sunday").del();
+    
     if (year) {
       results = [await populateHolidaysForYear(parseInt(year))];
     } else if (years) {
@@ -140,7 +143,7 @@ const autoPopulateHolidays = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: "Holidays populated successfully",
+      message: "Holidays populated successfully (Sundays removed)",
       results,
     });
   } catch (error) {
