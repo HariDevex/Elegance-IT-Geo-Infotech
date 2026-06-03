@@ -9,38 +9,37 @@ export async function seed(knex) {
   console.log("🌱 Starting database seed...");
 
   try {
-    const existingRoot = await knex("users").where("role", "root").first();
-    if (existingRoot) {
-      console.log("⚠️  Root user already exists. Skipping seed.");
-      return;
-    }
-
-    const generateEmployeeId = () => {
+    const newEmployeeId = process.env.DEFAULT_EMPLOYEE_ID || (() => {
       const prefix = "EJB";
       const year = new Date().getFullYear();
       const randomNum = Math.floor(Math.random() * 900) + 100;
       return `${prefix}${year}${randomNum}`;
-    };
-
-    const newEmployeeId = generateEmployeeId();
+    })();
 
     const hashedPassword = await bcrypt.hash(newEmployeeId, 12);
 
-    const [rootUser] = await knex("users")
-      .insert({
-        name: process.env.DEFAULT_NAME || "Admin",
-        email: process.env.DEFAULT_EMAIL || "admin@elegance.com",
-        password: hashedPassword,
-        role: "root",
-        employee_id: newEmployeeId,
-        department: "Administration",
-        designation: "System Administrator",
-      })
-      .returning("*");
+    const existingRoot = await knex("users").where("role", "root").first();
+    if (existingRoot) {
+      await knex("users").where("id", existingRoot.id).update({ password: hashedPassword, employee_id: newEmployeeId });
+      console.log(`✅ Root user updated:`);
+      console.log(`   Employee ID: ${newEmployeeId}`);
+      console.log(`   Password: ${newEmployeeId}`);
+      return;
+    }
+
+    await knex("users").insert({
+      name: process.env.DEFAULT_NAME || "Admin",
+      email: process.env.DEFAULT_EMAIL || "admin@elegance.com",
+      password: hashedPassword,
+      role: "root",
+      employee_id: newEmployeeId,
+      department: "Administration",
+      designation: "System Administrator",
+    });
 
     console.log(`✅ Root user created:`);
-    console.log(`   Employee ID: ${rootUser.employee_id}`);
-    console.log(`   Password: ${rootUser.employee_id}`);
+    console.log(`   Employee ID: ${newEmployeeId}`);
+    console.log(`   Password: ${newEmployeeId}`);
   } catch (error) {
     console.error("❌ Seed failed:", error);
     throw error;
