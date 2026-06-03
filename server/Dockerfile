@@ -23,6 +23,7 @@ COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/routes ./routes
 COPY --from=builder /app/utils ./utils
 COPY --from=builder /app/core ./core
+COPY --from=builder /app/modules ./modules
 COPY --from=builder /app/seeds ./seeds
 COPY --from=builder /app/index.js ./
 COPY --from=builder /app/.eslintrc.json ./
