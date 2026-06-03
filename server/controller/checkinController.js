@@ -6,11 +6,14 @@ import { isLateCheckIn } from "../utils/attendanceUtils.js";
 const MAX_CHECKIN_PER_DAY = 3;
 
 const getTodayCheckins = async (userId) => {
-  const today = new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
   
   const checkins = await db("checkin_checkout")
     .where("user_id", userId)
-    .whereRaw("date(created_at) = date(?)", [today])
+    .where("created_at", ">=", todayStart)
+    .where("created_at", "<=", todayEnd)
     .where("type", "checkin")
     .orderBy("created_at", "desc");
   
@@ -186,7 +189,9 @@ const getMyRecords = async (req, res, next) => {
       .limit(parseInt(limit));
 
     if (date) {
-      query = query.whereRaw("date(created_at) = date(?)", [date]);
+      const dayStart = new Date(date).getTime();
+      const dayEnd = new Date(date + "T23:59:59.999Z").getTime();
+      query = query.where("created_at", ">=", dayStart).where("created_at", "<=", dayEnd);
     }
 
     const records = await query;
