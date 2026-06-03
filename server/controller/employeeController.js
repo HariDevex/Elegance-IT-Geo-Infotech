@@ -146,7 +146,7 @@ const listEmployees = async (req, res, next) => {
     const { page = 1, limit = 50, search, department, role } = req.query;
     const offset = (page - 1) * limit;
 
-    const allowedRoles = ["root", "admin", "manager", "hr"];
+    const allowedRoles = ["root", "admin", "manager", "hr", "teamlead", "developer"];
     const canViewAll = allowedRoles.includes(req.user.role);
 
     if (!canViewAll) {

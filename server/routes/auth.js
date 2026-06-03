@@ -77,7 +77,7 @@ router.get("/profile", authMiddleware, getProfile);
 
 router.get("/login-logs", 
   authMiddleware,
-  requireRole(ROLES.ROOT, ROLES.ADMIN), 
+  requireRole(ROLES.ROOT, ROLES.ADMIN, ROLES.MANAGER), 
   getLoginLogs
 );
 

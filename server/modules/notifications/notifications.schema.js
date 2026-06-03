@@ -2,10 +2,9 @@ import { z } from "zod";
 
 export const announcementSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
-  content: z.string().min(1, "Content is required").max(5000),
-  priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
-  targetRoles: z.array(z.string()).optional(),
-  expiresAt: z.string().optional(),
+  message: z.string().min(1, "Message is required").max(5000),
+  audienceRoles: z.array(z.string()).optional(),
+  audienceDepartments: z.array(z.string()).optional(),
 });
 
 export const notificationSchema = z.object({

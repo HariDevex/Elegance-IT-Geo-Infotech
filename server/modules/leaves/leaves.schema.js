@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 export const leaveRequestSchema = z.object({
-  leaveType: z.enum(["Annual Leave", "Sick Leave", "Casual Leave", "unpaid"]),
-  fromDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
+  type: z.enum(["Annual Leave", "Sick Leave", "Casual Leave", "unpaid"]),
+  from: z.string().refine((date) => !isNaN(Date.parse(date)), {
     message: "Invalid from date",
   }),
-  toDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
+  to: z.string().refine((date) => !isNaN(Date.parse(date)), {
     message: "Invalid to date",
   }),
   description: z.string().max(500, "Description too long").optional(),
