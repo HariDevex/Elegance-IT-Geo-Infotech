@@ -125,7 +125,7 @@ const Login = () => {
 
         if (userData.role === "root") {
           navigate("/root-dashboard");
-        } else if (["admin", "manager", "teamlead", "hr"].includes(userData.role)) {
+        } else if (["admin", "manager", "teamlead"].includes(userData.role)) {
           navigate("/admin-dashboard");
         } else {
           navigate("/employee-dashboard");

@@ -1,20 +1,9 @@
 import db from "../config/database.js";
 import crypto from "crypto";
 import { logActivity } from "./activityLogController.js";
+import { isLateCheckIn } from "../utils/attendanceUtils.js";
 
 const MAX_CHECKIN_PER_DAY = 3;
-const LATE_THRESHOLD_HOUR = 9;
-const LATE_THRESHOLD_MINUTE = 15;
-
-const isLateCheckIn = (checkInTime) => {
-  if (!checkInTime) return false;
-  const checkIn = new Date(checkInTime);
-  const hour = checkIn.getHours();
-  const minute = checkIn.getMinutes();
-  if (hour > LATE_THRESHOLD_HOUR) return true;
-  if (hour === LATE_THRESHOLD_HOUR && minute > LATE_THRESHOLD_MINUTE) return true;
-  return false;
-};
 
 const getTodayCheckins = async (userId) => {
   const today = new Date().toISOString().split("T")[0];

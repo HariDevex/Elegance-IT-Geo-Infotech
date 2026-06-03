@@ -1,7 +1,6 @@
 import { useState, memo } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
-import API_BASE from "../config/api.js";
+import api from "../config/axios";
 
 const EditEmployeeForm = ({ employee, onDone }) => {
   const [form, setForm] = useState({
@@ -52,11 +51,9 @@ const EditEmployeeForm = ({ employee, onDone }) => {
       });
       if (file) fd.append("profileImage", file);
 
-      const token = localStorage.getItem("token");
-      const res = await axios.put(`${API_BASE}/api/employees/${employee._id}`, fd, {
+      const res = await api.put(`/employees/${employee._id}`, fd, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -229,7 +226,6 @@ const EditEmployeeForm = ({ employee, onDone }) => {
               <option value="developer">Developer</option>
               <option value="teamlead">Team Lead</option>
               <option value="manager">Manager</option>
-              <option value="hr">HR</option>
               <option value="admin">Admin</option>
             </select>
           </div>

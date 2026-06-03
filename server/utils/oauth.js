@@ -136,7 +136,18 @@ const oauthCallback = (req, res, next) => {
   })(req, res, next);
 };
 
-const googleAuth = passport.authenticate("google", { session: false });
-const githubAuth = passport.authenticate("github", { session: false });
+const googleAuth = (req, res, next) => {
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    return res.status(501).json({ success: false, error: "Google OAuth not configured" });
+  }
+  passport.authenticate("google", { session: false })(req, res, next);
+};
+
+const githubAuth = (req, res, next) => {
+  if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
+    return res.status(501).json({ success: false, error: "GitHub OAuth not configured" });
+  }
+  passport.authenticate("github", { session: false })(req, res, next);
+};
 
 export { initOAuth, oauthCallback, googleAuth, githubAuth };

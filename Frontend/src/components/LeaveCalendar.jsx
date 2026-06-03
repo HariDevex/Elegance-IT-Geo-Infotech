@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, memo } from "react";
 import { ChevronLeft, ChevronRight, Calendar as CalIcon } from "lucide-react";
-import axios from "axios";
+import api from "../config/axios";
 import toast from "react-hot-toast";
-import API_BASE from "../config/api.js";
 
 const LeaveCalendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -14,16 +13,11 @@ const LeaveCalendar = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
       const year = currentDate.getFullYear();
 
       const [leavesRes, holidaysRes] = await Promise.all([
-        axios.get(`${API_BASE}/leaves?status=Approved`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`${API_BASE}/holidays?year=${year}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        api.get("/leaves?status=Approved"),
+        api.get(`/holidays?year=${year}`),
       ]);
 
       if (leavesRes.data.success) {

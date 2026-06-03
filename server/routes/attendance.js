@@ -1,5 +1,5 @@
 import express from "express";
-import authMiddleware, { requireRole, ROLES } from "../middleware/auth.js";
+import authMiddleware from "../middleware/auth.js";
 import {
   createOrUpdateAttendance,
   listAttendance,

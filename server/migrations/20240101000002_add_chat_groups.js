@@ -3,15 +3,18 @@
  * @returns { Promise<void> }
  */
 export async function up(knex) {
+  const isSqlite = knex.client.config.client === 'better-sqlite3';
   await knex.schema.createTable("chat_groups", (table) => {
-    table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
+    if (isSqlite) {
+      table.string("id", 36).primary();
+    } else {
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
+    }
     table.string("name").notNullable();
     table.text("description");
-    table.uuid("created_by");
+    table.uuid("created_by").references("id").inTable("users").onDelete("CASCADE");
     table.timestamp("created_at").defaultTo(knex.fn.now());
   });
-  
-  await knex.schema.raw('ALTER TABLE chat_groups ADD CONSTRAINT chat_groups_created_by_foreign FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE');
 }
 
 /**

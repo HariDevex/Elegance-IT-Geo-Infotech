@@ -1,8 +1,7 @@
 import { useState, useEffect, memo } from "react";
+import api from "../config/axios";
 import toast from "react-hot-toast";
-import axios from "axios";
 import { Eye, EyeOff, Info, UserPlus, Copy, CheckCircle } from "lucide-react";
-import API_BASE from "../config/api.js";
 
 const BRANCHES = [
   { value: "bengaluru", label: "Bengaluru", prefix: "EJB" },
@@ -13,7 +12,6 @@ const ROLES = [
   { value: "developer", label: "Developer" },
   { value: "teamlead", label: "Team Lead" },
   { value: "manager", label: "Manager" },
-  { value: "hr", label: "HR" },
   { value: "admin", label: "Admin" },
 ];
 
@@ -84,11 +82,9 @@ const AddEmployeeForm = ({ onEmployeeAdded }) => {
       });
       if (file) fd.append("profileImage", file);
 
-      const token = localStorage.getItem("token");
-      const res = await axios.post(`${API_BASE}/api/employees`, fd, {
+      const res = await api.post("/employees", fd, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -136,7 +132,7 @@ const AddEmployeeForm = ({ onEmployeeAdded }) => {
             <ul className="list-disc list-inside space-y-1">
               <li>Employees will login using their <strong className="text-cyan-400">Employee ID</strong> (auto-generated)</li>
               <li>Email is only used for sending notifications</li>
-              <li>ID format: <strong className="text-cyan-400">{selectedBranch?.prefix || 'XXX'}{currentYear}XXX</strong> (10 characters)</li>
+              <li>ID format: <strong className="text-cyan-400">{selectedBranch?.prefix || 'EJB'}{currentYear}XXX</strong> (10 characters)</li>
             </ul>
           </div>
         </div>

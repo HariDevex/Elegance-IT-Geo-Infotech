@@ -1,9 +1,8 @@
-import { memo, useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { memo, useEffect, useMemo, useState, useCallback } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "../config/axios";
 import { useAuth } from "../context/authContext";
 import { SkeletonTable } from "./Skeleton";
-import API_BASE from "../config/api.js";
 
 const PayrollRow = memo(({ r, idx, canManage, onDelete }) => (
   <tr className="border-t border-slate-700 hover:bg-slate-700/30">
@@ -156,7 +155,6 @@ const PayrollManagement = () => {
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [employees, setEmployees] = useState([]);
-  const tokenRef = useRef(localStorage.getItem("token"));
 
   const debouncedSearch = useDebounce(search);
 
@@ -164,12 +162,10 @@ const PayrollManagement = () => {
     setLoading(true);
     try {
       const params = canManage ? {} : { userId: user?._id };
-      const res = await axios.get(`${API_BASE}/api/payroll`, {
-        headers: { Authorization: `Bearer ${tokenRef.current}` },
-        params,
-      });
+      const res = await api.get("/payroll", { params });
       setRows(res.data.payroll || []);
-    } catch {
+    } catch (err) {
+      console.error("Failed to load payroll records:", err);
       toast.error("Failed to load payroll records");
     } finally {
       setLoading(false);
@@ -183,13 +179,13 @@ const PayrollManagement = () => {
     let cancelled = false;
     const fetchEmployees = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/api/employees`, {
-          headers: { Authorization: `Bearer ${tokenRef.current}` },
-          params: { limit: 200 },
-        });
+        const res = await api.get("/employees", { params: { limit: 200 } });
         if (!cancelled) setEmployees(res.data.users || []);
-      } catch {
-        if (!cancelled) toast.error("Failed to load employees");
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Failed to load employees:", err);
+          toast.error("Failed to load employees");
+        }
       }
     };
     fetchEmployees();
@@ -209,13 +205,12 @@ const PayrollManagement = () => {
 
   const handleProcess = useCallback(async (formData) => {
     try {
-      await axios.post(`${API_BASE}/api/payroll`, formData, {
-        headers: { Authorization: `Bearer ${tokenRef.current}` },
-      });
+      await api.post("/payroll", formData);
       toast.success("Payroll processed");
       setShowForm(false);
       load();
     } catch (err) {
+      console.error("Failed to process payroll:", err);
       toast.error(err.response?.data?.error || "Failed to process payroll");
     }
   }, [load]);
@@ -223,12 +218,11 @@ const PayrollManagement = () => {
   const handleDelete = useCallback(async (id) => {
     if (!confirm("Delete this payroll record?")) return;
     try {
-      await axios.delete(`${API_BASE}/api/payroll/${id}`, {
-        headers: { Authorization: `Bearer ${tokenRef.current}` },
-      });
+      await api.delete(`/payroll/${id}`);
       toast.success("Payroll record deleted");
       load();
     } catch (err) {
+      console.error("Failed to delete payroll:", err);
       toast.error(err.response?.data?.error || "Failed to delete");
     }
   }, [load]);

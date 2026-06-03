@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import toast from "react-hot-toast";
 import { documentService } from "../services/documentService.js";
 import {
   Folder,
@@ -133,6 +134,7 @@ const FileExplorer = () => {
       setFolderTree(treeRes.data.tree || []);
     } catch (err) {
       console.error("Failed to load documents:", err);
+      toast.error("Failed to load documents");
     } finally {
       setLoading(false);
     }
@@ -182,6 +184,7 @@ const FileExplorer = () => {
       loadData(currentFolderId);
     } catch (err) {
       console.error("Failed to create folder:", err);
+      toast.error("Failed to create folder");
     }
   };
 
@@ -194,6 +197,7 @@ const FileExplorer = () => {
       loadData(currentFolderId);
     } catch (err) {
       console.error("Failed to rename folder:", err);
+      toast.error("Failed to rename folder");
     }
   };
 
@@ -203,7 +207,8 @@ const FileExplorer = () => {
       await documentService.deleteFolder(id);
       loadData(currentFolderId);
     } catch (err) {
-      alert(err.response?.data?.error || "Failed to delete folder");
+      console.error("Failed to delete folder:", err);
+      toast.error(err.response?.data?.error || "Failed to delete folder");
     }
   };
 
@@ -220,6 +225,7 @@ const FileExplorer = () => {
       loadData(currentFolderId);
     } catch (err) {
       console.error("Upload failed:", err);
+      toast.error("Upload failed");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -233,6 +239,7 @@ const FileExplorer = () => {
       loadData(currentFolderId);
     } catch (err) {
       console.error("Failed to delete document:", err);
+      toast.error("Failed to delete document");
     }
   };
 

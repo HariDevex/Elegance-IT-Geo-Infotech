@@ -1,8 +1,7 @@
 import { useState, memo } from "react";
+import api from "../config/axios";
 import toast from "react-hot-toast";
-import axios from "axios";
 import { useAuth } from "../context/authContext";
-import API_BASE from "../config/api.js";
 
 const roleOptions = [
   { value: "all", label: "All" },
@@ -10,7 +9,6 @@ const roleOptions = [
   { value: "teamlead", label: "Team Leads" },
   { value: "manager", label: "Managers" },
   { value: "admin", label: "Admins" },
-  { value: "hr", label: "HR" },
 ];
 
 const AddAnnouncementForm = ({ onCreated }) => {
@@ -43,9 +41,8 @@ const AddAnnouncementForm = ({ onCreated }) => {
     setSuccess("");
 
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.post(
-        `${API_BASE}/api/announcements`,
+      const res = await api.post(
+        "/announcements",
         {
           title,
           message,
@@ -54,8 +51,7 @@ const AddAnnouncementForm = ({ onCreated }) => {
             .split(",")
             .map((d) => d.trim())
             .filter(Boolean),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
+        }
       );
 
       if (res.data.success) {

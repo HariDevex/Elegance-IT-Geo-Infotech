@@ -1,10 +1,9 @@
 import { memo, useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "../config/axios";
 import { Download } from "lucide-react";
 import { exportToExcel, getImageUrl } from "../utils/excel";
 import { Skeleton, SkeletonTable } from "./Skeleton";
-import API_BASE from "../config/api.js";
 
 const EmployeesList = ({ onAddNew, onView, onEdit }) => {
   const [employees, setEmployees] = useState([]);
@@ -19,9 +18,7 @@ const EmployeesList = ({ onAddNew, onView, onEdit }) => {
     setLoading(true);
     setError("");
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE}/api/employees`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get("/employees", {
         params: { search, limit: 100, page: pagination.page },
       });
       setEmployees(res.data.users || []);
@@ -42,17 +39,15 @@ const EmployeesList = ({ onAddNew, onView, onEdit }) => {
 
   const handleExport = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE}/api/auth/export/employees`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/auth/export/employees");
       if (res.data.success && res.data.data.length > 0) {
         exportToExcel(res.data.data, `employees_${new Date().toISOString().split("T")[0]}`, "Employees");
         toast.success("Excel downloaded!");
       } else {
         toast.error("No data to export");
       }
-    } catch {
+    } catch (err) {
+      console.error("Export failed:", err);
       toast.error("Export failed");
     }
   }, []);
@@ -60,10 +55,7 @@ const EmployeesList = ({ onAddNew, onView, onEdit }) => {
   const handleDelete = useCallback(async () => {
     if (!deleteId) return;
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.delete(`${API_BASE}/api/employees/${deleteId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.delete(`/employees/${deleteId}`);
       if (res.data.success) {
         toast.success("Employee deleted!");
         setShowDeleteModal(false);

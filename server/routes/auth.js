@@ -25,7 +25,15 @@ import {
   exportLoginLogsExcel,
 } from "../controller/exportController.js";
 import authMiddleware, { requireRole, ROLES } from "../middleware/auth.js";
-import { validate, sanitizeInput } from "../middleware/validator.js";
+import { sanitizeInput } from "../middleware/validator.js";
+import { validate } from "../middleware/validate.js";
+import {
+  loginSchema,
+  changePasswordSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  refreshTokenSchema,
+} from "../modules/auth/auth.schema.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -45,25 +53,11 @@ const upload = multer({
 
 const router = express.Router();
 
-const loginSchema = {
-  employee_id: { required: true, maxLength: 50 },
-  password: { required: true, maxLength: 128 },
-};
-
-const changePasswordSchema = {
-  oldPassword: { required: true, maxLength: 128 },
-  newPassword: { required: true, minLength: 6, maxLength: 128 },
-};
-
-const forgotPasswordSchema = {
-  employee_id: { required: true, maxLength: 50 },
-};
-
 router.post("/login", sanitizeInput, validate(loginSchema), login);
 
 router.post("/logout", authMiddleware, logout);
 
-router.post("/refresh", refreshAccessToken);
+router.post("/refresh", validate(refreshTokenSchema), refreshAccessToken);
 
 router.put(
   "/change-password",
@@ -75,7 +69,7 @@ router.put(
 
 router.post("/forgot-password", sanitizeInput, validate(forgotPasswordSchema), forgotPassword);
 
-router.post("/reset-password", resetPassword);
+router.post("/reset-password", validate(resetPasswordSchema), resetPassword);
 
 router.post("/avatar", authMiddleware, upload.single("avatar"), uploadAvatar);
 

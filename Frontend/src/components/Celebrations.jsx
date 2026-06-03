@@ -1,7 +1,6 @@
+import api from "../config/axios";
 import { useState, useEffect } from "react";
 import { Cake, Gift, Calendar } from "lucide-react";
-import axios from "axios";
-import API_BASE from "../config/api.js";
 
 const Celebrations = () => {
   const [upcoming, setUpcoming] = useState([]);
@@ -9,10 +8,7 @@ const Celebrations = () => {
 
   const fetchCelebrations = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE}/api/employees?limit=500`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/employees?limit=500");
 
       if (res.data.success) {
         const employees = res.data.users || [];

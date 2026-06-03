@@ -18,8 +18,8 @@ const NotificationBell = () => {
         setNotifications(res.data.notifications || []);
         setUnreadCount(res.data.unreadCount || 0);
       }
-    } catch {
-      if (import.meta.env.DEV) console.warn("Notification fetch failed");
+    } catch (err) {
+      console.error("Failed to fetch notifications:", err);
     }
   };
 
@@ -45,7 +45,8 @@ const NotificationBell = () => {
     try {
       await api.put(`/notifications/${id}/read`, {});
       fetchNotifications();
-    } catch {
+    } catch (err) {
+      console.error("Failed to mark as read:", err);
       toast.error("Failed to mark as read");
     }
   };
@@ -55,7 +56,8 @@ const NotificationBell = () => {
       await api.put(`/notifications/read-all`, {});
       fetchNotifications();
       toast.success("All notifications marked as read");
-    } catch {
+    } catch (err) {
+      console.error("Failed to mark all as read:", err);
       toast.error("Failed to mark all as read");
     }
   };
@@ -99,9 +101,9 @@ const NotificationBell = () => {
                 <p className="text-sm">No notifications</p>
               </div>
             ) : (
-              notifications.map((notif) => (
+              notifications.map((notif, idx) => (
                 <div
-                  key={notif._id}
+                  key={notif._id ?? idx}
                   className={`px-4 py-3 border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors ${!notif.isRead ? "bg-slate-700/20" : ""}`}
                 >
                   <div className="flex items-start gap-3">

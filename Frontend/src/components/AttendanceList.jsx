@@ -1,11 +1,10 @@
 import { memo, useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "../config/axios";
 import { Download } from "lucide-react";
 import { useAuth } from "../context/authContext";
 import { exportToExcel, getImageUrl } from "../utils/excel";
 import { Skeleton, SkeletonTable } from "./Skeleton";
-import API_BASE from "../config/api.js";
 
 const AttendanceList = () => {
   const [rows, setRows] = useState([]);
@@ -25,10 +24,7 @@ const AttendanceList = () => {
 
   const fetchEmployees = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE}/api/employees?limit=500`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/employees?limit=500");
       setEmployees(res.data.users || []);
     } catch { /* empty */ }
   };
@@ -41,9 +37,7 @@ const AttendanceList = () => {
     setLoading(true);
     setError("");
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE}/api/attendance`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get("/attendance", {
         params: { date: selectedDate },
       });
 
@@ -82,11 +76,9 @@ const AttendanceList = () => {
 
   const setStatus = async (id, status) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        `${API_BASE}/api/attendance`,
-        { userId: id, status, date },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await api.post(
+        "/attendance",
+        { userId: id, status, date }
       );
       toast.success(`Marked as ${status}`);
       loadData(date);
@@ -101,13 +93,11 @@ const AttendanceList = () => {
       return;
     }
     try {
-      const token = localStorage.getItem("token");
       const params = { from: exportFrom, to: exportTo };
       if (exportEmployee !== "all") {
         params.userId = exportEmployee;
       }
-      const res = await axios.get(`${API_BASE}/api/auth/export/attendance`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get("/auth/export/attendance", {
         params,
       });
       if (res.data.success && res.data.data.length > 0) {
@@ -119,7 +109,8 @@ const AttendanceList = () => {
       } else {
         toast.error("No data to export for selected date range");
       }
-    } catch {
+    } catch (err) {
+      console.error("Export failed:", err);
       toast.error("Export failed");
     }
   };
@@ -136,8 +127,8 @@ const AttendanceList = () => {
             className="rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-1.5 text-white text-sm"
           >
             <option value="all">All Employees</option>
-            {employees.map((emp) => (
-              <option key={emp._id} value={emp._id}>{emp.name}</option>
+            {employees.map((emp, idx) => (
+              <option key={emp._id ?? idx} value={emp._id}>{emp.name}</option>
             ))}
           </select>
           <input

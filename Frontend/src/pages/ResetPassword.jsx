@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "../config/axios";
 import { Eye, EyeOff } from "lucide-react";
-import API_BASE from "../config/api.js";
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -41,7 +40,7 @@ const ResetPassword = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE}/api/auth/reset-password`, {
+      const response = await api.post("/auth/reset-password", {
         token,
         password,
       });

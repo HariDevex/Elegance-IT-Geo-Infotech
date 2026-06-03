@@ -4,7 +4,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import authMiddleware, { 
   requireRole, 
-  requireMinRole, 
   canManageUser,
   ROLES 
 } from "../middleware/auth.js";
@@ -16,7 +15,12 @@ import {
   updateAttendance,
   deleteEmployee,
 } from "../controller/employeeController.js";
-import { validate, sanitizeInput, validateUUID } from "../middleware/validator.js";
+import { validate } from "../middleware/validate.js";
+import { sanitizeInput } from "../middleware/validator.js";
+import {
+  createEmployeeSchema,
+  attendanceUpdateSchema,
+} from "../modules/employees/employees.schema.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -35,19 +39,6 @@ const upload = multer({
 });
 
 const router = express.Router();
-
-const createEmployeeSchema = {
-  name: { required: true, minLength: 2, maxLength: 100 },
-  email: { type: "email", maxLength: 255 },
-  password: { required: true, minLength: 6, maxLength: 128 },
-  role: {
-    required: true,
-    enum: ["admin", "manager", "teamlead", "developer", "hr"],
-  },
-  designation: { maxLength: 100 },
-  department: { maxLength: 100 },
-  branch: { maxLength: 100 },
-};
 
 router.use(authMiddleware);
 
@@ -74,6 +65,7 @@ router.put("/:id",
 
 router.put("/:id/attendance", 
   requireRole(ROLES.ROOT, ROLES.ADMIN, ROLES.MANAGER), 
+  validate(attendanceUpdateSchema),
   updateAttendance
 );
 

@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "../config/axios";
 import { Eye, EyeOff, RefreshCw, History, Search, Lock } from "lucide-react";
 import { Skeleton } from "./Skeleton";
-import API_BASE from "../config/api.js";
 
 const PasswordResetManager = () => {
   const [users, setUsers] = useState([]);
@@ -19,13 +18,10 @@ const PasswordResetManager = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE}/api/employees`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { limit: 100 },
-      });
+      const res = await api.get("/employees", { params: { limit: 100 } });
       setUsers(res.data.users || []);
-    } catch {
+    } catch (err) {
+      console.error("Failed to load users:", err);
       toast.error("Failed to load users");
     } finally {
       setLoading(false);
@@ -38,12 +34,10 @@ const PasswordResetManager = () => {
 
   const fetchHistory = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE}/api/auth/all-password-history`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/auth/all-password-history");
       setHistory(res.data.history || []);
-    } catch {
+    } catch (err) {
+      console.error("Failed to load password history:", err);
       toast.error("Failed to load password history");
     }
   };
@@ -61,12 +55,7 @@ const PasswordResetManager = () => {
 
     setResetting(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.post(
-        `${API_BASE}/api/auth/reset-user-password`,
-        { userId: selectedUser._id, newPassword },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.post("/auth/reset-user-password", { userId: selectedUser._id, newPassword });
 
       if (res.data.success) {
         toast.success(`Password reset for ${selectedUser.name}!`);
@@ -121,8 +110,8 @@ const PasswordResetManager = () => {
             <p className="text-slate-400 text-center py-4">No password resets recorded yet</p>
           ) : (
             <div className="space-y-2">
-              {history.map((h) => (
-                <div key={h._id} className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50">
+              {history.map((h, idx) => (
+                <div key={h._id ?? idx} className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50">
                   <div>
                     <p className="text-white font-medium">{h.user?.name}</p>
                     <p className="text-slate-400 text-sm">{h.user?.email} ({h.user?.employeeId})</p>
@@ -154,9 +143,9 @@ const PasswordResetManager = () => {
             />
           </div>
           <div className="space-y-2 max-h-80 overflow-y-auto">
-            {filteredUsers.map((user) => (
+            {filteredUsers.map((user, idx) => (
               <div
-                key={user._id}
+                key={user._id ?? idx}
                 onClick={() => setSelectedUser(user)}
                 className={`p-3 rounded-lg cursor-pointer transition-colors ${
                   selectedUser?._id === user._id

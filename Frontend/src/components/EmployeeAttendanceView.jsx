@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "../config/axios";
 import { useAuth } from "../context/authContext";
 import { Clock, CheckCircle, XCircle, AlertCircle, LogIn, LogOut } from "lucide-react";
 import { Skeleton, SkeletonTable } from "./Skeleton";
-import API_BASE from "../config/api.js";
 
 const EmployeeAttendanceView = () => {
   const { user } = useAuth();
@@ -18,12 +17,10 @@ const EmployeeAttendanceView = () => {
     setLoading(true);
     setError("");
     try {
-      const token = localStorage.getItem("token");
       const firstDayOfYear = `${new Date().getFullYear()}-01-01`;
       const today = new Date().toISOString().split("T")[0];
 
-      const res = await axios.get(`${API_BASE}/api/attendance/my`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get("/attendance/my", {
         params: { from: firstDayOfYear, to: today },
       });
 
@@ -45,12 +42,10 @@ const EmployeeAttendanceView = () => {
     setActionMsg("");
     setError("");
     try {
-      const token = localStorage.getItem("token");
       const today = new Date().toISOString().split("T")[0];
-      await axios.post(
-        `${API_BASE}/api/attendance`,
-        { userId: user?._id, date: today, action },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await api.post(
+        "/attendance",
+        { userId: user?._id, date: today, action }
       );
       const msg = action === "checkin" ? "Checked in successfully!" : "Checked out successfully!";
       setActionMsg(msg);

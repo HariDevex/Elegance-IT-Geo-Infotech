@@ -131,13 +131,13 @@ export const sessionStore = {
     if (!isConnected) return;
     try {
       await redisClient.setEx(`session:${id}`, 86400, JSON.stringify(session));
-    } catch {}
+    } catch { /* Redis operation failed silently */ }
   },
   async destroy(id) {
     if (!isConnected) return;
     try {
       await redisClient.del(`session:${id}`);
-    } catch {}
+    } catch { /* Redis operation failed silently */ }
   },
 };
 

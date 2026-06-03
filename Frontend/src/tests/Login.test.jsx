@@ -14,7 +14,25 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-vi.mock('axios');
+vi.mock('axios', () => {
+  const mockAxiosInstance = {
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() },
+    },
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+  };
+  return {
+    default: {
+      create: vi.fn(() => mockAxiosInstance),
+    },
+    create: vi.fn(() => mockAxiosInstance),
+  };
+});
 
 describe('Login Component', () => {
   beforeEach(() => {
@@ -53,7 +71,7 @@ describe('Login Component', () => {
     });
   });
 
-  it('shows error for invalid email format', async () => {
+  it('shows error when login request fails', async () => {
     render(
       <BrowserRouter>
         <AuthProvider>
@@ -71,7 +89,7 @@ describe('Login Component', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/invalid email/i)).toBeInTheDocument();
+      expect(screen.getByText(/login failed/i)).toBeInTheDocument();
     });
   });
 });

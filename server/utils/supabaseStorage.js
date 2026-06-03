@@ -59,6 +59,30 @@ export const uploadFile = async (file, folder = "uploads") => {
   return await saveLocalFile(file);
 };
 
+export const generateSignedUploadUrl = async (fileName, folder = "uploads") => {
+  if (!supabase) {
+    return null;
+  }
+
+  try {
+    const filePath = `${folder}/${Date.now()}-${sanitizeFileName(fileName)}`;
+    const { data, error } = await supabase.storage
+      .from("ems-uploads")
+      .createSignedUploadUrl(filePath);
+
+    if (error) throw error;
+
+    return {
+      signedUrl: data.signedUrl,
+      path: filePath,
+      publicUrl: supabase.storage.from("ems-uploads").getPublicUrl(filePath).data.publicUrl,
+    };
+  } catch (error) {
+    console.error("Supabase signed URL error:", error.message);
+    return null;
+  }
+};
+
 export const deleteFile = async (fileUrl) => {
   if (!fileUrl) return;
 

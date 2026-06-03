@@ -1,14 +1,13 @@
 import { useState, useEffect, useCallback, memo } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "../config/axios";
 import { Trash2, Plus, Lock, Calendar, RefreshCw } from "lucide-react";
 import { useAuth } from "../context/authContext";
 import { Skeleton, SkeletonTable } from "./Skeleton";
-import API_BASE from "../config/api.js";
 
 const HolidayManagement = () => {
   const { user } = useAuth();
-  const canManage = ["root", "admin", "manager", "hr", "teamlead"].includes(user?.role);
+  const canManage = ["root", "admin", "manager", "teamlead"].includes(user?.role);
   const canAutoPopulate = ["root", "admin", "manager"].includes(user?.role);
   const [holidays, setHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,10 +19,7 @@ const HolidayManagement = () => {
 
   const fetchHolidays = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE}/api/holidays?year=${selectedYear}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get(`/holidays?year=${selectedYear}`);
       if (res.data.success) {
         setHolidays(res.data.holidays || []);
       }
@@ -41,11 +37,9 @@ const HolidayManagement = () => {
   const handleAutoPopulate = async () => {
     setAutoPopulating(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.post(
-        `${API_BASE}/api/holidays/auto-populate?years=2`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+      const res = await api.post(
+        "/holidays/auto-populate?years=2",
+        {}
       );
       if (res.data.success) {
         toast.success("Holidays auto-populated!");
@@ -62,10 +56,7 @@ const HolidayManagement = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.post(`${API_BASE}/api/holidays`, form, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.post("/holidays", form);
       if (res.data.success) {
         toast.success("Holiday added!");
         setForm({ name: "", date: "", type: "public", description: "" });
@@ -82,10 +73,7 @@ const HolidayManagement = () => {
   const handleDelete = async (id) => {
     if (!confirm("Delete this holiday?")) return;
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`${API_BASE}/api/holidays/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/holidays/${id}`);
       toast.success("Holiday deleted");
       fetchHolidays();
     } catch {
@@ -237,8 +225,8 @@ const HolidayManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {holidays.map((holiday) => (
-                <tr key={holiday._id} className="border-t border-slate-700 hover:bg-slate-700/30">
+              {holidays.map((holiday, idx) => (
+                <tr key={holiday._id ?? idx} className="border-t border-slate-700 hover:bg-slate-700/30">
                   <td className="px-4 py-3 text-white">
                     {new Date(holiday.date).toLocaleDateString("en-US", { weekday: "short", year: "numeric", month: "short", day: "numeric" })}
                   </td>

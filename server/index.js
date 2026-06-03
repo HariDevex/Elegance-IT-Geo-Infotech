@@ -3,15 +3,13 @@ import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
+import RateLimitRedisStore from "rate-limit-redis";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import https from "https";
 import http from "http";
 import fs from "fs";
-
-import knex from "knex";
-import knexConfig from "./knexfile.js";
 
 import authRouter from "./routes/auth.js";
 import employeeRouter from "./routes/employee.js";
@@ -28,20 +26,18 @@ import folderRouter from "./routes/folder.js";
 import activityLogRouter from "./routes/activity-logs.js";
 import twoFactorRouter from "./routes/two-factor.js";
 import oauthRouter from "./routes/oauth.js";
-import aiRouter from "./routes/ai.js";
 import payrollRouter from "./routes/payroll.js";
 import salarySlipRouter from "./routes/salary-slips.js";
 import resignationRouter from "./routes/resignation.js";
 import onboardingRouter from "./routes/onboarding.js";
 import { cacheMiddleware } from "./utils/responseCache.js";
-import { cacheMiddleware as redisCacheMiddleware } from "./utils/redis.js";
+import { cacheMiddleware as redisCacheMiddleware, connectRedis, isRedisConnected, getRedisClient } from "./utils/redis.js";
 import { errorHandler, requestLogger } from "./middleware/errorHandler.js";
 import { validateInputLength } from "./middleware/validator.js";
 import { initSentry, sentryErrorHandler } from "./utils/sentry.js";
-import { connectRedis, isRedisConnected } from "./utils/redis.js";
 import { initSocketIO } from "./utils/socket.js";
+import { register, httpRequestDurationMicroseconds, activeRequests } from "./core/metrics.js";
 import logger from "./utils/logger.js";
-import { securityMiddleware, aiThreatDetection } from "./utils/aiSecurity.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
@@ -49,16 +45,12 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
 
-console.log("=== Server Startup ===");
-console.log(`PORT: ${PORT}`);
-console.log(`HOST: ${HOST}`);
-console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
-console.log(`DATABASE_URL set: ${!!process.env.DATABASE_URL}`);
-console.log(`REDIS_URL set: ${!!process.env.REDIS_URL}`);
-console.log("========================");
-
-const env = process.env.NODE_ENV || "development";
-const db = knex(knexConfig[env]);
+logger.info("=== Server Startup ===");
+logger.info(`PORT: ${PORT}`);
+logger.info(`HOST: ${HOST}`);
+logger.info(`NODE_ENV: ${process.env.NODE_ENV}`);
+logger.info(`DATABASE_URL set: ${!!process.env.DATABASE_URL}`);
+logger.info(`REDIS_URL set: ${!!process.env.REDIS_URL}`);
 
 const app = express();
 
@@ -139,18 +131,29 @@ app.use(
   })
 );
 
-const globalLimiter = rateLimit({
+const makeRateLimiter = (opts) => {
+  const redisClient = getRedisClient();
+  const store = redisClient?.isOpen
+    ? new RateLimitRedisStore({ sendCommand: (...args) => redisClient.sendCommand(args) })
+    : undefined;
+  return rateLimit({ store, ...opts });
+};
+
+const sensitivePaths = ["/api/employees", "/api/leaves", "/api/announcements"];
+
+const globalLimiter = makeRateLimiter({
   windowMs: 60 * 60 * 1000,
-  max: 1000,
+  max: process.env.NODE_ENV === "production" ? 1000 : 50000,
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: false,
   validate: { xForwardedForHeader: false },
   message: { success: false, error: "Too many requests, please try again later." },
+  skip: (req) => sensitivePaths.some((p) => req.path.startsWith(p)),
 });
 app.use("/api/", globalLimiter);
 
-const authLimiter = rateLimit({
+const authLimiter = makeRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 20,
   standardHeaders: true,
@@ -161,9 +164,9 @@ const authLimiter = rateLimit({
 app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/forgot-password", authLimiter);
 
-const sensitiveEndpointLimiter = rateLimit({
+const sensitiveEndpointLimiter = makeRateLimiter({
   windowMs: 60 * 60 * 1000,
-  max: 200,
+  max: process.env.NODE_ENV === "production" ? 200 : 10000,
   standardHeaders: true,
   legacyHeaders: false,
   validate: { xForwardedForHeader: false },
@@ -195,6 +198,16 @@ app.use("/api/", validateInputLength);
 
 app.use(compression());
 
+app.use((req, res, next) => {
+  activeRequests.inc();
+  const end = httpRequestDurationMicroseconds.startTimer();
+  res.on("finish", () => {
+    activeRequests.dec();
+    end({ method: req.method, route: req.route?.path || req.path, status_code: res.statusCode });
+  });
+  next();
+});
+
 const useRedis = () => isRedisConnected();
 
 app.use("/api/holidays", useRedis() ? redisCacheMiddleware({ ttl: 300, keyPrefix: "holidays" }) : cacheMiddleware({ ttl: 60000, keyPrefix: "holidays" }));
@@ -203,6 +216,11 @@ app.use("/api/leave-balance", useRedis() ? redisCacheMiddleware({ ttl: 300, keyP
 app.use("/api/attendance", useRedis() ? redisCacheMiddleware({ ttl: 60, keyPrefix: "attendance" }) : cacheMiddleware({ ttl: 15000, keyPrefix: "attendance" }));
 app.use("/api/leaves", useRedis() ? redisCacheMiddleware({ ttl: 60, keyPrefix: "leaves" }) : cacheMiddleware({ ttl: 15000, keyPrefix: "leaves" }));
 app.use("/api/activity-logs", useRedis() ? redisCacheMiddleware({ ttl: 120, keyPrefix: "activity-logs" }) : cacheMiddleware({ ttl: 30000, keyPrefix: "activity-logs" }));
+
+app.get("/metrics", async (req, res) => {
+  res.set("Content-Type", register.contentType);
+  res.end(await register.metrics());
+});
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
   setHeaders: (res) => {
@@ -227,104 +245,44 @@ app.use("/api/folders", folderRouter);
 app.use("/api/activity-logs", activityLogRouter);
 app.use("/api/auth/2fa", twoFactorRouter);
 app.use("/api/auth/oauth", oauthRouter);
-app.use("/api/ai", aiRouter);
 app.use("/api/payroll", payrollRouter);
 app.use("/api/salary-slips", salarySlipRouter);
 app.use("/api/resignations", resignationRouter);
 app.use("/api/onboarding", onboardingRouter);
 
-// One-time admin seed endpoint (use once then remove or protect)
-app.post("/api/seed-admin", async (req, res) => {
-  try {
-    console.log("Seed endpoint called");
-    console.log("DB client:", db.client.config.client);
-    console.log("DB connection:", db.client.config.connection);
-    
-    // Test database connection first
-    const testResult = await db.raw('SELECT NOW()');
-    console.log("DB connected:", !!testResult);
-    
-    // Check if users table exists
-    const hasUsers = await db.schema.hasTable('users');
-    console.log("Users table exists:", hasUsers);
-    
-    if (!hasUsers) {
-      // Create users table if it doesn't exist
-      console.log("Creating users table...");
-      await db.schema.createTable("users", (table) => {
-        table.uuid("id").primary().defaultTo(db.raw("gen_random_uuid()"));
-        table.string("name").notNullable();
-        table.string("email").unique().notNullable();
-        table.string("password").notNullable();
-        table.string("role").notNullable().defaultTo("developer");
-        table.string("employee_id").unique();
-        table.string("designation");
-        table.string("department");
-        table.boolean("is_active").defaultTo(true);
-        table.integer("failed_attempts").defaultTo(0);
-        table.integer("login_count").defaultTo(0);
-        table.timestamp("created_at").defaultTo(db.fn.now());
-        table.timestamp("updated_at").defaultTo(db.fn.now());
-      });
-      console.log("Users table created");
-    }
-    
-    const bcrypt = await import("bcryptjs");
-    const hashedPassword = await bcrypt.default.hash("Rootadmmin@$123", 12);
-    const employeeId = `EJB${new Date().getFullYear()}${(Math.floor(Math.random() * 900) + 100)}`;
-    
-    console.log("Checking for existing user...");
-    const existingUser = await db("users").where("email", "rootharidevx@elegance.com").first();
-    
-    if (existingUser) {
-      console.log("Admin user already exists");
-      return res.json({ success: true, message: "Admin user already exists" });
-    }
-    
-    console.log("Creating new admin user...");
-    await db("users").insert({
-      name: "Admin",
-      email: "rootharidevx@elegance.com",
-      password: hashedPassword,
-      role: "root",
-      employee_id: employeeId,
-      department: "Administration",
-      designation: "System Administrator",
-      is_active: true,
-      failed_attempts: 0,
-      login_count: 0,
-      created_at: new Date(),
-      updated_at: new Date(),
-    });
-    
-    console.log("Admin user created successfully");
-    res.json({ success: true, message: "Admin user created successfully" });
-  } catch (error) {
-    console.error("Seed error:", error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message,
-      hint: "Check server logs for details"
-    });
-  }
-});
+app.get("/api/health", async (req, res) => {
+  const checks = { websocket: true, redis: false, database: false, sentry: !!process.env.SENTRY_DSN };
 
-app.get("/api/health", (req, res) => {
-  res.json({ 
-    success: true, 
-    message: "Server is running", 
+  try {
+    const redisClient = getRedisClient();
+    checks.redis = redisClient?.isOpen === true;
+  } catch { /* redis not available */ }
+
+  try {
+    const db = (await import("./config/database.js")).default;
+    await db.raw("SELECT 1");
+    checks.database = true;
+  } catch { /* db not reachable */ }
+
+  const healthy = checks.redis || !process.env.REDIS_URL;
+
+  res.status(healthy ? 200 : 503).json({
+    success: healthy,
+    message: healthy ? "Server is healthy" : "Server degraded — some services unavailable",
     timestamp: new Date().toISOString(),
     version: "2.0.0",
-    features: {
-      websocket: true,
-      redis: true,
-      sentry: !!process.env.SENTRY_DSN,
-    }
+    features: checks,
   });
 });
 
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+app.get("/health", async (req, res) => {
+  try {
+    const db = (await import("./config/database.js")).default;
+    await db.raw("SELECT 1");
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+  } catch {
+    res.status(503).json({ status: "degraded", timestamp: new Date().toISOString() });
+  }
 });
 
 if (fs.existsSync(frontendDistPath)) {
@@ -342,8 +300,8 @@ app.use(errorHandler);
 
 const REDIRECT_PORT = process.env.REDIRECT_PORT || 80;
 
-console.log("All imports completed successfully");
-console.log("Starting server initialization...");
+logger.info("All imports completed successfully");
+logger.info("Starting server initialization...");
 
 const startServer = async () => {
   try {
@@ -373,18 +331,17 @@ const startServer = async () => {
       });
     }
   } catch (error) {
-    console.error("=== STARTUP ERROR ===");
-    console.error("Error:", error);
-    console.error("Error message:", error?.message);
-    console.error("Error stack:", error?.stack);
-    console.error("====================");
+    logger.error("=== STARTUP ERROR ===");
+    logger.error("Error:", error);
+    logger.error("Error message:", error?.message);
+    logger.error("Error stack:", error?.stack);
     
     if (server) {
       server.listen(PORT, HOST, () => {
-        console.log(`🚀 Server running on http://${HOST}:${PORT}`);
+        logger.info(`Server running on http://${HOST}:${PORT}`);
       });
     } else {
-      console.error("Server object not created. Check HTTPS/SSL configuration.");
+      logger.error("Server object not created. Check HTTPS/SSL configuration.");
       process.exit(1);
     }
   }

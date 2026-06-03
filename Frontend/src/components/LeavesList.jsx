@@ -1,9 +1,8 @@
 import { memo, useEffect, useMemo, useState, useCallback } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "../config/axios";
 import { useAuth } from "../context/authContext";
 import { Skeleton, SkeletonTable } from "./Skeleton";
-import API_BASE from "../config/api.js";
 const statusOptions = ["All", "Pending", "Approved", "Rejected"];
 
 const LeavesList = () => {
@@ -19,15 +18,11 @@ const LeavesList = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
       const params = {};
       if (statusFilter !== "All") params.status = statusFilter;
       if (search) params.search = search;
 
-      const res = await axios.get(`${API_BASE}/api/leaves`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params,
-      });
+      const res = await api.get("/leaves", { params });
 
       setRows(
         res.data.leaves?.map((l) => ({
@@ -40,7 +35,8 @@ const LeavesList = () => {
           status: l.status,
         })) || []
       );
-    } catch {
+    } catch (err) {
+      console.error("Failed to load leaves:", err);
       toast.error("Failed to load leaves");
     } finally {
       setLoading(false);
@@ -61,33 +57,33 @@ const LeavesList = () => {
 
   const updateStatus = async (id, status) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        `${API_BASE}/api/leaves/${id}/status`,
-        { status },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put(`/leaves/${id}/status`, { status });
       toast.success(`Leave ${status.toLowerCase()}`);
       load();
     } catch (err) {
+      console.error("Failed to update leave:", err);
       toast.error(err.response?.data?.error || "Failed to update");
     }
   };
 
   const submitLeave = async () => {
+    if (!form.type || !form.from || !form.to) {
+      toast.error("Please fill all required fields");
+      return;
+    }
     try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        `${API_BASE}/api/leaves`,
-        { type: form.type, from: form.from, to: form.to, description: form.description },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const payload = { type: form.type, from: form.from, to: form.to, description: form.description };
+      await api.post("/leaves", payload);
       toast.success("Leave request submitted");
       setShowForm(false);
       setForm({ type: "", from: "", to: "", description: "" });
       load();
     } catch (err) {
-      toast.error(err.response?.data?.error || "Failed to submit");
+      console.error("Leave submit failed — full error:", err);
+      console.error("Leave submit failed — response data:", err.response?.data);
+      console.error("Leave submit failed — response status:", err.response?.status);
+      const msg = err.response?.data?.error || err.response?.data?.message || err.message || "Unknown error";
+      toast.error(msg);
     }
   };
 
@@ -133,17 +129,21 @@ const LeavesList = () => {
         <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-4 space-y-3">
           <h3 className="font-semibold text-white">New Leave Request</h3>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1">
+              <div className="space-y-1">
               <label htmlFor="leave-type" className="text-xs text-slate-400">Leave Type</label>
-              <input
+              <select
                 id="leave-type"
                 name="type"
-                type="text"
-                placeholder="Leave Type"
                 value={form.type}
                 onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
                 className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-white text-sm w-full"
-              />
+              >
+                <option value="">Select type</option>
+                <option value="Annual Leave">Annual Leave</option>
+                <option value="Sick Leave">Sick Leave</option>
+                <option value="Casual Leave">Casual Leave</option>
+                <option value="unpaid">Unpaid</option>
+              </select>
             </div>
             <div className="space-y-1">
               <label htmlFor="leave-from" className="text-xs text-slate-400">From</label>
@@ -217,7 +217,7 @@ const LeavesList = () => {
               </tr>
             ) : (
               filtered.map((l, idx) => (
-                <tr key={l.id} className="border-t border-slate-700 hover:bg-slate-700/30">
+                <tr key={l.id ?? idx} className="border-t border-slate-700 hover:bg-slate-700/30">
                   <td className="px-4 py-3">{idx + 1}</td>
                   <td className="px-4 py-3">{l.empId}</td>
                   <td className="px-4 py-3 whitespace-nowrap">{l.name}</td>

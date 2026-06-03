@@ -1,10 +1,9 @@
 import { useState, useEffect, memo } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "../config/axios";
 import { useAuth } from "../context/authContext";
 import { Eye, EyeOff } from "lucide-react";
 import { getImageUrl } from "../utils/excel";
-import API_BASE from "../config/api.js";
 
 const ProfileEdit = ({ onDone }) => {
   const { user, updateAvatar, updateUser } = useAuth();
@@ -42,17 +41,14 @@ const ProfileEdit = ({ onDone }) => {
     try {
       const fd = new FormData();
       fd.append("avatar", file);
-      const token = localStorage.getItem("token");
-      const res = await axios.post(`${API_BASE}/api/auth/avatar`, fd, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await api.post("/auth/avatar", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       const url = getImageUrl(res.data?.avatarUrl) || URL.createObjectURL(file);
       updateAvatar(url);
       toast.success("Avatar updated!");
     } catch (err) {
+      console.error("Avatar upload failed:", err);
       toast.error(err.response?.data?.error || "Avatar upload failed");
     }
   };
@@ -64,13 +60,10 @@ const ProfileEdit = ({ onDone }) => {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
       let userId = user?._id;
       
       if (!userId) {
-        const profileRes = await axios.get(`${API_BASE}/api/auth/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const profileRes = await api.get("/auth/profile");
         if (!profileRes.data.user?._id) {
           throw new Error("User ID not found");
         }
@@ -86,9 +79,7 @@ const ProfileEdit = ({ onDone }) => {
         if (updates[k] === "" || updates[k] === null) delete updates[k];
       });
 
-      const res = await axios.put(`${API_BASE}/api/employees/${userId}`, updates, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.put(`/employees/${userId}`, updates);
 
       if (res.data.success) {
         setSuccess("Profile updated!");
@@ -97,6 +88,7 @@ const ProfileEdit = ({ onDone }) => {
         setTimeout(() => onDone?.(), 1500);
       }
     } catch (err) {
+      console.error("Failed to update profile:", err);
       const msg = err.response?.data?.error || "Failed to update profile";
       setError(msg);
       toast.error(msg);

@@ -1,9 +1,8 @@
 import { memo, useEffect, useMemo, useState, useCallback } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "../config/axios";
 import { useAuth } from "../context/authContext";
 import { SkeletonTable } from "./Skeleton";
-import API_BASE from "../config/api.js";
 
 const statusOptions = ["All", "Pending", "Approved", "Rejected"];
 
@@ -20,15 +19,12 @@ const ResignationWorkflow = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
       const params = {};
       if (statusFilter !== "All") params.status = statusFilter;
-      const res = await axios.get(`${API_BASE}/api/resignations`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params,
-      });
+      const res = await api.get("/resignations", { params });
       setRows(res.data.resignations || []);
-    } catch {
+    } catch (err) {
+      console.error("Failed to load resignations:", err);
       toast.error("Failed to load resignations");
     } finally {
       setLoading(false);
@@ -54,31 +50,25 @@ const ResignationWorkflow = () => {
       return;
     }
     try {
-      const token = localStorage.getItem("token");
-      await axios.post(`${API_BASE}/api/resignations`, form, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.post("/resignations", form);
       toast.success("Resignation submitted");
       setShowForm(false);
       setForm({ reason: "", lastWorkingDay: "" });
       load();
     } catch (err) {
+      console.error("Failed to submit resignation:", err);
       toast.error(err.response?.data?.error || "Failed to submit");
     }
   };
 
   const handleUpdateStatus = async (id, status) => {
     try {
-      const token = localStorage.getItem("token");
       const adminNotes = prompt(`Enter notes for ${status}:`);
-      await axios.put(
-        `${API_BASE}/api/resignations/${id}/status`,
-        { status, adminNotes },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put(`/resignations/${id}/status`, { status, adminNotes });
       toast.success(`Resignation ${status.toLowerCase()}`);
       load();
     } catch (err) {
+      console.error("Failed to update resignation:", err);
       toast.error(err.response?.data?.error || "Failed to update");
     }
   };
@@ -184,7 +174,7 @@ const ResignationWorkflow = () => {
               </tr>
             ) : (
               filtered.map((r, idx) => (
-                <tr key={r.id} className="border-t border-slate-700 hover:bg-slate-700/30">
+                <tr key={r.id ?? idx} className="border-t border-slate-700 hover:bg-slate-700/30">
                   <td className="px-4 py-3">{idx + 1}</td>
                   <td className="px-4 py-3">{r.employee_id}</td>
                   <td className="px-4 py-3 whitespace-nowrap">{r.user_name}</td>

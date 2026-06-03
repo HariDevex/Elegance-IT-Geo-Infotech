@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
-import API_BASE from "../config/api.js";
+import api from "../config/axios";
 
 const isGroupId = (id) => id && id.includes("-") && id.length === 36;
 
@@ -24,14 +23,12 @@ export default function useChat() {
     if (!userData._id) {
       const token = localStorage.getItem("token");
       if (token) {
-        axios.get(`${API_BASE}/api/auth/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }).then(res => {
+        api.get("/auth/profile").then(res => {
           if (res.data.user) {
             setUser(res.data.user);
             localStorage.setItem("user", JSON.stringify(res.data.user));
           }
-        }).catch(() => {});
+        }).catch(err => console.error("Failed to load profile:", err));
       }
     } else {
       setUser(userData);
@@ -43,11 +40,7 @@ export default function useChat() {
   useEffect(() => {
     const loadContacts = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get(`${API_BASE}/api/employees`, {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { limit: 500 },
-        });
+        const res = await api.get("/employees", { params: { limit: 500 } });
         const contacts = res.data.users
           ?.filter((u) => u._id !== userId)
           .map((u) => ({
@@ -62,8 +55,8 @@ export default function useChat() {
         if (!activeContact && contacts.length > 0) {
           setActiveContact(contacts[0].id);
         }
-      } catch {
-        /* empty */
+      } catch (err) {
+        console.error("Failed to load contacts:", err);
       } finally {
         setLoadingContacts(false);
       }
@@ -74,14 +67,11 @@ export default function useChat() {
   useEffect(() => {
     const loadGroups = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get(`${API_BASE}/api/chat/groups`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get("/chat/groups");
         if (res.data.success) {
           setCustomGroups(res.data.groups || []);
         }
-      } catch { /* empty */ }
+      } catch (err) { console.error("Failed to load groups:", err); }
     };
     loadGroups();
   }, []);
@@ -124,10 +114,8 @@ export default function useChat() {
     if (!contactId) return;
     setLoadingMessages(true);
     try {
-      const token = localStorage.getItem("token");
       const isGroup = isGroupId(contactId);
-      const res = await axios.get(`${API_BASE}/api/chat`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get("/chat", {
         params: { contactId, type: isGroup ? "group" : "direct" },
       });
       const msgs = res.data?.messages || [];
@@ -137,7 +125,7 @@ export default function useChat() {
         const lastMsg = msgs[msgs.length - 1];
         setLastMessages((prev) => ({ ...prev, [contactId]: lastMsg }));
       }
-    } catch { /* empty */ } finally {
+    } catch (err) { console.error("Failed to load messages:", err); } finally {
       setLoadingMessages(false);
     }
   }, [activeContact]);
@@ -185,7 +173,6 @@ export default function useChat() {
     }));
 
     try {
-      const token = localStorage.getItem("token");
       const formData = new FormData();
       formData.append("contactId", activeContact);
       formData.append("type", isGroup ? "group" : "direct");
@@ -193,25 +180,19 @@ export default function useChat() {
       if (attachment) {
         formData.append("file", attachment);
       }
-      await axios.post(
-        `${API_BASE}/api/chat`,
-        formData,
-        { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } }
-      );
+      await api.post("/chat", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       loadMessages(activeContact);
-    } catch {
+    } catch (err) {
+      console.error("Failed to send message:", err);
       toast.error("Failed to send message");
     }
   }, [activeContact, userId, user, loadMessages]);
 
   const handleCreateGroup = useCallback(async (name, description) => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.post(
-        `${API_BASE}/api/chat/groups`,
-        { name, description },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.post("/chat/groups", { name, description });
       if (res.data.success) {
         setCustomGroups((prev) => [res.data.group, ...prev]);
         toast.success("Group created!");

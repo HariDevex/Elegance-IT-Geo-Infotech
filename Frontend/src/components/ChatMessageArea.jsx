@@ -1,6 +1,6 @@
 import { useMemo, useRef, useEffect, memo } from "react";
 import { Search, X, Phone, Video, MoreVertical, CheckCheck } from "lucide-react";
-import chatBgLogo from "../assets/Logo/EGlogo.png";
+import chatBgLogo from "../assets/Logo/EG.png";
 
 const getInitials = (name) => {
   return (name || "?").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
@@ -140,7 +140,7 @@ const ChatMessageArea = ({
               }
               const showAvatar = !item.isYou && (groupedMessages[idx - 1]?.from?._id !== item.from?._id || groupedMessages[idx - 1]?.type === "date");
               return (
-                <div key={item._id} className={`flex mb-2 ${item.isYou ? "justify-end" : "justify-start"}`}>
+                <div key={item._id ?? idx} className={`flex mb-2 ${item.isYou ? "justify-end" : "justify-start"}`}>
                   <div className={`max-w-[65%] ${item.isYou ? "text-right" : "text-left"}`}>
                     {!item.isYou && showAvatar && (
                       <div className="text-xs text-gray-400 mb-1 ml-1">{item.from?.name}</div>

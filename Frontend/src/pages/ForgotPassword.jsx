@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import axios from "axios";
-import API_BASE from "../config/api.js";
+import api from "../config/axios";
 
 const ForgotPassword = () => {
   const [employeeId, setEmployeeId] = useState("");
@@ -17,7 +16,7 @@ const ForgotPassword = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE}/api/auth/forgot-password`, {
+      const response = await api.post("/auth/forgot-password", {
         employee_id: employeeId,
       });
 

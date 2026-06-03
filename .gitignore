@@ -8,13 +8,15 @@ build/
 .env.credentials
 .env.production.example
 
-# Uploads
+# Server data & uploads
+server/data/
 server/uploads/*
 !server/uploads/.gitkeep
 
 # Logs
 *.log
 npm-debug.log*
+server/logs/
 
 # OS
 .DS_Store
@@ -25,7 +27,9 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
-elegance.db
+
+# SSL certs (never commit private keys)
+server/ssl/
 
 # Test artifacts & reports
 reports/

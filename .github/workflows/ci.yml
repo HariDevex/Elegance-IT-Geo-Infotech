@@ -1,0 +1,80 @@
+name: CI
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: elegance_ems_test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:test@localhost:5432/elegance_ems_test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: test_secret_key_for_ci_pipeline_2024
+      PORT: 3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: |
+            server/package-lock.json
+            Frontend/package-lock.json
+
+      - name: Install server dependencies
+        run: npm ci
+        working-directory: server
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: Frontend
+
+      - name: Lint server
+        run: npm run lint
+        working-directory: server
+
+      - name: Run database migrations
+        run: npx knex migrate:latest --knexfile knexfile.js
+        working-directory: server
+
+      - name: Run server tests
+        run: npm test
+        working-directory: server
+
+      - name: Run frontend tests
+        run: npm test
+        working-directory: Frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: Frontend

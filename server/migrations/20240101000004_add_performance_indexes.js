@@ -30,9 +30,14 @@ export async function up(knex) {
   await knex.raw("CREATE INDEX IF NOT EXISTS idx_checkin_user_date ON checkin_checkout(user_id, created_at)");
 
   // Activity log table
+  const isSqlite = knex.client.config.client === 'better-sqlite3';
   await knex.schema.createTable("activity_logs", (table) => {
-    table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
-    table.uuid("user_id");
+    if (isSqlite) {
+      table.string("id", 36).primary();
+    } else {
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
+    }
+    table.uuid("user_id").references("id").inTable("users").onDelete("SET NULL");
     table.string("action").notNullable();
     table.string("module").notNullable();
     table.string("target_id");
@@ -42,8 +47,6 @@ export async function up(knex) {
     table.index(["user_id", "created_at"]);
     table.index(["module", "action"]);
   });
-  
-  await knex.schema.raw('ALTER TABLE activity_logs ADD CONSTRAINT activity_logs_user_id_foreign FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL');
 }
 
 /**

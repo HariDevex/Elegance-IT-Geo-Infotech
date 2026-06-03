@@ -5,19 +5,15 @@ import {
   listAnnouncements,
   deleteAnnouncement,
 } from "../controller/announcementController.js";
-import { validate, sanitizeInput } from "../middleware/validator.js";
+import { validate } from "../middleware/validate.js";
+import { sanitizeInput } from "../middleware/validator.js";
+import { announcementSchema } from "../modules/notifications/notifications.schema.js";
 
 const router = express.Router();
 
-const createAnnouncementSchema = {
-  title: { required: true, minLength: 3, maxLength: 200 },
-  message: { required: true, minLength: 10, maxLength: 5000 },
-  priority: { enum: ["low", "medium", "high"], maxLength: 20 },
-};
-
 router.use(authMiddleware);
 
-router.post("/", requireRole(ROLES.ROOT, ROLES.ADMIN), sanitizeInput, validate(createAnnouncementSchema), createAnnouncement);
+router.post("/", requireRole(ROLES.ROOT, ROLES.ADMIN), sanitizeInput, validate(announcementSchema), createAnnouncement);
 
 router.get("/", listAnnouncements);
 

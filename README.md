@@ -1,267 +1,303 @@
-# 🎯 Elegance EMS
+# Elegance EMS
 
-<div align="center">
-
-[![Elegance Logo](Frontend/src/assets/Logo/EG.png)](#)
-
-### Enterprise Employee Management System
+Enterprise Employee Management System — React 19 frontend, Express 5 API, PostgreSQL database.
 
 [![React](https://img.shields.io/badge/React-19-blue?style=flat&logo=react)](https://react.dev)
 [![Node.js](https://img.shields.io/badge/Node.js-22-green?style=flat&logo=nodedotjs)](https://nodejs.org)
 [![Express](https://img.shields.io/badge/Express-5-lightgrey?style=flat&logo=express)](https://expressjs.com)
-[![PostgreSQL](https://img.shields.io/badge/Supabase-PostgreSQL-blueviolet?style=flat&logo=postgresql)](https://supabase.com)
-[![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?style=flat&logo=vercel)](https://vercel.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blueviolet?style=flat&logo=postgresql)](https://postgresql.org)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](LICENSE)
 
-**A modern, secure, and scalable employee management system.**
+---
 
-[Live Demo](#) • [Features](#features) • [Tech Stack](#tech-stack) • [Getting Started](#getting-started)
+## Quick Start
 
-</div>
+```bash
+# Full environment (PostgreSQL + Redis + server)
+docker compose up --build
+
+# Apply migrations + seed data
+docker compose exec server npx knex migrate:latest --knexfile knexfile.js
+docker compose exec server node seeds/seed.js
+
+# Frontend (separate terminal)
+cd Frontend && npm install && npm run dev
+```
+
+- **Frontend**: http://localhost:5173
+- **API**: http://localhost:3000/api
+- **Metrics**: http://localhost:3000/metrics
+- **Health**: http://localhost:3000/health
 
 ---
 
-## 🚀 Live Production
+## Features
 
-| Service | URL |
-|---------|-----|
-| **Frontend** | [elegance-ems-haridevx.vercel.app](https://elegance-ems-haridevx.vercel.app) |
-| **Backend API** | [haridevx-eg-server.onrender.com](https://haridevx-eg-server.onrender.com) |
+### Authentication & Security
+- JWT with refresh tokens, 7-30 day sessions
+- Password complexity enforcement (8+ chars, upper/lower/digit/special)
+- 90-day password expiry for admin roles
+- Account lockout after 5 failed attempts (15 min)
+- Role hierarchy enforcement (root > admin > manager > teamlead > developer)
 
-### Default Login
-- **Email**: `rootharidevx@elegance.com`
-- **Password**: `Rootadmmin@$123`
+### Employee Management
+- CRUD with search, filter, pagination
+- Profile avatar upload
+- Excel export
 
----
+### Attendance
+- Auto check-in/out on login/logout
+- QR code check-in with time-limited tokens
+- Geolocation check-in with configurable office radius
+- Calendar dashboard
 
-<img width="1922" height="959" alt="it" src="https://github.com/user-attachments/assets/3555eb5c-d686-496e-8204-b28c2d30d165" />
----
-<img width="3444" height="3516" alt="diagram" src="https://github.com/user-attachments/assets/25d4eae6-68e8-4229-94f8-aec8bd878a0a" />
-
-## ✨ Features
-
-### 🔐 Authentication & Security
-- JWT-based authentication with refresh tokens (JWT_SECRET env var required)
-- Password complexity enforcement (8+ chars, uppercase, lowercase, numbers, special)
-- Password expiry after 90 days
-- Account lockout after 5 failed attempts (15-minute lockout)
-- Session management across devices
-- Remember Me with extended 30-day sessions
-- Role hierarchy enforcement — users cannot manage others with equal/higher role
-- Input sanitization skips password fields to preserve special characters
-
-### 👥 Employee Management
-- Complete CRUD operations
-- Search & filter by department, role, status
-- Export to Excel with one click
-- Profile management with avatar upload
-
-### 📊 Attendance Tracking
-- Auto check-in/check-out
-- Manual entry support
-- Calendar view with status tracking
-- Real-time attendance dashboard
-
-### 📝 Leave Management
-- Leave request & approval workflow
-- Balance tracking by leave type
+### Leave Management
+- Request/approval workflow
+- Balance tracking by leave type (Annual, Sick, Casual)
 - Overlap prevention
-- Leave predictions & forecasting
+- Email notifications (via Bull queue when Redis available)
 
-### 💰 Payroll & Salary
-- Payroll processing with allowances & deductions
-- Net pay calculation
+### Payroll & Salary
+- Payroll processing with allowances/deductions
 - Monthly salary slip generation
 - Download tracking
 
-### 📋 HR Workflows
-- Resignation submission & approval workflow
-- Onboarding task management with progress tracking
-- Checklist system for new hires
-- Email notifications for status changes
+### HR Workflows
+- Resignation submission/approval
+- Onboarding task manager with checklist
 
-### 📍 Advanced Attendance
-- QR code-based check-in (time-limited tokens)
-- Geolocation-based check-in with office radius enforcement
-- Real-time attendance dashboard with late detection
+### Internal Communication
+- Direct messaging + group chats via Socket.io
 
-### 💬 Internal Communication
-- Direct messaging
-- Group chats
-- Real-time updates with Socket.io
-- Emoji support
-
-### 📢 Additional Features
-- Company announcements with priority levels
-- Holiday management
-- Activity logs & audit trail
+### Notifications
 - In-app notifications
-- Dark-themed UI
-- Excel export
-- Responsive design
+- Announcements with priority levels
+- Holiday calendar
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 ### Frontend
-| Technology | Purpose |
-|------------|---------|
-| React 19 | UI Library |
-| Vite 8 | Build Tool |
+| Library | Use |
+|---------|-----|
+| React 19 | UI |
+| Vite 8 | Build |
 | Tailwind CSS 3.4 | Styling |
 | React Router 7 | Routing |
 | Recharts | Charts |
-| Axios | HTTP Client |
+| Axios | HTTP client |
 | Framer Motion | Animations |
-| Vitest | Unit Testing |
+| Vitest | Tests |
 
 ### Backend
-| Technology | Purpose |
-|------------|---------|
+| Library | Use |
+|---------|-----|
 | Node.js 22 | Runtime |
-| Express 5 | Framework |
-| Knex.js 3 | Query Builder |
-| PostgreSQL (Supabase) | Database |
-| JWT | Authentication |
-| Bcryptjs | Password Hashing |
-| Socket.io | Real-time |
-| Vitest | Unit Testing |
+| Express 5 | HTTP framework |
+| Knex.js 3 | SQL query builder |
+| PostgreSQL 16 | Database |
+| Redis 7 | Cache, rate limiter store, async queue |
+| Bull | Background job queue |
+| Socket.io | WebSocket |
+| JWT + bcryptjs | Auth |
+| Winston | Logging |
+| Zod | Request validation |
+| Speakeasy + QRCode | 2FA |
+| Passport (Google, GitHub) | OAuth |
+| Nodemailer | Email |
+| Prometheus client | Metrics |
+| Sentry | Error tracking |
+| Supabase JS | File storage |
+| Vitest | Tests |
 
-### Deployment
-| Service | Purpose |
-|---------|---------|
-| Vercel | Frontend Hosting |
-| Render | Backend API |
-| Supabase | PostgreSQL Database |
+### Infrastructure
+| Service | Use |
+|---------|-----|
+| Docker Compose | Local dev environment |
+| GitHub Actions | CI (lint, migrate, test, build) |
 
 ---
 
-## 🏁 Getting Started
+## Development
 
-### Prerequisites
-- Node.js 18+
-- npm or yarn
-- **PostgreSQL** (local or Docker) — SQLite is not compatible (UUID schema)
-
-### Local Development
+### With Docker (recommended)
 
 ```bash
-# Clone the repository
-git clone https://github.com/HariDevex/Elegance-IT-Geo-Infotech.git
-cd Elegance-IT-Geo-Infotech
+# Start PostgreSQL + Redis + API server
+docker compose up --build
 
-# Start PostgreSQL via Docker (optional but recommended)
-docker run -d --name elegance-pg -e POSTGRES_USER=elegance \
-  -e POSTGRES_PASSWORD=elegance -e POSTGRES_DB=elegance_ems \
-  -p 5432:5432 postgres:16
+# Run migrations + seed
+docker compose exec server sh -c "npx knex migrate:latest --knexfile knexfile.js && node seeds/seed.js"
+```
 
-# Backend Setup
+The server auto-runs migrations on start. To disable, remove `npx knex migrate:latest --knexfile knexfile.js &&` from the `CMD` in `server/Dockerfile`.
+
+### Without Docker (SQLite)
+
+```bash
 cd server
 npm install
-cp .env.example .env  # Set DATABASE_URL=postgresql://elegance:elegance@localhost:5432/elegance_ems
-npm run db:migrate
-node seeds/seed.js     # Run seed directly (not via knex)
-npm run dev            # Uses node --watch, starts on :3000
-
-# Frontend Setup (new terminal)
-cd ../Frontend
-npm install
-npm run dev            # Vite dev server on :8081, proxies /api to :3000
+cp .env.example .env
+# Edit .env: leave DATABASE_URL unset, ensure NODE_ENV=development
+npm run dev
 ```
 
-### Access Locally
-- **Frontend**: http://localhost:8081
-- **Backend API**: http://localhost:3000/api
+SQLite file is `server/data/elegance.db`. To switch to PostgreSQL, set `DATABASE_URL` in `.env`.
 
-### Default Login (Local Seed)
-- **Employee ID**: `EJB2026266` (randomly generated, check seed output)
-- **Password**: `admin123`
+### Environment Variables
 
-### Troubleshooting
+See `server/.env.example` for all options. Key variables:
 
-| Issue | Solution |
-|---|---|
-| `relation "users" does not exist` | Run `npm run db:migrate` before seeding |
-| `null value in column "id"` | Ensure PostgreSQL is used (not SQLite) |
-| Foreign key constraint errors | Ensure users are seeded before dependent tables |
-| Seed doesn't create user | Seed checks for existing root user; truncate `users` table to re-run |
-| Frontend can't reach API | Vite proxy forwards `/api` to `:3000`; ensure backend is running |
-| Port conflicts | Backend uses `:3000`, frontend uses `:8081` |
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DATABASE_URL` | prod | — | PostgreSQL connection string |
+| `JWT_SECRET` | yes | — | JWT signing key (min 32 chars) |
+| `REDIS_URL` | no | — | Redis connection string (adds caching, queue, persisted rate limits) |
+| `NODE_ENV` | no | `development` | `development`, `production`, or `test` |
+| `FRONTEND_URL` | no | `http://localhost:5173` | CORS origin, email links |
+| `SENTRY_DSN` | no | — | Sentry error tracking |
+| `SUPABASE_URL` | no | — | Supabase project URL (file storage) |
+| `SUPABASE_SERVICE_KEY` | no | — | Supabase service role key |
+| `SMTP_HOST` | no | — | SMTP server (email notifications) |
+| `LOG_LEVEL` | no | `info` | Winston log level |
+
+### Seed Data
+
+```bash
+docker compose exec server node seeds/seed.js
+```
+
+Creates a root user with credentials from env vars (defaults: `admin@elegance.com` / `admin123`). Employee ID is randomly generated — check seed output.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
-Elegance-IT-Geo-Infotech/
-├── server/                 # Express.js backend
-│   ├── config/            # Database configuration
-│   ├── controller/        # Business logic (incl. exportController)
-│   ├── middleware/        # Auth, validation, errors
-│   ├── migrations/        # Database schema
-│   ├── routes/           # API endpoints
-│   ├── seeds/            # Initial data
-│   ├── tests/            # Unit tests (60+ tests)
-│   ├── utils/            # Helpers (caching, logging)
-│   └── index.js          # Entry point
+├── server/                        # Express API
+│   ├── core/                      # Shared framework
+│   │   ├── errors.js              # Custom error classes
+│   │   ├── metrics.js             # Prometheus metrics
+│   │   ├── queue.js               # Bull job queue
+│   │   └── emailQueue.js          # Email processors
+│   ├── config/                    # DB, app config
+│   ├── controller/                # Route handlers
+│   ├── middleware/                # Auth, validation, errors
+│   │   ├── auth.js                # JWT verify + role checks
+│   │   ├── validate.js            # Zod validation middleware
+│   │   ├── validator.js           # Security (sanitize, length check)
+│   │   └── errorHandler.js        # Error handling + logging
+│   ├── migrations/                # Knex schema migrations
+│   ├── modules/                   # Zod schemas per feature
+│   │   ├── auth/
+│   │   ├── employees/
+│   │   ├── attendance/
+│   │   ├── leaves/
+│   │   ├── chat/
+│   │   ├── notifications/
+│   │   ├── hr/
+│   │   └── payroll/
+│   ├── routes/                    # API route definitions
+│   ├── seeds/                     # Initial data
+│   ├── tests/                     # 60 unit tests
+│   ├── utils/                     # Email, OAuth, Redis, logging
+│   ├── Dockerfile
+│   ├── knexfile.js
+│   └── index.js                   # Entry point
 │
-├── Frontend/              # React frontend
+├── Frontend/                      # React SPA
 │   ├── src/
-│   │   ├── components/   # Reusable UI (incl. PayrollManagement, SalarySlips, OnboardingSystem, ResignationWorkflow)
-│   │   ├── hooks/        # Custom React hooks
-│   │   ├── services/     # API service layer
-│   │   ├── pages/        # Route pages
-│   │   ├── context/      # React context (auth)
-│   │   └── assets/       # Static assets
-│   └── index.html
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── pages/
+│   │   ├── config/
+│   │   └── tests/                 # 13 component tests
+│   ├── Dockerfile
+│   └── vite.config.js
 │
-├── types/                 # TypeScript type definitions (.d.ts)
-├── docs/                  # Architecture & API documentation
-├── vercel.json           # Vercel config
-└── README.md
+├── docker-compose.yml             # PostgreSQL + Redis + server
+├── .github/workflows/ci.yml       # GitHub Actions
+└── types/                         # TypeScript definitions
 ```
 
 ---
 
-## 🌐 API Endpoints
+## API Endpoints
 
-| Module | Endpoint | Methods |
-|--------|----------|---------|
-| Auth | `/api/auth/*` | login, logout, profile, change-password, sessions |
-| Employees | `/api/employees` | CRUD operations |
-| Attendance | `/api/attendance` | CRUD, check-in/out |
-| My Attendance | `/api/attendance/my` | GET (self-service) |
+| Module | Path | Methods |
+|--------|------|---------|
+| Auth | `/api/auth/login` | POST |
+| Auth | `/api/auth/logout` | POST |
+| Auth | `/api/auth/refresh` | POST |
+| Auth | `/api/auth/change-password` | PUT |
+| Auth | `/api/auth/forgot-password` | POST |
+| Auth | `/api/auth/reset-password` | POST |
+| Auth | `/api/auth/profile` | GET |
+| Auth | `/api/auth/avatar` | POST |
+| Auth | `/api/auth/sessions` | GET, DELETE |
+| Auth | `/api/auth/login-logs` | GET |
+| Auth | `/api/auth/export/*` | GET (Excel) |
+| 2FA | `/api/auth/2fa/*` | Status, setup, verify |
+| OAuth | `/api/auth/oauth/*` | Google, GitHub |
+| Employees | `/api/employees` | CRUD |
+| Attendance | `/api/attendance` | CRUD, QR, Geo |
 | Leaves | `/api/leaves` | CRUD, approve/reject |
-| Leave Balance | `/api/leave-balance/*` | get/set balances, types |
-| Chat | `/api/chat` | messages, groups |
+| Leave Balance | `/api/leave-balance` | GET, PUT |
+| Chat | `/api/chat` | Messages, groups |
 | Notifications | `/api/notifications` | CRUD |
+| Announcements | `/api/announcements` | CRUD |
 | Holidays | `/api/holidays` | CRUD |
 | Activity Logs | `/api/activity-logs` | GET |
-| AI Features | `/api/ai/*` | insights, search, chat |
-| Payroll | `/api/payroll` | CRUD, process |
-| Salary Slips | `/api/salary-slips` | generate, list, download |
-| Resignations | `/api/resignations` | submit, list, approve/reject |
-| Onboarding | `/api/onboarding/*` | tasks, checklist |
-| Export Employees | `/api/auth/export/employees` | GET |
-| Export Attendance | `/api/auth/export/attendance` | GET |
-| Export Login Logs | `/api/auth/export/login-logs` | GET |
-| QR Check-in | `/api/attendance/generate-qr` | POST (generate QR token) |
-| QR Check-in | `/api/attendance/qr-checkin` | POST (scan & check in) |
-| Geo Check-in | `/api/attendance/geo-checkin` | POST (location-based) |
+| Payroll | `/api/payroll` | CRUD |
+| Salary Slips | `/api/salary-slips` | Generate, list |
+| Resignations | `/api/resignations` | Submit, approve |
+| Onboarding | `/api/onboarding/*` | Tasks, checklist |
+| Documents | `/api/documents` | CRUD, signed URLs |
+| Health | `/api/health`, `/health` | GET |
+| Metrics | `/metrics` | GET (Prometheus) |
 
 ---
 
-## 📝 License
+## CI/CD
 
-MIT License - see [LICENSE](LICENSE) file.
+Every push/PR to `main` or `develop` runs via `.github/workflows/ci.yml`:
+
+1. Spin up PostgreSQL 16 + Redis 7 (service containers)
+2. Install dependencies (server + frontend)
+3. Lint server
+4. Run database migrations
+5. Run server tests (60)
+6. Run frontend tests (13)
+7. Build frontend
 
 ---
 
-<div align="center">
+## Rate Limiting
 
-**© 2026 Elegance IT & Geo Synergy. All rights reserved.**
+| Scope | Limit (dev) | Limit (prod) | Window |
+|-------|-------------|--------------|--------|
+| Global API | 50,000 | 1,000 | 1 hour |
+| Sensitive (employees, leaves, announcements) | 10,000 | 200 | 1 hour |
+| Login / forgot-password | 20 | 20 | 15 min |
 
-Built with ❤️ by [HariDevex](https://github.com/HariDevex)
+Rate limits persist across restarts when Redis is configured.
 
-</div>
+---
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| `relation "users" does not exist` | Run `npx knex migrate:latest` before seeding |
+| Port conflict (3000) | Change `PORT` in `.env` |
+| Redis connection refused | Remove `REDIS_URL` from `.env` (graceful fallback) |
+| CANNOT GET /api/* | Ensure backend is running on port 3000 |
+| 429 Too Many Requests | Reduce request frequency or increase limits in `server/index.js` |
+| `"From date cannot be in the past"` | Use YYYY-MM-DD format for leave dates |
+
+---
+
+## License
+
+MIT License — see [LICENSE](LICENSE).

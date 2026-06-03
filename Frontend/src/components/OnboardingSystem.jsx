@@ -1,15 +1,14 @@
 import { memo, useEffect, useMemo, useState, useCallback } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "../config/axios";
 import { useAuth } from "../context/authContext";
 import { SkeletonTable, SkeletonList } from "./Skeleton";
-import API_BASE from "../config/api.js";
 
 const taskStatusOptions = ["All", "pending", "in_progress", "completed"];
 
 const OnboardingSystem = () => {
   const { user } = useAuth();
-  const canManage = ["root", "admin", "manager", "hr"].includes(user?.role);
+  const canManage = ["root", "admin", "manager"].includes(user?.role);
 
   const [tasks, setTasks] = useState([]);
   const [checklist, setChecklist] = useState([]);
@@ -25,24 +24,18 @@ const OnboardingSystem = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
       const taskParams = {};
       if (statusFilter !== "All") taskParams.status = statusFilter;
       if (!canManage) taskParams.userId = user?._id;
 
       const [taskRes, checklistRes] = await Promise.all([
-        axios.get(`${API_BASE}/api/onboarding/tasks`, {
-          headers: { Authorization: `Bearer ${token}` },
-          params: taskParams,
-        }),
-        axios.get(`${API_BASE}/api/onboarding/checklist`, {
-          headers: { Authorization: `Bearer ${token}` },
-          params: canManage ? {} : { userId: user?._id },
-        }),
+        api.get("/onboarding/tasks", { params: taskParams }),
+        api.get("/onboarding/checklist", { params: canManage ? {} : { userId: user?._id } }),
       ]);
       setTasks(taskRes.data.tasks || []);
       setChecklist(checklistRes.data.checklist || []);
-    } catch {
+    } catch (err) {
+      console.error("Failed to load onboarding data:", err);
       toast.error("Failed to load onboarding data");
     } finally {
       setLoading(false);
@@ -55,13 +48,10 @@ const OnboardingSystem = () => {
     if (!showTaskForm && !showChecklistForm) return;
     const fetchEmployees = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get(`${API_BASE}/api/employees`, {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { limit: 200 },
-        });
+        const res = await api.get("/employees", { params: { limit: 200 } });
         setEmployees(res.data.users || []);
-      } catch {
+      } catch (err) {
+        console.error("Failed to load employees:", err);
         toast.error("Failed to load employees");
       }
     };
@@ -85,30 +75,24 @@ const OnboardingSystem = () => {
       return;
     }
     try {
-      const token = localStorage.getItem("token");
-      await axios.post(`${API_BASE}/api/onboarding/tasks`, taskForm, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.post("/onboarding/tasks", taskForm);
       toast.success("Task created");
       setShowTaskForm(false);
       setTaskForm({ userId: "", taskName: "", description: "", assignedTo: "", dueDate: "" });
       load();
     } catch (err) {
+      console.error("Failed to create task:", err);
       toast.error(err.response?.data?.error || "Failed to create task");
     }
   };
 
   const handleUpdateTaskStatus = async (id, status) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        `${API_BASE}/api/onboarding/tasks/${id}/status`,
-        { status },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put(`/onboarding/tasks/${id}/status`, { status });
       toast.success("Task updated");
       load();
     } catch (err) {
+      console.error("Failed to update task:", err);
       toast.error(err.response?.data?.error || "Failed to update task");
     }
   };
@@ -116,13 +100,11 @@ const OnboardingSystem = () => {
   const handleDeleteTask = async (id) => {
     if (!confirm("Delete this task?")) return;
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`${API_BASE}/api/onboarding/tasks/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/onboarding/tasks/${id}`);
       toast.success("Task deleted");
       load();
     } catch (err) {
+      console.error("Failed to delete task:", err);
       toast.error(err.response?.data?.error || "Failed to delete");
     }
   };
@@ -133,30 +115,26 @@ const OnboardingSystem = () => {
       return;
     }
     try {
-      const token = localStorage.getItem("token");
-      await axios.post(`${API_BASE}/api/onboarding/checklist`, checklistForm, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.post("/onboarding/checklist", checklistForm);
       toast.success("Checklist item added");
       setShowChecklistForm(false);
       setChecklistForm({ userId: "", item: "" });
       load();
     } catch (err) {
+      console.error("Failed to add checklist item:", err);
       toast.error(err.response?.data?.error || "Failed to add checklist item");
     }
   };
 
   const handleToggleChecklist = async (id) => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.put(`${API_BASE}/api/onboarding/checklist/${id}/toggle`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.put(`/onboarding/checklist/${id}/toggle`);
       setChecklist((prev) =>
         prev.map((c) => (c.id === id ? { ...c, is_completed: res.data.is_completed } : c))
       );
       toast.success(res.data.is_completed ? "Checked" : "Unchecked");
     } catch (err) {
+      console.error("Failed to toggle checklist:", err);
       toast.error(err.response?.data?.error || "Failed to toggle");
     }
   };
@@ -302,7 +280,7 @@ const OnboardingSystem = () => {
                 </tr>
               ) : (
                 filteredTasks.map((t, idx) => (
-                  <tr key={t.id} className="border-t border-slate-700 hover:bg-slate-700/30">
+                  <tr key={t.id ?? idx} className="border-t border-slate-700 hover:bg-slate-700/30">
                     <td className="px-4 py-3">{idx + 1}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{t.user_name}</td>
                     <td className="px-4 py-3 font-medium">{t.task_name}</td>
@@ -402,9 +380,9 @@ const OnboardingSystem = () => {
             <p className="text-center text-slate-400 py-4">No checklist items</p>
           ) : (
             <div className="space-y-2">
-              {checklist.map((item) => (
+              {checklist.map((item, idx) => (
                 <div
-                  key={item.id}
+                  key={item.id ?? idx}
                   className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700/30 cursor-pointer"
                   onClick={() => handleToggleChecklist(item.id)}
                 >

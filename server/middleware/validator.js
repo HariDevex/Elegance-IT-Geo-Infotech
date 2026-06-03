@@ -3,7 +3,7 @@ import validator from "validator";
 const MAX_STRING_LENGTH = 500;
 const MAX_TEXTAREA_LENGTH = 2000;
 const SUSPICIOUS_PATTERNS = [
-  /[\u0000-\u001F\u007F-\u009F]/,
+  /[\x00-\x1F\x7F-\x9F]/,
   /[\uFDD0-\uFDEF]/,
   /[\uFFFE-\uFFFF]/,
 ];

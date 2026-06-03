@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "../config/axios";
 import { useAuth } from "../context/authContext";
 import { Skeleton, SkeletonTable } from "./Skeleton";
-import API_BASE from "../config/api.js";
 const statusOptions = ["All", "Pending", "Approved", "Rejected"];
 const leaveTypeOptions = [
   { value: "Annual Leave", label: "Annual Leave" },
@@ -23,10 +22,7 @@ const EmployeeLeaves = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE}/api/leaves`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/leaves");
       const mine = (res.data.leaves || []).filter((l) => l.user?._id === user?._id);
       setRows(
         mine.map((l) => ({
@@ -38,7 +34,8 @@ const EmployeeLeaves = () => {
           status: l.status,
         }))
       );
-    } catch {
+    } catch (err) {
+      console.error("Failed to load employee leaves:", err);
       toast.error("Failed to load leaves");
     } finally {
       setLoading(false);
@@ -64,11 +61,9 @@ const EmployeeLeaves = () => {
       return;
     }
     try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        `${API_BASE}/api/leaves`,
-        { type: form.type, from: form.from, to: form.to, description: form.description },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await api.post(
+        "/leaves",
+        { type: form.type, from: form.from, to: form.to, description: form.description }
       );
       toast.success("Leave request submitted!");
       setShowForm(false);

@@ -1,13 +1,12 @@
 import { memo, useEffect, useMemo, useState, useCallback } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "../config/axios";
 import { useAuth } from "../context/authContext";
 import { SkeletonTable } from "./Skeleton";
-import API_BASE from "../config/api.js";
 
 const SalarySlips = () => {
   const { user } = useAuth();
-  const canManage = ["root", "admin", "manager", "hr"].includes(user?.role);
+  const canManage = ["root", "admin", "manager"].includes(user?.role);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -16,16 +15,13 @@ const SalarySlips = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
       const params = {};
       if (yearFilter) params.year = yearFilter;
       if (!canManage) params.userId = user?._id;
-      const res = await axios.get(`${API_BASE}/api/salary-slips`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params,
-      });
+      const res = await api.get("/salary-slips", { params });
       setRows(res.data.slips || []);
-    } catch {
+    } catch (err) {
+      console.error("Failed to load salary slips:", err);
       toast.error("Failed to load salary slips");
     } finally {
       setLoading(false);
@@ -50,14 +46,50 @@ const SalarySlips = () => {
 
   const handleDownload = async (id) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.put(`${API_BASE}/api/salary-slips/${id}/download`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.put(`/salary-slips/${id}/download`);
       toast.success("Download recorded");
     } catch (err) {
+      console.error("Failed to record download:", err);
       toast.error(err.response?.data?.error || "Failed to record download");
     }
+  };
+
+  const renderRows = () => {
+    if (loading) {
+      return (
+        <tr>
+          <td colSpan={canManage ? 11 : 9} className="px-4 py-12 text-center">
+            <SkeletonTable rows={5} cols={canManage ? 11 : 9} />
+          </td>
+        </tr>
+      );
+    }
+    if (filtered.length === 0) {
+      return (
+        <tr>
+          <td colSpan={canManage ? 11 : 9} className="px-4 py-8 text-center text-slate-400">No salary slips found</td>
+        </tr>
+      );
+    }
+    return filtered.map((r, idx) => (
+      <tr key={r.id ?? idx} className="border-t border-slate-700 hover:bg-slate-700/30">
+        <td className="px-4 py-3">{idx + 1}</td>
+        {canManage && <td className="px-4 py-3">{r.employee_id}</td>}
+        {canManage && <td className="px-4 py-3 whitespace-nowrap">{r.user_name}</td>}
+        <td className="px-4 py-3">{r.month}</td>
+        <td className="px-4 py-3">{r.year}</td>
+        <td className="px-4 py-3">{r.basic_pay}</td>
+        <td className="px-4 py-3">{r.allowances}</td>
+        <td className="px-4 py-3">{r.deductions}</td>
+        <td className="px-4 py-3 font-semibold text-cyan-400">{r.net_pay}</td>
+        <td className="px-4 py-3 text-xs">{r.downloaded_at ? new Date(r.downloaded_at).toLocaleDateString() : "-"}</td>
+        <td className="px-4 py-3">
+          <button onClick={() => handleDownload(r.id)} className="text-cyan-400 hover:text-white text-xs">
+            Mark Downloaded
+          </button>
+        </td>
+      </tr>
+    ));
   };
 
   return (
@@ -108,37 +140,7 @@ const SalarySlips = () => {
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={canManage ? 11 : 8} className="px-4 py-12 text-center">
-                  <SkeletonTable rows={5} cols={canManage ? 11 : 8} />
-                </td>
-              </tr>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={canManage ? 11 : 8} className="px-4 py-8 text-center text-slate-400">No salary slips found</td>
-              </tr>
-            ) : (
-              filtered.map((r, idx) => (
-                <tr key={r.id} className="border-t border-slate-700 hover:bg-slate-700/30">
-                  <td className="px-4 py-3">{idx + 1}</td>
-                  {canManage && <td className="px-4 py-3">{r.employee_id}</td>}
-                  {canManage && <td className="px-4 py-3 whitespace-nowrap">{r.user_name}</td>}
-                  <td className="px-4 py-3">{r.month}</td>
-                  <td className="px-4 py-3">{r.year}</td>
-                  <td className="px-4 py-3">{r.basic_pay}</td>
-                  <td className="px-4 py-3">{r.allowances}</td>
-                  <td className="px-4 py-3">{r.deductions}</td>
-                  <td className="px-4 py-3 font-semibold text-cyan-400">{r.net_pay}</td>
-                  <td className="px-4 py-3 text-xs">{r.downloaded_at ? new Date(r.downloaded_at).toLocaleDateString() : "-"}</td>
-                  <td className="px-4 py-3">
-                    <button onClick={() => handleDownload(r.id)} className="text-cyan-400 hover:text-white text-xs">
-                      Mark Downloaded
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
+            {renderRows()}
           </tbody>
         </table>
       </div>

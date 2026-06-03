@@ -1,9 +1,8 @@
 import { useEffect, useState, memo } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "../config/axios";
 import { Download, LogIn, LogOut, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { Skeleton, SkeletonTable } from "./Skeleton";
-import API_BASE from "../config/api.js";
 
 const CheckInOut = () => {
   const [records, setRecords] = useState([]);
@@ -16,14 +15,12 @@ const CheckInOut = () => {
     setLoading(true);
     setError("");
     try {
-      const token = localStorage.getItem("token");
       const today = new Date();
       const todayStr = today.toISOString().split("T")[0];
       const firstDayOfYear = `${today.getFullYear()}-01-01`;
       const timestamp = Date.now();
 
-      const res = await axios.get(`${API_BASE}/api/attendance/my`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get("/attendance/my", {
         params: { from: firstDayOfYear, to: todayStr, _t: timestamp },
       });
 
@@ -50,11 +47,9 @@ const CheckInOut = () => {
   const handleCheckin = async () => {
     setChecking(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.post(
-        `${API_BASE}/api/checkin/checkin`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+      const res = await api.post(
+        "/checkin/checkin",
+        {}
       );
       if (res.data.success) {
         toast.success(`Checked in! (${res.data.todayCount}/${res.data.maxAllowed} today)`);
@@ -70,11 +65,9 @@ const CheckInOut = () => {
   const handleCheckout = async () => {
     setChecking(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.post(
-        `${API_BASE}/api/checkin/checkout`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+      const res = await api.post(
+        "/checkin/checkout",
+        {}
       );
       if (res.data.success) {
         toast.success(`Checked out! Duration: ${res.data.session?.durationMinutes} min`);
@@ -89,10 +82,7 @@ const CheckInOut = () => {
 
   const handleExport = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE}/api/checkin/export`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/checkin/export");
       if (res.data.success && res.data.data && res.data.data.length > 0) {
         toast.success("Excel downloaded!");
       } else {

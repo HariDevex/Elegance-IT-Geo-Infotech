@@ -6,6 +6,8 @@ import { uploadFile, deleteFile } from "../utils/supabaseStorage.js";
 import { sendPasswordResetEmail } from "../utils/emailService.js";
 import { config } from "../config/appConfig.js";
 import { logActivity } from "./activityLogController.js";
+import { addEmailJob } from "../core/queue.js";
+import "../core/emailQueue.js";
 import aiSecurity from "../utils/aiSecurity.js";
 import { blacklistToken } from "../utils/tokenBlacklist.js";
 
@@ -693,7 +695,15 @@ const forgotPassword = async (req, res, next) => {
         reset_token_expiry: resetTokenExpiry,
       });
 
-    await sendPasswordResetEmail(user.email, resetToken, user.name);
+    const emailQueued = await addEmailJob("password-reset", {
+      email: user.email,
+      resetToken,
+      userName: user.name,
+    });
+
+    if (!emailQueued) {
+      await sendPasswordResetEmail(user.email, resetToken, user.name);
+    }
 
     res.json({
       success: true,
@@ -914,8 +924,10 @@ const terminateSession = async (req, res, next) => {
 const terminateAllSessions = async (req, res, next) => {
   try {
     const userId = req.user.id;
+    const currentToken = req.headers.authorization?.replace("Bearer ", "");
+    const currentTokenHash = currentToken ? crypto.createHash("sha256").update(currentToken).digest("hex") : null;
 
-    await db("login_sessions")
+    const sessionsToTerminate = await db("login_sessions")
       .where("user_id", userId)
       .where("is_active", true)
       .where("token_hash", "!=", currentTokenHash)

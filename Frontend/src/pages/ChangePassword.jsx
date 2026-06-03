@@ -2,8 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
-import axios from "axios";
-import API_BASE from "../config/api.js";
+import api from "../config/axios";
 
 const ChangePassword = () => {
   const navigate = useNavigate();
@@ -40,10 +39,9 @@ const ChangePassword = () => {
 
     setLoading(true);
     try {
-      const response = await axios.put(
-        `${API_BASE}/api/auth/change-password`,
-        { oldPassword, newPassword },
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.put(
+        "/auth/change-password",
+        { oldPassword, newPassword }
       );
 
       if (response.data.success) {

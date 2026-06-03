@@ -13,8 +13,9 @@ const LeaveBalance = ({ compact = false }) => {
       if (res.data.success) {
         setBalances(res.data.balances || []);
       }
-    } catch { /* empty */ }
-    finally {
+    } catch (err) {
+      console.error("Failed to fetch leave balances:", err);
+    } finally {
       setLoading(false);
     }
   };
@@ -69,9 +70,9 @@ const LeaveBalance = ({ compact = false }) => {
   if (compact) {
     return (
       <div className="flex flex-wrap gap-2">
-        {balances.map((b) => (
+        {balances.map((b, idx) => (
           <div
-            key={b._id}
+            key={b._id ?? idx}
             className={`px-3 py-1.5 rounded-lg bg-gradient-to-r ${getLeaveColor(b.leaveType)} text-white text-xs font-medium flex items-center gap-1.5`}
           >
             <span>{getLeaveIcon(b.leaveType)}</span>
@@ -96,9 +97,9 @@ const LeaveBalance = ({ compact = false }) => {
             <p>No leave balances configured</p>
           </div>
         ) : (
-          balances.map((balance) => (
+          balances.map((balance, idx) => (
             <div
-              key={balance._id}
+              key={balance._id ?? idx}
               className="bg-slate-800/60 border border-slate-700 rounded-xl p-4 hover:border-slate-600 transition-colors"
             >
               <div className="flex items-center justify-between mb-3">

@@ -108,7 +108,7 @@ function validateInputLength(req, res, next) {
         }
         
         const SUSPICIOUS_PATTERNS = [
-          /[\u0000-\u001F\u007F-\u009F]/,
+          /[\x00-\x1F\x7F-\x9F]/,
           /[\uFDD0-\uFDEF]/,
         ];
         

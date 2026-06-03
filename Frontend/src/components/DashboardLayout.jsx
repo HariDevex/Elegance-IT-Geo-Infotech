@@ -1,6 +1,6 @@
 import { memo, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Edit2, Lock, LogOut, Menu, X, ChevronDown, Sparkles, Brain, Search } from "lucide-react";
+import { Edit2, Lock, LogOut, Menu, X, ChevronDown } from "lucide-react";
 import { useAuth } from "../context/authContext";
 import api from "../config/axios.js";
 import logoSrc from "../assets/Logo/EG.png";
@@ -20,27 +20,13 @@ const menuItems = [
   { title: "Check In/Out", key: "checkin", roles: ["root", "admin", "manager"] },
   { title: "Chat", key: "chat" },
   { title: "Holidays", key: "holidays" },
-  { title: "Documents", key: "documents" },
-  { title: "Payroll", key: "payroll", children: [
-    { title: "Process Payroll", key: "payrollProcess", roles: ["root", "admin", "manager"] },
-    { title: "Salary Slips", key: "salarySlips" },
-  ]},
-  { title: "HR", key: "hr", roles: ["root", "admin", "manager", "hr"], children: [
-    { title: "Resignations", key: "resignations" },
-    { title: "Onboarding", key: "onboarding" },
-  ]},
   { title: "Login Logs", key: "loginLogs", roles: ["root", "admin", "manager"] },
   { title: "Activity Logs", key: "activityLogs", roles: ["root", "admin"] },
   { title: "Announcements", key: "announcements", children: [
-    { title: "Add New", key: "addAnnouncement", roles: ["root", "admin", "manager", "hr", "teamlead"] },
+    { title: "Add New", key: "addAnnouncement", roles: ["root", "admin", "manager", "teamlead"] },
     { title: "View All", key: "announcementsList" },
   ]},
-  { title: "AI Features", key: "ai", icon: "sparkles", roles: ["root", "admin", "manager", "hr"], children: [
-    { title: "Smart Search", key: "aiSearch", icon: "search", roles: ["root", "admin", "manager", "hr"] },
-    { title: "Attendance Insights", key: "aiAttendance", icon: "brain", roles: ["root", "admin", "manager", "hr"] },
-    { title: "Leave Prediction", key: "aiLeave", roles: ["root", "admin", "manager"] },
-  ]},
-  { title: "Security", key: "security", roles: ["root", "admin", "manager", "hr"], children: [
+  { title: "Security", key: "security", roles: ["root", "admin", "manager"], children: [
     { title: "Active Sessions", key: "sessions" },
     { title: "Password Reset", key: "passwordReset", roles: ["root"] },
   ]},
@@ -205,12 +191,7 @@ const DashboardLayout = ({
                       color: openMenus[item.key] ? 'var(--color-primary)' : 'var(--color-text-secondary)'
                     }}
                   >
-                    <span className="flex items-center gap-2">
-                      {item.icon === 'sparkles' && <Sparkles size={16} />}
-                      {item.icon === 'brain' && <Brain size={16} />}
-                      {item.icon === 'search' && <Search size={16} />}
-                      {item.title}
-                    </span>
+                    <span>{item.title}</span>
                     <ChevronDown size={16} className={`transition-transform ${openMenus[item.key] ? "rotate-180" : ""}`} />
                   </button>
                   {openMenus[item.key] && filteredChildren(item.children).length > 0 && (

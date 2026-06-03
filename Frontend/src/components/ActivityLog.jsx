@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, memo } from "react";
-import axios from "axios";
+import api from "../config/axios";
 import toast from "react-hot-toast";
 import { Activity, Filter } from "lucide-react";
 import { Skeleton } from "./Skeleton";
-import API_BASE from "../config/api.js";
 
 const ActivityLog = () => {
   const [logs, setLogs] = useState([]);
@@ -14,13 +13,11 @@ const ActivityLog = () => {
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
       const params = { page: pagination.page, limit: 50 };
       if (filters.module) params.module = filters.module;
       if (filters.action) params.action = filters.action;
 
-      const res = await axios.get(`${API_BASE}/api/activity-logs`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get("/activity-logs", {
         params,
       });
 
@@ -32,7 +29,8 @@ const ActivityLog = () => {
           pages: res.data.pagination.pages,
         });
       }
-    } catch {
+    } catch (err) {
+      console.error("Failed to fetch activity logs:", err);
       toast.error("Failed to fetch activity logs");
     } finally {
       setLoading(false);
@@ -129,9 +127,9 @@ const ActivityLog = () => {
       ) : (
         <>
           <div className="space-y-2">
-            {logs.map((log) => (
+            {logs.map((log, idx) => (
               <div
-                key={log._id}
+                key={log._id ?? idx}
                 className="flex items-center justify-between p-3 rounded-xl bg-slate-800/60 border border-slate-700 hover:border-slate-600 transition-colors"
               >
                 <div className="flex items-center gap-3">

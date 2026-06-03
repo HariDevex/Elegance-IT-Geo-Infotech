@@ -14,14 +14,9 @@ import DashboardHome from "../components/DashboardHome";
 import HolidayManagement from "../components/HolidayManagement";
 import LeaveCalendar from "../components/LeaveCalendar";
 import ActivityLog from "../components/ActivityLog";
-import PayrollManagement from "../components/PayrollManagement";
-import SalarySlips from "../components/SalarySlips";
-import ResignationWorkflow from "../components/ResignationWorkflow";
-import OnboardingSystem from "../components/OnboardingSystem";
 import CheckInOut from "../components/CheckInOut";
 import LoginLogs from "../components/LoginLogs";
 import SessionManagement from "../components/SessionManagement";
-import FileExplorer from "../components/FileExplorer";
 import { 
   SkeletonDashboardHome, 
   SkeletonEmployeesList, 
@@ -82,11 +77,11 @@ const AdminDashboard = () => {
             developers: employees.filter((e) => e.role === "developer").length,
             teamleads: employees.filter((e) => e.role === "teamlead").length,
             managers: employees.filter((e) => ["admin", "manager"].includes(e.role)).length,
-            hr: employees.filter((e) => e.role === "hr").length,
           },
         });
-      } catch { /* empty */ }
-    finally {
+      } catch (err) {
+        console.error("Failed to fetch admin stats:", err);
+      } finally {
         setLoadingStats(false);
       }
     };
@@ -111,14 +106,9 @@ const AdminDashboard = () => {
       announcementsList: <SkeletonAnnouncementsList />,
       addAnnouncement: <SkeletonForm />,
       activityLogs: <SkeletonTable rows={8} cols={5} />,
-      payrollProcess: <SkeletonTable rows={5} cols={10} />,
-      salarySlips: <SkeletonTable rows={5} cols={8} />,
-      resignations: <SkeletonTable rows={5} cols={9} />,
-      onboarding: <SkeletonTable rows={5} cols={8} />,
       loginLogs: <SkeletonTable rows={8} cols={4} />,
       sessions: <SkeletonList items={5} />,
       checkin: <SkeletonStatCard />,
-      documents: <SkeletonTable rows={6} cols={4} />,
     };
 
     if (loading) {
@@ -172,14 +162,6 @@ const AdminDashboard = () => {
         return <LeaveCalendar />;
       case "activityLogs":
         return <ActivityLog />;
-      case "payrollProcess":
-        return <PayrollManagement />;
-      case "salarySlips":
-        return <SalarySlips />;
-      case "resignations":
-        return <ResignationWorkflow />;
-      case "onboarding":
-        return <OnboardingSystem />;
       case "attendance":
         return <AttendanceList />;
       case "checkin":
@@ -192,8 +174,6 @@ const AdminDashboard = () => {
         return <LoginLogs />;
       case "sessions":
         return <SessionManagement />;
-      case "documents":
-        return <FileExplorer />;
       default:
         return <DashboardHome stats={stats} loading={loadingStats} />;
     }

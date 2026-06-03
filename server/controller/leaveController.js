@@ -27,8 +27,10 @@ const createLeave = async (req, res, next) => {
       });
     }
 
-    const fromDate = new Date(from);
-    const toDate = new Date(to);
+    const [fromY, fromM, fromD] = from.split('-').map(Number);
+    const [toY, toM, toD] = to.split('-').map(Number);
+    const fromDate = new Date(fromY, fromM - 1, fromD);
+    const toDate = new Date(toY, toM - 1, toD);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 

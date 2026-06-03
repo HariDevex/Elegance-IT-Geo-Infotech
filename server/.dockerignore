@@ -1,0 +1,10 @@
+node_modules
+.env
+data/
+logs/
+uploads/*
+!uploads/.gitkeep
+ssl/
+*.db
+*.log
+.git

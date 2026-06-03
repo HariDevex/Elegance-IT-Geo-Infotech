@@ -74,12 +74,12 @@ const RootDashboard = () => {
             developers: employees.filter((e) => e.role === "developer").length,
             teamleads: employees.filter((e) => e.role === "teamlead").length,
             admins: employees.filter((e) => ["admin", "manager"].includes(e.role)).length,
-            hr: employees.filter((e) => e.role === "hr").length,
             root: employees.filter((e) => e.role === "root").length,
           },
         });
-      } catch { /* empty */ }
-    finally {
+      } catch (err) {
+        console.error("Failed to fetch root stats:", err);
+      } finally {
         setLoadingStats(false);
       }
     };

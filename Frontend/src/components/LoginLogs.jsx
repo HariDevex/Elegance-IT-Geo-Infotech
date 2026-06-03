@@ -1,10 +1,9 @@
 import { useEffect, useState, useCallback, memo } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "../config/axios";
 import { Download } from "lucide-react";
 import { exportToExcel } from "../utils/excel";
 import { Skeleton, SkeletonTable } from "./Skeleton";
-import API_BASE from "../config/api.js";
 
 const LoginLogs = () => {
   const [logs, setLogs] = useState([]);
@@ -14,15 +13,14 @@ const LoginLogs = () => {
   const loadLogs = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE}/api/auth/login-logs`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get("/auth/login-logs", {
         params: filter.status ? { status: filter.status } : {},
       });
       if (res.data.success) {
         setLogs(res.data.logs || []);
       }
-    } catch {
+    } catch (err) {
+      console.error("Failed to load login logs:", err);
       toast.error("Failed to load logs");
     } finally {
       setLoading(false);
@@ -35,9 +33,7 @@ const LoginLogs = () => {
 
   const handleExport = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE}/api/auth/export/login-logs`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get("/auth/export/login-logs", {
         params: filter.status ? { status: filter.status } : {},
       });
       if (res.data.success && res.data.data.length > 0) {
@@ -46,7 +42,8 @@ const LoginLogs = () => {
       } else {
         toast.error("No data to export");
       }
-    } catch {
+    } catch (err) {
+      console.error("Export failed:", err);
       toast.error("Export failed");
     }
   };
@@ -107,8 +104,8 @@ const LoginLogs = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredLogs.map((log) => (
-                <tr key={log._id} className="border-t border-slate-700 hover:bg-slate-700/30">
+              {filteredLogs.map((log, idx) => (
+                <tr key={log._id ?? idx} className="border-t border-slate-700 hover:bg-slate-700/30">
                   <td className="px-4 py-3 whitespace-nowrap">{log.user?.name || "-"}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">
                     {log.user?.email || "-"}

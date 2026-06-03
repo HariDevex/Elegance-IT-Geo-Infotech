@@ -5,16 +5,12 @@ import ErrorBoundary from "../components/ErrorBoundary";
 import ChatWindow from "../components/ChatWindow";
 import EmployeeLeaves from "../components/EmployeeLeaves";
 import EmployeeAttendanceView from "../components/EmployeeAttendanceView";
-import EmployeeAnnouncements from "../components/EmployeeAnnouncements";
+import AnnouncementsList from "../components/AnnouncementsList";
 import ProfileEdit from "../components/ProfileEdit";
 import EmployeeHome from "../components/EmployeeHome";
 import CheckInOut from "../components/CheckInOut";
 import HolidayManagement from "../components/HolidayManagement";
 import LeaveCalendar from "../components/LeaveCalendar";
-import SalarySlips from "../components/SalarySlips";
-import ResignationWorkflow from "../components/ResignationWorkflow";
-import OnboardingSystem from "../components/OnboardingSystem";
-import FileExplorer from "../components/FileExplorer";
 import { 
   SkeletonDashboardHome, 
   SkeletonLeavesList,
@@ -169,13 +165,9 @@ const EmployeeDashboard = () => {
       attendance: <SkeletonAttendance />,
       profileEdit: <SkeletonProfileEdit />,
       holidays: <SkeletonHolidays />,
-      salarySlips: <SkeletonTable rows={5} cols={8} />,
-      resignations: <SkeletonTable rows={5} cols={8} />,
-      onboarding: <SkeletonTable rows={5} cols={8} />,
       announcementsList: <SkeletonAnnouncementsList />,
       announcements: <SkeletonAnnouncementsList />,
       checkin: <SkeletonStatCard />,
-      documents: <SkeletonTable rows={6} cols={4} />,
     };
     return skeletonMap[view] || <SkeletonDashboardHome />;
   };
@@ -191,15 +183,6 @@ const EmployeeDashboard = () => {
       case "leaves":
         Component = <EmployeeLeaves />;
         break;
-      case "salarySlips":
-        Component = <SalarySlips />;
-        break;
-      case "resignations":
-        Component = <ResignationWorkflow />;
-        break;
-      case "onboarding":
-        Component = <OnboardingSystem />;
-        break;
       case "attendance":
         Component = <EmployeeAttendanceView />;
         break;
@@ -208,16 +191,13 @@ const EmployeeDashboard = () => {
         break;
       case "announcementsList":
       case "announcements":
-        Component = <EmployeeAnnouncements />;
+        Component = <AnnouncementsList />;
         break;
       case "holidays":
         Component = <HolidayManagement />;
         break;
       case "leaveCalendar":
         Component = <LeaveCalendar />;
-        break;
-      case "documents":
-        Component = <FileExplorer />;
         break;
       default:
         Component = <EmployeeHome stats={stats} loading={loading} />;

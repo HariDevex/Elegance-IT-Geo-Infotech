@@ -10,13 +10,6 @@ const generateSecret = () => {
   });
 };
 
-const generateTOTP = (secret) => {
-  return speakeasy.totp({
-    secret: secret,
-    encoding: "base32",
-  });
-};
-
 const verifyTOTP = (token, secret) => {
   return speakeasy.totp.verify({
     secret: secret,
@@ -205,5 +198,4 @@ export {
   disable2FA,
   verify2FALogin,
   get2FAStatus,
-  verifyTOTP,
 };

@@ -155,27 +155,4 @@ export const filterSchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
-export const validate = (schema) => (req, res, next) => {
-  try {
-    const result = schema.safeParse({
-      ...req.body,
-      ...req.query,
-      ...req.params,
-    });
-    if (!result.success) {
-      const errors = result.error.errors.map((e) => ({
-        field: e.path.join("."),
-        message: e.message,
-      }));
-      return res.status(400).json({
-        success: false,
-        error: "Validation failed",
-        details: errors,
-      });
-    }
-    req.validated = result.data;
-    next();
-  } catch (error) {
-    next(error);
-  }
-};
+

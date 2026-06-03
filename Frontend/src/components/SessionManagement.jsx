@@ -1,9 +1,8 @@
 import { useState, useEffect, memo } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "../config/axios";
 import { Monitor, Smartphone, Globe, Clock, Trash2, LogOut, Shield, AlertCircle } from "lucide-react";
 import { Skeleton } from "./Skeleton";
-import API_BASE from "../config/api.js";
 
 const SessionManagement = () => {
   const [sessions, setSessions] = useState([]);
@@ -13,12 +12,10 @@ const SessionManagement = () => {
   const fetchSessions = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE}/api/auth/sessions`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/auth/sessions");
       setSessions(res.data.sessions || []);
-    } catch {
+    } catch (err) {
+      console.error("Failed to load sessions:", err);
       toast.error("Failed to load sessions");
     } finally {
       setLoading(false);
@@ -32,15 +29,13 @@ const SessionManagement = () => {
   const terminateSession = async (sessionId) => {
     setTerminating(sessionId);
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.delete(`${API_BASE}/api/auth/sessions/${sessionId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.delete(`/auth/sessions/${sessionId}`);
       if (res.data.success) {
         toast.success("Session terminated");
         fetchSessions();
       }
-    } catch {
+    } catch (err) {
+      console.error("Failed to terminate session:", err);
       toast.error("Failed to terminate session");
     } finally {
       setTerminating(null);
@@ -52,15 +47,13 @@ const SessionManagement = () => {
     
     setTerminating("all");
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.delete(`${API_BASE}/api/auth/sessions`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.delete("/auth/sessions");
       if (res.data.success) {
         toast.success("All other sessions terminated");
         fetchSessions();
       }
-    } catch {
+    } catch (err) {
+      console.error("Failed to terminate sessions:", err);
       toast.error("Failed to terminate sessions");
     } finally {
       setTerminating(null);
@@ -142,8 +135,8 @@ const SessionManagement = () => {
                   </td>
                 </tr>
               ) : (
-                sessions.map((session) => (
-                  <tr key={session._id} className="border-b border-slate-700/50 hover:bg-slate-700/30">
+                sessions.map((session, idx) => (
+                  <tr key={session._id ?? idx} className="border-b border-slate-700/50 hover:bg-slate-700/30">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {getDeviceIcon(session.deviceType)}
