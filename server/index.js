@@ -121,6 +121,7 @@ const corsOrigins = [
   "https://192.168.1.10:8081",
   "https://elegance-ems-haridevx.vercel.app",
   "https://elegance-it-geo-infotech.vercel.app",
+  "https://haridevx-eg-server.onrender.com",
 ].filter(Boolean);
 
 app.use(
