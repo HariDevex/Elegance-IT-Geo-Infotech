@@ -24,7 +24,6 @@ COPY --from=builder /app/routes ./routes
 COPY --from=builder /app/utils ./utils
 COPY --from=builder /app/core ./core
 COPY --from=builder /app/modules ./modules
-COPY --from=builder /app/seeds ./seeds
 COPY --from=builder /app/index.js ./
 COPY --from=builder /app/.eslintrc.json ./
 
@@ -38,4 +37,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
 
 ENTRYPOINT ["tini", "--"]
 
-CMD ["sh", "-c", "npx knex migrate:latest --knexfile knexfile.js && node seeds/seed.js && node index.js"]
+CMD ["sh", "-c", "npx knex migrate:latest --knexfile knexfile.js && node index.js"]
