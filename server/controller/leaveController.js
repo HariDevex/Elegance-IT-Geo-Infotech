@@ -5,6 +5,8 @@ import { logActivity } from "./activityLogController.js";
 import { invalidateCache } from "../utils/responseCache.js";
 import crypto from "crypto";
 
+import { getProjectToday } from "../utils/dateUtils.js";
+
 const canApprove = (role) => ["root", "admin", "manager", "teamlead", "hr"].includes(role);
 
 const VALID_LEAVE_TYPES = ["Annual Leave", "Sick Leave", "Casual Leave", "unpaid"];
@@ -45,8 +47,7 @@ const createLeave = async (req, res, next) => {
     const [toY, toM, toD] = to.split('-').map(Number);
     const fromDate = new Date(fromY, fromM - 1, fromD);
     const toDate = new Date(toY, toM - 1, toD);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = getProjectToday();
 
     if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
       return res.status(400).json({

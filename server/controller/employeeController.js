@@ -100,12 +100,27 @@ const createEmployee = async (req, res, next) => {
       branchDepartment = branch.charAt(0).toUpperCase() + branch.slice(1);
     }
 
+    // Check if email exists (excluding soft-deleted)
+    let finalEmail = (email && typeof email === 'string' && email.trim()) ? email.toLowerCase().trim() : null;
+    if (!finalEmail) {
+      // Fallback for optional email to satisfy database NOT NULL/UNIQUE constraints
+      finalEmail = `${finalEmployeeId.toLowerCase()}@elegance.local`;
+    }
+
+    const existingEmail = await db("users").where("email", finalEmail).where("is_deleted", false).first();
+    if (existingEmail) {
+      return res.status(409).json({
+        success: false,
+        error: "Email already exists",
+      });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 12);
     const profileImage = req.file ? await uploadFile(req.file, "profiles") : null;
 
     await db("users").insert({
       name,
-      email: email ? email.toLowerCase() : null,
+      email: finalEmail,
       password: hashedPassword,
       role,
       employee_id: finalEmployeeId,

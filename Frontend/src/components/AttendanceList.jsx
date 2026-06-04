@@ -6,18 +6,21 @@ import { useAuth } from "../context/authContext";
 import { exportToExcel, getImageUrl } from "../utils/excel";
 import { Skeleton, SkeletonTable } from "./Skeleton";
 
+import { getProjectDateStr } from "../utils/dateUtils.js";
+
 const AttendanceList = () => {
   const [rows, setRows] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(() => getProjectDateStr());
   const [exportFrom, setExportFrom] = useState(() => {
     const d = new Date();
-    d.setDate(1);
-    return d.toISOString().split("T")[0];
+    // Use project-aware date components
+    const [year, month] = getProjectDateStr(d).split("-").map(Number);
+    return `${year}-${String(month).padStart(2, "0")}-01`;
   });
-  const [exportTo, setExportTo] = useState(() => new Date().toISOString().split("T")[0]);
+  const [exportTo, setExportTo] = useState(() => getProjectDateStr());
   const [exportEmployee, setExportEmployee] = useState("all");
   const { user } = useAuth();
   const canUpdate = ["admin", "manager", "root"].includes(user?.role);

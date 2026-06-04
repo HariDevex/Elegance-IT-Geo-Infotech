@@ -27,6 +27,8 @@ import {
 import api from "../config/axios.js";
 
 
+import { getProjectDateStr } from "../utils/dateUtils.js";
+
 const EmployeeDashboard = () => {
   const { user } = useAuth();
   const [currentView, setCurrentView] = useState("dashboard");
@@ -38,17 +40,37 @@ const EmployeeDashboard = () => {
     const fetchStats = async () => {
       try {
         const today = new Date();
-        const todayStr = today.toISOString().split("T")[0];
+        const todayStr = getProjectDateStr(today);
         const timestamp = Date.now();
         
-        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0];
-        const lastMonthLastDay = new Date(today.getFullYear(), today.getMonth(), 0).toISOString().split("T")[0];
-        const lastMonthFirstDay = new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().split("T")[0];
-        const twoMonthsAgoFirstDay = new Date(today.getFullYear(), today.getMonth() - 2, 1).toISOString().split("T")[0];
+        // Use a base date in the project timezone for month calculations
+        // For simplicity, we can use the project date string parts
+        const [year, month] = todayStr.split("-").map(Number);
+        
+        const firstDayOfMonth = `${year}-${String(month).padStart(2, "0")}-01`;
+        
+        // Calculate last month
+        let lmYear = year;
+        let lmMonth = month - 1;
+        if (lmMonth === 0) {
+          lmMonth = 12;
+          lmYear -= 1;
+        }
+        const lastMonthFirstDay = `${lmYear}-${String(lmMonth).padStart(2, "0")}-01`;
+        const lastMonthLastDay = new Date(year, month - 1, 0).toISOString().split("T")[0]; // This is mostly fine for boundaries
+        
+        // Two months ago
+        let tmaYear = lmYear;
+        let tmaMonth = lmMonth - 1;
+        if (tmaMonth === 0) {
+          tmaMonth = 12;
+          tmaYear -= 1;
+        }
+        const twoMonthsAgoFirstDay = `${tmaYear}-${String(tmaMonth).padStart(2, "0")}-01`;
         
         const startOfWeek = new Date(today);
         startOfWeek.setDate(today.getDate() - today.getDay() + 1);
-        const weekStartStr = startOfWeek.toISOString().split("T")[0];
+        const weekStartStr = getProjectDateStr(startOfWeek);
 
         const [leaveRes, attRes, lastMonthAttRes, weekAttRes, threeMonthsAttRes] = await Promise.all([
           api.get(`/leaves?userId=${user?._id}&_t=${timestamp}`),

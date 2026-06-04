@@ -1,8 +1,14 @@
+import logger from "../utils/logger.js";
+
 export const validate = (schema, source = "body") => {
   return (req, res, next) => {
     try {
       const result = schema.safeParse(req[source]);
       if (!result.success) {
+        logger.error(`Validation failed for ${req.originalUrl}`, {
+          issues: result.error.errors,
+          body: req.body,
+        });
         const issues = result.error.errors || result.error.issues || [];
         const details = issues.map((e) => ({
           field: e.path.join("."),

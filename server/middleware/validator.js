@@ -86,6 +86,7 @@ export const validateInputLength = (req, res, next) => {
   if (!req.body || typeof req.body !== 'object') return next();
   const error = checkLength(req.body);
   if (error) {
+    console.error("Input length validation failed:", error, "Body:", req.body);
     return res.status(400).json({
       success: false,
       error,

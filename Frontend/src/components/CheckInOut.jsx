@@ -5,6 +5,8 @@ import { Download, LogIn, LogOut, Clock, CheckCircle, AlertCircle, Users, User }
 import { Skeleton, SkeletonTable } from "./Skeleton";
 import { useAuth } from "../context/authContext";
 
+import { getProjectDateStr } from "../utils/dateUtils";
+
 const CheckInOut = () => {
   const { user } = useAuth();
   const isAdmin = ["root", "admin", "manager"].includes(user?.role);
@@ -21,7 +23,7 @@ const CheckInOut = () => {
     setError("");
     try {
       const today = new Date();
-      const todayStr = today.toISOString().split("T")[0];
+      const todayStr = getProjectDateStr(today);
       const firstDayOfYear = `${today.getFullYear()}-01-01`;
       const timestamp = Date.now();
 
@@ -106,7 +108,7 @@ const CheckInOut = () => {
         const url = URL.createObjectURL(res.data);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `checkin-export-${new Date().toISOString().split("T")[0]}.xlsx`;
+        a.download = `checkin-export-${getProjectDateStr()}.xlsx`;
         document.body.appendChild(a);
         a.click();
         a.remove();

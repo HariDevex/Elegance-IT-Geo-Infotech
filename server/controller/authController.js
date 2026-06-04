@@ -11,9 +11,11 @@ import "../core/emailQueue.js";
 import aiSecurity from "../utils/aiSecurity.js";
 import { blacklistToken } from "../utils/tokenBlacklist.js";
 
+import { getProjectDateStr } from "../utils/dateUtils.js";
+
 const createOrUpdateAttendanceOnLogin = async (userId, action = "checkin") => {
   try {
-    const today = new Date().toISOString().split("T")[0];
+    const today = getProjectDateStr();
     const now = new Date();
 
     try {

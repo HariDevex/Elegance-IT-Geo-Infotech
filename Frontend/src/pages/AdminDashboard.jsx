@@ -37,6 +37,8 @@ import {
 import api from "../config/axios.js";
 
 
+import { getProjectDateStr } from "../utils/dateUtils.js";
+
 const AdminDashboard = () => {
   const [currentView, setCurrentView] = useState("dashboard");
   const [chatOpen, setChatOpen] = useState(false);
@@ -54,7 +56,7 @@ const AdminDashboard = () => {
           }),
           api.get(`/leaves?status=Pending`),
           api.get(`/attendance`, {
-            params: { date: new Date().toISOString().split("T")[0] },
+            params: { date: getProjectDateStr() },
           }),
         ]);
 

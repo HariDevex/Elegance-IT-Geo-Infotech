@@ -1,14 +1,17 @@
 import db from "../config/database.js";
 import crypto from "crypto";
 import { logActivity } from "./activityLogController.js";
+import { getProjectDateStr } from "../utils/dateUtils.js";
 import { isLateCheckIn } from "../utils/attendanceUtils.js";
 
 const MAX_CHECKIN_PER_DAY = 3;
 
 const getTodayCheckins = async (userId) => {
-  const today = new Date();
-  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
-  const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999).toISOString();
+  const dateStr = getProjectDateStr();
+  // Calculate UTC range for the project date (IST is UTC+5:30)
+  // June 4 IST starts at June 3 18:30 UTC
+  const todayStart = new Date(new Date(`${dateStr}T00:00:00`).getTime() - 5.5 * 60 * 60 * 1000).toISOString();
+  const todayEnd = new Date(new Date(`${dateStr}T23:59:59.999`).getTime() - 5.5 * 60 * 60 * 1000).toISOString();
   
   const checkins = await db("checkin_checkout")
     .where("user_id", userId)
@@ -21,7 +24,7 @@ const getTodayCheckins = async (userId) => {
 };
 
 const updateAttendanceRecord = async (userId, checkInTime, checkOutTime) => {
-  const today = new Date().toISOString().split("T")[0];
+  const today = getProjectDateStr();
   const now = new Date();
   
   const existing = await db("attendance")
@@ -287,7 +290,7 @@ const exportCheckinExcel = async (req, res, next) => {
       }
 
       sessions.push({
-        date: new Date(ci.created_at).toISOString().split("T")[0],
+        date: getProjectDateStr(new Date(ci.created_at)),
         employeeId: ci.employee_id,
         name: ci.name,
         department: ci.department || "-",
