@@ -18,7 +18,8 @@ const countWeekdays = (from, to) => {
   const end = new Date(to);
   end.setHours(0, 0, 0, 0);
   while (current <= end) {
-    if (current.getDay() !== 0) count++;
+    const day = current.getDay();
+    if (day !== 0 && day !== 6) count++;
     current.setDate(current.getDate() + 1);
   }
   return count;
