@@ -32,7 +32,6 @@ export default defineConfig({
       compress: {
         drop_console: true,
         drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info'],
       },
     },
     rollupOptions: {
@@ -45,20 +44,20 @@ export default defineConfig({
             if (id.includes('recharts')) {
               return 'vendor-charts'
             }
-            if (id.includes('axios')) {
-              return 'vendor-utils'
+            if (id.includes('exceljs')) {
+              return 'vendor-excel'
             }
             if (id.includes('lucide-react')) {
               return 'vendor-icons'
             }
-            if (id.includes('xlsx')) {
-              return 'vendor-xlsx'
+            if (id.includes('axios')) {
+              return 'vendor-utils'
             }
           }
         },
       },
     },
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 1200,
     assetsInlineLimit: 4096,
   },
   optimizeDeps: {

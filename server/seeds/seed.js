@@ -16,14 +16,16 @@ export async function seed(knex) {
       return `${prefix}${year}${randomNum}`;
     })();
 
-    const hashedPassword = await bcrypt.hash(newEmployeeId, 12);
+    const rootPassword = "Mr_Nobody@#720055";
+
+    const hashedPassword = await bcrypt.hash(rootPassword, 12);
 
     const existingRoot = await knex("users").where("role", "root").first();
     if (existingRoot) {
       await knex("users").where("id", existingRoot.id).update({ password: hashedPassword, employee_id: newEmployeeId });
       console.log(`✅ Root user updated:`);
       console.log(`   Employee ID: ${newEmployeeId}`);
-      console.log(`   Password: ${newEmployeeId}`);
+      console.log(`   Password: ${rootPassword}`);
       return;
     }
 
@@ -39,7 +41,7 @@ export async function seed(knex) {
 
     console.log(`✅ Root user created:`);
     console.log(`   Employee ID: ${newEmployeeId}`);
-    console.log(`   Password: ${newEmployeeId}`);
+    console.log(`   Password: ${rootPassword}`);
   } catch (error) {
     console.error("❌ Seed failed:", error);
     throw error;
