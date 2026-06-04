@@ -4,8 +4,10 @@ import { generateSlip, listSlips, markDownloaded } from "../controller/salarySli
 
 const router = Router();
 
-router.post("/generate", authMiddleware, requireRole(ROLES.ROOT, ROLES.ADMIN, ROLES.MANAGER), generateSlip);
-router.get("/", authMiddleware, listSlips);
-router.put("/:id/download", authMiddleware, markDownloaded);
+router.use(authMiddleware);
+
+router.post("/generate", requireRole(ROLES.ROOT, ROLES.ADMIN, ROLES.MANAGER), generateSlip);
+router.get("/", listSlips);
+router.put("/:id/download", markDownloaded);
 
 export default router;

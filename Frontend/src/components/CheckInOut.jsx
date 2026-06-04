@@ -1,11 +1,16 @@
 import { useEffect, useState, memo } from "react";
 import toast from "react-hot-toast";
 import api from "../config/axios";
-import { Download, LogIn, LogOut, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { Download, LogIn, LogOut, Clock, CheckCircle, AlertCircle, Users, User } from "lucide-react";
 import { Skeleton, SkeletonTable } from "./Skeleton";
+import { useAuth } from "../context/authContext";
 
 const CheckInOut = () => {
+  const { user } = useAuth();
+  const isAdmin = ["root", "admin", "manager"].includes(user?.role);
+  const [view, setView] = useState("my"); // "my" or "all"
   const [records, setRecords] = useState([]);
+  const [allRecords, setAllRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
   const [todayStats, setTodayStats] = useState({ checkinCount: 0, maxAllowed: 1, remaining: 1 });
@@ -20,19 +25,26 @@ const CheckInOut = () => {
       const firstDayOfYear = `${today.getFullYear()}-01-01`;
       const timestamp = Date.now();
 
-      const res = await api.get("/attendance/my", {
-        params: { from: firstDayOfYear, to: todayStr, _t: timestamp },
-      });
+      if (view === "my") {
+        const res = await api.get("/attendance/my", {
+          params: { from: firstDayOfYear, to: todayStr, _t: timestamp },
+        });
 
-      setRecords(res.data.records || []);
+        setRecords(res.data.records || []);
 
-      const todayRecords = (res.data.records || []).filter(r => r.date === todayStr);
-      const todaySessions = todayRecords.flatMap(r => r.sessions || []);
-      setTodayStats({
-        checkinCount: todaySessions.filter(s => s.checkInAt).length,
-        maxAllowed: 3,
-        remaining: Math.max(0, 3 - todaySessions.filter(s => s.checkInAt).length),
-      });
+        const todayRecords = (res.data.records || []).filter(r => r.date === todayStr);
+        const todaySessions = todayRecords.flatMap(r => r.sessions || []);
+        setTodayStats({
+          checkinCount: todaySessions.filter(s => s.checkInAt).length,
+          maxAllowed: 3,
+          remaining: Math.max(0, 3 - todaySessions.filter(s => s.checkInAt).length),
+        });
+      } else {
+        const res = await api.get("/checkin/all-records", {
+          params: { _t: timestamp },
+        });
+        setAllRecords(res.data.records || []);
+      }
     } catch (err) {
       setError(err.response?.data?.error || "Failed to load records");
     } finally {
@@ -42,7 +54,7 @@ const CheckInOut = () => {
 
   useEffect(() => {
     loadRecords();
-  }, []);
+  }, [view]);
 
   const handleCheckin = async () => {
     setChecking(true);
@@ -135,8 +147,32 @@ const CheckInOut = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-white">Check In / Out</h2>
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-semibold text-white">Check In / Out</h2>
+          {isAdmin && (
+            <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
+              <button
+                onClick={() => setView("my")}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs transition-colors ${
+                  view === "my" ? "bg-cyan-600 text-white shadow-lg" : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <User size={14} />
+                My Records
+              </button>
+              <button
+                onClick={() => setView("all")}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs transition-colors ${
+                  view === "all" ? "bg-cyan-600 text-white shadow-lg" : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <Users size={14} />
+                All Accounts
+              </button>
+            </div>
+          )}
+        </div>
         <button
           onClick={handleExport}
           className="flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-xs transition-colors"
@@ -146,36 +182,38 @@ const CheckInOut = () => {
         </button>
       </div>
 
-      <div className="bg-slate-800/60 rounded-xl border border-slate-700 p-6">
-        <div className="text-center mb-6">
-          <div className="text-5xl font-bold text-white mb-2">
-            {todayStats.remaining}
+      {view === "my" ? (
+        <div className="bg-slate-800/60 rounded-xl border border-slate-700 p-6">
+          <div className="text-center mb-6">
+            <div className="text-5xl font-bold text-white mb-2">
+              {todayStats.remaining}
+            </div>
+            <p className="text-slate-400 text-sm">Check-ins remaining today</p>
+            <p className="text-slate-500 text-xs mt-1">
+              {todayStats.checkinCount} / {todayStats.maxAllowed} used
+            </p>
           </div>
-          <p className="text-slate-400 text-sm">Check-ins remaining today</p>
-          <p className="text-slate-500 text-xs mt-1">
-            {todayStats.checkinCount} / {todayStats.maxAllowed} used
-          </p>
-        </div>
 
-        <div className="flex gap-4">
-          <button
-            onClick={handleCheckin}
-            disabled={checking || todayStats.remaining <= 0}
-            className="flex items-center justify-center gap-2 flex-1 py-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold transition-colors"
-          >
-            <LogIn size={18} />
-            {checking ? "Processing..." : "Check In"}
-          </button>
-          <button
-            onClick={handleCheckout}
-            disabled={checking}
-            className="flex items-center justify-center gap-2 flex-1 py-3 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold transition-colors"
-          >
-            <LogOut size={18} />
-            {checking ? "Processing..." : "Check Out"}
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={handleCheckin}
+              disabled={checking || todayStats.remaining <= 0}
+              className="flex items-center justify-center gap-2 flex-1 py-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold transition-colors"
+            >
+              <LogIn size={18} />
+              {checking ? "Processing..." : "Check In"}
+            </button>
+            <button
+              onClick={handleCheckout}
+              disabled={checking}
+              className="flex items-center justify-center gap-2 flex-1 py-3 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold transition-colors"
+            >
+              <LogOut size={18} />
+              {checking ? "Processing..." : "Check Out"}
+            </button>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {error && (
         <div className="p-3 rounded-lg bg-rose-500/20 border border-rose-500/50 text-rose-400 text-sm">
@@ -185,14 +223,17 @@ const CheckInOut = () => {
 
       <div className="rounded-xl border border-slate-700 bg-slate-800/60 overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-700 bg-slate-800">
-          <h3 className="text-sm font-semibold text-white">Recent Sessions</h3>
+          <h3 className="text-sm font-semibold text-white">
+            {view === "my" ? "Recent Sessions" : "All Account Sessions"}
+          </h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-700">
+                {view === "all" && <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">Employee</th>}
                 <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">Date</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">Login Time</th>
+                {view === "my" && <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">Login Time</th>}
                 <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">Check In</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">Check Out</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">Duration</th>
@@ -202,17 +243,17 @@ const CheckInOut = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center">
-                    <SkeletonTable rows={5} cols={6} />
+                  <td colSpan={view === "all" ? 6 : 6} className="px-4 py-8 text-center">
+                    <SkeletonTable rows={5} cols={view === "all" ? 6 : 6} />
                   </td>
                 </tr>
-              ) : records.length === 0 ? (
+              ) : (view === "my" ? records : allRecords).length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                  <td colSpan={view === "all" ? 6 : 6} className="px-4 py-8 text-center text-slate-400">
                     No sessions yet
                   </td>
                 </tr>
-              ) : (
+              ) : view === "my" ? (
                 records.map((record) => (
                   record.sessions && record.sessions.length > 0 ? (
                     record.sessions.map((session, idx) => (
@@ -283,6 +324,53 @@ const CheckInOut = () => {
                       </td>
                     </tr>
                   )
+                ))
+              ) : (
+                allRecords.map((session) => (
+                  <tr key={session._id} className="border-b border-slate-700/50 hover:bg-slate-700/30">
+                    <td className="px-4 py-3 text-sm">
+                      <div className="flex flex-col">
+                        <span className="text-white font-medium">{session.user?.name}</span>
+                        <span className="text-slate-500 text-xs">{session.user?.employeeId}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-300">
+                      {formatDate(session.date)}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      {session.checkin?.time ? (
+                        <span className="flex items-center gap-1.5 text-cyan-400">
+                          <CheckCircle size={14} />
+                          {formatTime(session.checkin.time)}
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5 text-slate-500">-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      {session.checkout?.time ? (
+                        <span className="flex items-center gap-1.5 text-amber-400">
+                          <CheckCircle size={14} />
+                          {formatTime(session.checkout.time)}
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5 text-indigo-400">
+                          <AlertCircle size={14} />
+                          Active
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-300">
+                      {session.duration ? `${session.duration}m` : "-"}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                        session.checkout ? "bg-emerald-500/20 text-emerald-400" : "bg-indigo-500/20 text-indigo-400"
+                      }`}>
+                        {session.checkout ? "Completed" : "Active"}
+                      </span>
+                    </td>
+                  </tr>
                 ))
               )}
             </tbody>

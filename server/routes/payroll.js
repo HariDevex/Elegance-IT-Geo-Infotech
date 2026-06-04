@@ -4,9 +4,11 @@ import { processPayroll, listPayroll, getPayroll, deletePayroll } from "../contr
 
 const router = Router();
 
-router.post("/", authMiddleware, requireRole(ROLES.ROOT, ROLES.ADMIN, ROLES.MANAGER), processPayroll);
-router.get("/", authMiddleware, listPayroll);
-router.get("/:id", authMiddleware, getPayroll);
-router.delete("/:id", authMiddleware, requireRole(ROLES.ROOT, ROLES.ADMIN, ROLES.MANAGER), deletePayroll);
+router.use(authMiddleware);
+
+router.post("/", requireRole(ROLES.ROOT, ROLES.ADMIN, ROLES.MANAGER), processPayroll);
+router.get("/", listPayroll);
+router.get("/:id", getPayroll);
+router.delete("/:id", requireRole(ROLES.ROOT, ROLES.ADMIN, ROLES.MANAGER), deletePayroll);
 
 export default router;

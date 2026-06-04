@@ -92,6 +92,11 @@ const markDownloaded = async (req, res, next) => {
     const slip = await db("salary_slips").where("id", req.params.id).first();
     if (!slip) return res.status(404).json({ success: false, error: "Salary slip not found" });
 
+    // Check ownership
+    if (!canViewAllSlips(req.user.role) && slip.user_id !== req.user.id) {
+      return res.status(403).json({ success: false, error: "Access denied" });
+    }
+
     await db("salary_slips").where("id", req.params.id).update({ downloaded_at: db.fn.now() });
 
     res.json({ success: true, message: "Download recorded" });

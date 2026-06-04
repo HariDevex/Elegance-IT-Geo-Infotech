@@ -63,6 +63,89 @@ describe('Auth API', () => {
       expect(res.status).toBe(401);
       expect(res.body.success).toBe(false);
     });
+
+    it('should return mustChangePassword true if flag is set in database', async () => {
+      await db('users').where('employee_id', testUser.employee_id).update({
+        must_change_password: true
+      });
+
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({
+          employee_id: testUser.employee_id,
+          password: testUser.password
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.mustChangePassword).toBe(true);
+
+      await db('users').where('employee_id', testUser.employee_id).update({
+        must_change_password: false
+      });
+    });
+  });
+
+  describe('POST /api/auth/reset-user-password', () => {
+    let rootToken;
+    const devUser = {
+      name: 'Dev User',
+      email: 'dev@test.com',
+      password: 'OldPassword123!',
+      role: 'developer',
+      employee_id: 'DEV001'
+    };
+
+    beforeAll(async () => {
+      const rootPassword = await bcrypt.hash('RootPass123!', 10);
+      await db('users').insert({
+        name: 'Root Admin',
+        email: 'root@test.com',
+        password: rootPassword,
+        role: 'root',
+        employee_id: 'ROOT001'
+      });
+
+      const devPassword = await bcrypt.hash(devUser.password, 10);
+      await db('users').insert({
+        ...devUser,
+        password: devPassword
+      });
+
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({
+          employee_id: 'ROOT001',
+          password: 'RootPass123!'
+        });
+      rootToken = loginRes.body.token;
+    });
+
+    it('should set must_change_password to true when root resets password', async () => {
+      const newPassword = 'NewPassword123!';
+      const res = await request(app)
+        .post('/api/auth/reset-user-password')
+        .set('Authorization', `Bearer ${rootToken}`)
+        .send({
+          userId: devUser.employee_id,
+          newPassword
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+
+      const user = await db('users').where('employee_id', devUser.employee_id).first();
+      expect(!!user.must_change_password).toBe(true);
+
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({
+          employee_id: devUser.employee_id,
+          password: newPassword
+        });
+      
+      expect(loginRes.status).toBe(200);
+      expect(loginRes.body.mustChangePassword).toBe(true);
+    });
   });
 
   describe('GET /api/auth/profile', () => {

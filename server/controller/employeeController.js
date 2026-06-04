@@ -222,6 +222,7 @@ const listEmployees = async (req, res, next) => {
     );
 
     const canViewSalary = ["root", "admin", "manager", "teamlead", "hr"].includes(req.user.role);
+    const canViewSensitive = ["root", "admin", "manager", "hr"].includes(req.user.role);
 
     res.json({
       success: true,
@@ -231,9 +232,9 @@ const listEmployees = async (req, res, next) => {
         email: u.email,
         role: u.role,
         employeeId: u.employee_id,
-        dob: u.dob,
-        gender: u.gender,
-        maritalStatus: u.marital_status,
+        dob: canViewSensitive ? u.dob : undefined,
+        gender: canViewSensitive ? u.gender : undefined,
+        maritalStatus: canViewSensitive ? u.marital_status : undefined,
         department: u.department,
         designation: u.designation,
         salary: canViewSalary ? u.salary : undefined,

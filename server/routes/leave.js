@@ -16,14 +16,18 @@ router.use(authMiddleware);
 
 router.post("/", sanitizeInput, validate(leaveRequestSchema), createLeave);
 
-router.get("/", listLeaves);
+router.get("/", 
+  listLeaves
+);
 
 router.put("/:id/status", 
-  requireRole(ROLES.ROOT, ROLES.ADMIN, ROLES.MANAGER), 
+  requireRole(ROLES.ROOT, ROLES.ADMIN, ROLES.MANAGER, ROLES.HR, ROLES.TEAMLEAD), 
   validate(leaveStatusSchema),
   updateLeaveStatus
 );
 
-router.delete("/:id", deleteLeave);
+router.delete("/:id", 
+  deleteLeave
+);
 
 export default router;

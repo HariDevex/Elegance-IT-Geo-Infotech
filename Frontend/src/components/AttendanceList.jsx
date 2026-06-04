@@ -209,7 +209,7 @@ const AttendanceList = () => {
                         <button
                           onClick={() => setStatus(emp._id, "Present")}
                           className={`px-3 py-1 rounded text-xs ${
-                            emp.attendanceStatus === "Present"
+                            ["Present", "On Time", "Late"].includes(emp.attendanceStatus)
                               ? "bg-cyan-500/30 text-cyan-300"
                               : "bg-slate-700 text-slate-300 hover:text-white"
                           }`}

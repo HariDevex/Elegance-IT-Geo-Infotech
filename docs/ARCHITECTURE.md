@@ -104,7 +104,6 @@ src/
 | `/api/documents` | Document upload |
 | `/api/leave-balance` | Leave balances |
 | `/api/activity-logs` | Audit trail |
-| `/api/ai` | AI features (insights, search, chatbot) |
 
 ### Database
 

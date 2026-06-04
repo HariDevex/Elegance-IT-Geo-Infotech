@@ -97,7 +97,7 @@ const DashboardHome = ({ stats, loading }) => {
         >
           <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text-primary)' }}>Today's Attendance</h3>
           <div className="flex items-center justify-center h-64">
-            <div className="relative w-40 h-40">
+            <div className="relative w-40 h-35">
               <PieChartComponent data={pieData} />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-3xl font-bold" style={{ color: 'var(--color-primary)' }}>{stats?.presentToday || 0}</span>

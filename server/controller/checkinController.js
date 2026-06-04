@@ -196,34 +196,32 @@ const getMyRecords = async (req, res, next) => {
 
     const records = await query;
 
-    const grouped = [];
-    let currentSession = null;
+    const checkins = records.filter(r => r.type === "checkin");
+    const checkouts = records.filter(r => r.type === "checkout");
 
-    for (const record of records) {
-      if (record.type === "checkin") {
-        currentSession = {
-          date: record.created_at,
-          checkin: {
-            _id: record.id,
-            time: record.created_at,
-            note: record.note,
-          },
-          checkout: null,
-          duration: null,
-        };
-        grouped.push(currentSession);
-      } else if (record.type === "checkout" && currentSession && !currentSession.checkout) {
-        currentSession.checkout = {
-          _id: record.id,
-          time: record.created_at,
-          note: record.note,
-        };
-        const start = new Date(currentSession.checkin.time);
-        const end = new Date(currentSession.checkout.time);
-        currentSession.duration = Math.round((end - start) / 60000);
-        currentSession = null;
+    const grouped = checkins.map(ci => {
+      const co = checkouts.find(o => o.parent_id === ci.id);
+      let duration = null;
+      if (co) {
+        const start = new Date(ci.created_at);
+        const end = new Date(co.created_at);
+        duration = Math.round((end - start) / 60000);
       }
-    }
+      return {
+        date: ci.created_at,
+        checkin: {
+          _id: ci.id,
+          time: ci.created_at,
+          note: ci.note,
+        },
+        checkout: co ? {
+          _id: co.id,
+          time: co.created_at,
+          note: co.note,
+        } : null,
+        duration,
+      };
+    });
 
     const todayCheckins = await getTodayCheckins(userId);
 
@@ -267,44 +265,33 @@ const exportCheckinExcel = async (req, res, next) => {
 
     const records = await query;
 
-    const grouped = {};
-    for (const record of records) {
-      const dateKey = new Date(record.created_at).toISOString().split("T")[0];
-      if (!grouped[dateKey]) {
-        grouped[dateKey] = [];
-      }
-      grouped[dateKey].push(record);
-    }
+    const checkins = records.filter(r => r.type === "checkin");
+    const checkouts = records.filter(r => r.type === "checkout");
 
     const sessions = [];
-    for (const [date, dayRecords] of Object.entries(grouped)) {
-      let currentCheckin = null;
-      for (const record of dayRecords) {
-        if (record.type === "checkin") {
-          currentCheckin = {
-            date,
-            employeeId: record.employee_id,
-            name: record.name,
-            department: record.department || "-",
-            checkinTime: new Date(record.created_at).toLocaleTimeString(),
-            checkoutTime: "-",
-            duration: "-",
-            note: record.note || "-",
-          };
-        } else if (record.type === "checkout" && currentCheckin && currentCheckin.checkoutTime === "-") {
-          currentCheckin.checkoutTime = new Date(record.created_at).toLocaleTimeString();
-          const start = new Date(currentCheckin.checkinTime);
-          const end = new Date(record.created_at);
-          currentCheckin.duration = `${Math.round((end - start) / 60000)} min`;
-        }
-        if (currentCheckin && currentCheckin.checkoutTime !== "-") {
-          sessions.push(currentCheckin);
-          currentCheckin = null;
-        }
+    for (const ci of checkins) {
+      const co = checkouts.find(o => o.parent_id === ci.id);
+      
+      let checkoutTime = "-";
+      let duration = "-";
+      
+      if (co) {
+        checkoutTime = new Date(co.created_at).toLocaleTimeString();
+        const start = new Date(ci.created_at);
+        const end = new Date(co.created_at);
+        duration = `${Math.round((end - start) / 60000)} min`;
       }
-      if (currentCheckin && currentCheckin.checkoutTime === "-") {
-        sessions.push(currentCheckin);
-      }
+
+      sessions.push({
+        date: new Date(ci.created_at).toISOString().split("T")[0],
+        employeeId: ci.employee_id,
+        name: ci.name,
+        department: ci.department || "-",
+        checkinTime: new Date(ci.created_at).toLocaleTimeString(),
+        checkoutTime,
+        duration,
+        note: ci.note || "-",
+      });
     }
 
     res.json({
@@ -316,4 +303,78 @@ const exportCheckinExcel = async (req, res, next) => {
   }
 };
 
-export { checkin, checkout, getMyRecords, exportCheckinExcel };
+const getAllCheckinRecords = async (req, res, next) => {
+  try {
+    const { date, limit = 500, userId } = req.query;
+
+    if (!["root", "admin", "manager"].includes(req.user.role)) {
+      return res.status(403).json({ success: false, error: "Not authorized" });
+    }
+
+    let query = db("checkin_checkout")
+      .join("users", "checkin_checkout.user_id", "users.id")
+      .select(
+        "checkin_checkout.*",
+        "users.name",
+        "users.employee_id",
+        "users.department"
+      )
+      .orderBy("checkin_checkout.created_at", "desc")
+      .limit(parseInt(limit));
+
+    if (date) {
+      const dayStart = new Date(date).getTime();
+      const dayEnd = new Date(date + "T23:59:59.999Z").getTime();
+      query = query.where("checkin_checkout.created_at", ">=", dayStart).where("checkin_checkout.created_at", "<=", dayEnd);
+    }
+
+    if (userId) {
+      query = query.where("checkin_checkout.user_id", userId);
+    }
+
+    const records = await query;
+
+    const checkins = records.filter(r => r.type === "checkin");
+    const checkouts = records.filter(r => r.type === "checkout");
+
+    const grouped = checkins.map(ci => {
+      const co = checkouts.find(o => o.parent_id === ci.id);
+      let duration = null;
+      if (co) {
+        const start = new Date(ci.created_at);
+        const end = new Date(co.created_at);
+        duration = Math.round((end - start) / 60000);
+      }
+      return {
+        _id: ci.id,
+        user: {
+          _id: ci.user_id,
+          name: ci.name,
+          employeeId: ci.employee_id,
+          department: ci.department,
+        },
+        date: ci.created_at,
+        checkin: {
+          _id: ci.id,
+          time: ci.created_at,
+          note: ci.note,
+        },
+        checkout: co ? {
+          _id: co.id,
+          time: co.created_at,
+          note: co.note,
+        } : null,
+        duration,
+      };
+    });
+
+    res.json({
+      success: true,
+      records: grouped,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export { checkin, checkout, getMyRecords, getAllCheckinRecords, exportCheckinExcel };

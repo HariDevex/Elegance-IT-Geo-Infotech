@@ -137,6 +137,8 @@ const listLeaves = async (req, res, next) => {
     const pageSize = Math.min(100, Math.max(1, parseInt(limit) || 50));
     const offset = (currentPage - 1) * pageSize;
 
+    const canViewAll = ["root", "admin", "manager", "hr", "teamlead"].includes(req.user.role);
+
     let query = db("leaves")
       .join("users", "leaves.user_id", "users.id")
       .select(
@@ -155,12 +157,17 @@ const listLeaves = async (req, res, next) => {
       )
       .orderBy("leaves.created_at", "desc");
 
-    if (status && status !== "All") {
-      query = query.where("leaves.status", status);
+    if (canViewAll) {
+      if (userId) {
+        query = query.where("leaves.user_id", userId);
+      }
+    } else {
+      // Regular employees can only see their own leaves
+      query = query.where("leaves.user_id", req.user.id);
     }
 
-    if (userId) {
-      query = query.where("leaves.user_id", userId);
+    if (status && status !== "All") {
+      query = query.where("leaves.status", status);
     }
 
     const [{ count }] = await query.clone().clearSelect().clearOrder().count("* as count");

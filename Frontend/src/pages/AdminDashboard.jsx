@@ -62,7 +62,7 @@ const AdminDashboard = () => {
         const pendingLeaves = leaveRes.data.leaves || [];
         const todayAttendance = attRes.data.records || [];
 
-        const presentCount = todayAttendance.filter((a) => a.status === "Present").length;
+        const presentCount = todayAttendance.filter((a) => a.status === "On Time" || a.status === "Late").length;
         const absentCount = todayAttendance.filter((a) => a.status === "Absent").length;
 
         const departments = [...new Set(employees.map((e) => e.department).filter(Boolean))];

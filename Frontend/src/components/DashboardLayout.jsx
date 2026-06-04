@@ -17,7 +17,7 @@ const menuItems = [
     { title: "Add Employee", key: "addEmployee", roles: ["root", "admin", "manager"] },
     { title: "Employees List", key: "employeesList", roles: ["root", "admin", "manager"] },
   ]},
-  { title: "Check In/Out", key: "checkin", roles: ["root", "admin", "manager"] },
+  { title: "Check In/Out", key: "checkin" },
   { title: "Chat", key: "chat" },
   { title: "Holidays", key: "holidays" },
   { title: "Login Logs", key: "loginLogs", roles: ["root", "admin", "manager"] },

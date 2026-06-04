@@ -319,28 +319,6 @@ Get activity logs (root/admin/manager/hr). Paginated.
 
 ---
 
-## AI Features (`/api/ai`)
-
-### GET `/attendance-insights`
-AI-powered attendance pattern analysis.
-
-### GET `/search`
-AI-powered smart search across employees, leaves, announcements.
-
-### GET `/leave-prediction`
-AI-powered leave prediction analysis.
-
-### POST `/chat`
-AI HR chatbot conversation.
-```
-Body: { message, conversationId? }
-```
-
-### DELETE `/chat/:conversationId`
-Clear AI chatbot conversation.
-
----
-
 ## Health
 
 ### GET `/api/health`

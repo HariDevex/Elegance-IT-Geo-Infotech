@@ -162,9 +162,9 @@ const login = async (req, res, next) => {
       });
     }
 
-    // Check password expiry (90 days for admin roles)
+    // Check password expiry (90 days for admin roles) or must_change_password flag
     const adminRoles = ["root", "admin", "manager", "hr"];
-    let mustChangePassword = false;
+    let mustChangePassword = !!user.must_change_password;
     let passwordExpiring = false;
 
     if (adminRoles.includes(user.role)) {
@@ -553,6 +553,7 @@ const resetUserPassword = async (req, res, next) => {
       .where("employee_id", userId)
       .update({
         password: hashedNewPassword,
+        must_change_password: true,
         updated_at: db.fn.now(),
       });
 
