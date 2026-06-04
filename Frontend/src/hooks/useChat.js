@@ -56,7 +56,7 @@ export default function useChat() {
 
     const socket = io(serverUrl, {
       auth: { token },
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
       secure: true,
       reconnection: true,
       reconnectionAttempts: 5,
