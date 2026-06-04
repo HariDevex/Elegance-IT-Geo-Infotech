@@ -6,9 +6,9 @@ import { isLateCheckIn } from "../utils/attendanceUtils.js";
 const MAX_CHECKIN_PER_DAY = 3;
 
 const getTodayCheckins = async (userId) => {
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+  const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999).toISOString();
   
   const checkins = await db("checkin_checkout")
     .where("user_id", userId)
@@ -60,6 +60,10 @@ const updateAttendanceRecord = async (userId, checkInTime, checkOutTime) => {
 const checkin = async (req, res, next) => {
   try {
     const userId = req.user.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: "User ID missing from session. Please re-login." });
+    }
+    
     const { note } = req.body;
     const now = new Date();
 
@@ -189,8 +193,8 @@ const getMyRecords = async (req, res, next) => {
       .limit(parseInt(limit));
 
     if (date) {
-      const dayStart = new Date(date).getTime();
-      const dayEnd = new Date(date + "T23:59:59.999Z").getTime();
+      const dayStart = new Date(date);
+      const dayEnd = new Date(date + "T23:59:59.999Z");
       query = query.where("created_at", ">=", dayStart).where("created_at", "<=", dayEnd);
     }
 
@@ -323,8 +327,8 @@ const getAllCheckinRecords = async (req, res, next) => {
       .limit(parseInt(limit));
 
     if (date) {
-      const dayStart = new Date(date).getTime();
-      const dayEnd = new Date(date + "T23:59:59.999Z").getTime();
+      const dayStart = new Date(date);
+      const dayEnd = new Date(date + "T23:59:59.999Z");
       query = query.where("checkin_checkout.created_at", ">=", dayStart).where("checkin_checkout.created_at", "<=", dayEnd);
     }
 

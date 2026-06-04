@@ -45,12 +45,22 @@ const authMiddleware = async (req, res, next) => {
     req.user = decoded;
     req.user.role = decoded.role;
 
-    if (!req.user.id) {
+    // Ensure we have the database UUID 'id', not just the 'employee_id' (_id)
+    if (!req.user.id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.user.id)) {
       const db = (await import("../config/database.js")).default;
-      const user = await db("users").where("employee_id", req.user._id).select("id").first();
-      if (user) {
-        req.user.id = user.id;
+      const user = await db("users")
+        .where("employee_id", req.user._id || req.user.employee_id)
+        .where("is_deleted", false)
+        .select("id")
+        .first();
+        
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          error: "User account not found or has been deleted.",
+        });
       }
+      req.user.id = user.id;
     }
 
     next();
