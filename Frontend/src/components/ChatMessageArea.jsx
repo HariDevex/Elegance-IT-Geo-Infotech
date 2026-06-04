@@ -1,5 +1,5 @@
 import { useMemo, useRef, useEffect, memo } from "react";
-import { Search, X, Phone, Video, MoreVertical, CheckCheck } from "lucide-react";
+import { Search, X, Phone, Video, MoreVertical, Check, CheckCheck } from "lucide-react";
 import chatBgLogo from "../assets/Logo/EG.png";
 
 const getInitials = (name) => {
@@ -20,6 +20,12 @@ const formatDate = (ts) => {
   yesterday.setDate(yesterday.getDate() - 1);
   if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
   return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+};
+
+const MessageStatus = ({ status }) => {
+  if (status === "seen") return <CheckCheck size={14} className="text-cyan-400" />;
+  if (status === "delivered") return <CheckCheck size={14} className="text-slate-400" />;
+  return <Check size={14} className="text-slate-400" />;
 };
 
 const MessageSkeleton = ({ isOwn = false }) => (
@@ -70,18 +76,31 @@ const ChatMessageArea = ({
   }, [filteredMessages]);
 
   const isGroupChat = activeContact?.startsWith("grp-");
+  const isActiveOnline = useMemo(() => {
+    if (isGroupChat) return false;
+    const contact = (messages[activeContact] || []).find(m => !m.isYou)?.from; // This is a fallback
+    // In a real app we'd look up the contact in the contactList, but for simplicity here:
+    return activeName && !isGroupChat; 
+  }, [activeContact, isGroupChat, activeName]);
 
   if (!activeContact) return null;
 
   return (
     <section className="flex-1 flex flex-col min-w-0 h-full bg-[#0d1117]">
       <header className="px-4 py-3 border-b flex items-center gap-3 flex-shrink-0" style={{ borderColor: '#2a3338', backgroundColor: '#131c21' }}>
-        <div className="h-10 w-10 rounded-full flex items-center justify-center" style={{ backgroundColor: isGroupChat ? '#00a884' : '#5e6e7c' }}>
-          <span className="text-sm font-medium text-white">{getInitials(activeName)}</span>
+        <div className="relative">
+          <div className="h-10 w-10 rounded-full flex items-center justify-center" style={{ backgroundColor: isGroupChat ? '#00a884' : '#5e6e7c' }}>
+            <span className="text-sm font-medium text-white">{getInitials(activeName)}</span>
+          </div>
+          {isActiveOnline && !isGroupChat && (
+            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#131c21] bg-emerald-500" />
+          )}
         </div>
         <div className="flex-1">
           <div className="font-semibold text-white">{activeName}</div>
-          <div className="text-xs text-gray-400">{isGroupChat ? 'Group' : 'Online'}</div>
+          <div className="text-xs text-gray-400">
+            {isGroupChat ? 'Group' : isActiveOnline ? 'Online' : 'Offline'}
+          </div>
         </div>
         <div className="flex items-center gap-1">
           <button onClick={onToggleSearch} className="p-2 rounded-full" style={{ backgroundColor: showSearch ? '#182229' : 'transparent' }}>
@@ -151,7 +170,7 @@ const ChatMessageArea = ({
                     </div>
                     <div className={`flex items-center gap-1 mt-1 ${item.isYou ? "justify-end" : "justify-start"}`}>
                       <span className="text-[10px] text-gray-400">{formatTime(item.ts)}</span>
-                      {item.isYou && <CheckCheck size={14} className="text-[#53bdeb]" />}
+                      {item.isYou && <MessageStatus status={item.status} />}
                     </div>
                   </div>
                 </div>

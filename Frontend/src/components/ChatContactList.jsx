@@ -81,8 +81,13 @@ const ChatContactList = ({
                 <button key={c.id} onClick={() => onSelect(c.id)}
                   className="w-full flex items-center gap-3 px-4 py-3 transition-colors hover:bg-[#182229]"
                   style={{ backgroundColor: activeContact === c.id ? '#182229' : 'transparent' }}>
-                  <div className="h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#5e6e7c' }}>
-                    <span className="text-white font-medium">{getInitials(c.name)}</span>
+                  <div className="relative flex-shrink-0">
+                    <div className="h-12 w-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#5e6e7c' }}>
+                      <span className="text-white font-medium">{getInitials(c.name)}</span>
+                    </div>
+                    {c.online && (
+                      <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-[#131c21] bg-emerald-500" title="Online" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0 text-left">
                     <div className="flex justify-between items-center">

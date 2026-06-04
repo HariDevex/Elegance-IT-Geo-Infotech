@@ -47,18 +47,37 @@ export default function useChat() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return;
+    if (!token || !userId) return;
 
-    const serverUrl = API_BASE || window.location.origin;
+    let serverUrl = API_BASE || window.location.origin;
+    if (serverUrl.endsWith("/api")) {
+      serverUrl = serverUrl.replace("/api", "");
+    }
+
     const socket = io(serverUrl, {
       auth: { token },
       transports: ["websocket", "polling"],
+      secure: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
     });
 
     socket.on("connect", () => console.log("Socket connected"));
-    socket.on("connect_error", (err) => console.error("Socket error:", err.message));
+    socket.on("connect_error", (err) => {
+      if (err.message === "xhr poll error") return; // Reduce noise
+      console.error("Socket error:", err.message);
+    });
+
+    socket.on("user:status", (data) => {
+      if (!data) return;
+      const { userId: statusId, status } = data;
+      setDirectContacts(prev => prev.map(c => 
+        c.id === statusId ? { ...c, online: status === "online" } : c
+      ));
+    });
 
     socket.on("chat:receive", (data) => {
+      if (!data) return;
       const contactId = data.from;
       const newMsg = {
         _id: `socket-${Date.now()}`,
@@ -66,15 +85,55 @@ export default function useChat() {
         from: { _id: data.from, name: data.fromName },
         isYou: data.from === userId,
         ts: data.timestamp,
+        status: "delivered"
       };
+
       setMessages((prev) => ({
         ...prev,
         [contactId]: [...(prev[contactId] || []), newMsg],
       }));
       setLastMessages((prev) => ({ ...prev, [contactId]: newMsg }));
+
+      // If this is the active chat, send 'seen' status
+      if (activeContactRef.current === contactId) {
+        socket.emit("message:seen", { from: contactId, timestamp: data.timestamp });
+      }
+    });
+
+    socket.on("chat:sent", (data) => {
+      if (!data) return;
+      const { to, timestamp, isOnline } = data;
+      setMessages(prev => {
+        const chatMsgs = [...(prev[to] || [])];
+        const msgIndex = chatMsgs.findLastIndex(m => m.ts === timestamp || m._id.startsWith('temp-'));
+        if (msgIndex !== -1) {
+          chatMsgs[msgIndex] = { 
+            ...chatMsgs[msgIndex], 
+            status: isOnline ? "delivered" : "sent" 
+          };
+        }
+        return { ...prev, [to]: chatMsgs };
+      });
+    });
+
+    socket.on("message:status", (data) => {
+      if (!data) return;
+      const { userId: statusId, timestamp, status } = data;
+      setMessages(prev => {
+        const chatMsgs = [...(prev[statusId] || [])];
+        // Mark all messages up to this timestamp as seen
+        const updated = chatMsgs.map(m => {
+          if (m.isYou && m.status !== "seen" && (m.ts <= timestamp || !m.ts)) {
+            return { ...m, status: "seen" };
+          }
+          return m;
+        });
+        return { ...prev, [statusId]: updated };
+      });
     });
 
     socket.on("chat:receiveGroup", (data) => {
+      if (!data) return;
       const contactId = data.groupId;
       const newMsg = {
         _id: `socket-${Date.now()}`,
@@ -93,14 +152,22 @@ export default function useChat() {
     socketRef.current = socket;
 
     return () => {
-      socket.disconnect();
+      if (socket) {
+        socket.off();
+        socket.disconnect();
+      }
     };
   }, [userId]);
 
   useEffect(() => {
+    const controller = new AbortController();
     const loadContacts = async () => {
+      if (!userId) return;
       try {
-        const res = await api.get("/employees", { params: { limit: 500 } });
+        const res = await api.get("/employees", { 
+          params: { limit: 500 },
+          signal: controller.signal 
+        });
         const contacts = res.data.users
           ?.filter((u) => u._id !== userId)
           .map((u) => ({
@@ -109,32 +176,42 @@ export default function useChat() {
             department: u.department,
             avatar: u.profileImage,
             role: u.role,
+            online: false
           })) || [];
         setDirectContacts(contacts);
 
-        if (!activeContact && contacts.length > 0) {
-          setActiveContact(contacts[0].id);
-        }
+        setActiveContact(prev => {
+          if (!prev && contacts.length > 0) return contacts[0].id;
+          return prev;
+        });
       } catch (err) {
+        if (err.name === "CanceledError" || err.name === "AbortError") return;
         console.error("Failed to load contacts:", err);
       } finally {
         setLoadingContacts(false);
       }
     };
     loadContacts();
-  }, [userId, activeContact]);
+    return () => controller.abort();
+  }, [userId]);
 
   useEffect(() => {
+    const controller = new AbortController();
     const loadGroups = async () => {
+      if (!userId) return;
       try {
-        const res = await api.get("/chat/groups");
+        const res = await api.get("/chat/groups", { signal: controller.signal });
         if (res.data.success) {
           setCustomGroups(res.data.groups || []);
         }
-      } catch (err) { console.error("Failed to load groups:", err); }
+      } catch (err) {
+        if (err.name === "CanceledError" || err.name === "AbortError") return;
+        console.error("Failed to load groups:", err);
+      }
     };
     loadGroups();
-  }, []);
+    return () => controller.abort();
+  }, [userId]);
 
   const filteredContacts = useMemo(() => {
     if (!searchQuery.trim()) return directContacts;
@@ -170,13 +247,14 @@ export default function useChat() {
     [filteredGroups, lastMessages]
   );
 
-  const loadMessages = useCallback(async (contactId = activeContact) => {
+  const loadMessages = useCallback(async (contactId, signal) => {
     if (!contactId) return;
     setLoadingMessages(true);
     try {
       const isGroup = isGroupId(contactId);
       const res = await api.get("/chat", {
         params: { contactId, type: isGroup ? "group" : "direct" },
+        signal
       });
       const msgs = res.data?.messages || [];
       setMessages((prev) => ({ ...prev, [contactId]: msgs }));
@@ -184,14 +262,29 @@ export default function useChat() {
       if (msgs.length > 0) {
         const lastMsg = msgs[msgs.length - 1];
         setLastMessages((prev) => ({ ...prev, [contactId]: lastMsg }));
+
+        // Mark as seen if it's a direct chat and we are currently viewing it
+        if (!isGroup && contactId === activeContactRef.current && socketRef.current?.connected) {
+          const lastUnread = [...msgs].reverse().find(m => !m.isYou);
+          if (lastUnread) {
+            socketRef.current.emit("message:seen", { from: contactId, timestamp: lastUnread.ts });
+          }
+        }
       }
-    } catch (err) { console.error("Failed to load messages:", err); } finally {
+    } catch (err) {
+      if (err.name === "CanceledError" || err.name === "AbortError") return;
+      console.error("Failed to load messages:", err);
+    } finally {
       setLoadingMessages(false);
     }
-  }, [activeContact]);
+  }, []);
 
   useEffect(() => {
-    if (activeContact) loadMessages();
+    const controller = new AbortController();
+    if (activeContact) {
+      loadMessages(activeContact, controller.signal);
+    }
+    return () => controller.abort();
   }, [activeContact, loadMessages]);
 
   const activeName = useMemo(() => {
@@ -233,7 +326,7 @@ export default function useChat() {
       if (attachment) {
         formData.append("file", attachment);
       }
-      const res = await api.post("/chat", formData, {
+      await api.post("/chat", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

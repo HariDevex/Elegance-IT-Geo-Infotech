@@ -12,14 +12,24 @@ const userSockets = new Map();
 const socketUsers = new Map();
 
 export const initSocketIO = (server) => {
+  const corsOrigins = [
+    process.env.FRONTEND_URL,
+    "http://localhost:5173",
+    "http://localhost:8081",
+    "https://elegance-ems-haridevx.vercel.app",
+    "https://elegance-it-geo-infotech.vercel.app",
+    "https://haridevx-eg-server.onrender.com",
+  ].filter(Boolean);
+
   io = new Server(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || "*",
+      origin: corsOrigins.length > 0 ? corsOrigins : "*",
       methods: ["GET", "POST"],
       credentials: true,
     },
     pingTimeout: 60000,
     pingInterval: 25000,
+    transports: ["websocket", "polling"],
   });
 
   io.use((socket, next) => {
@@ -46,14 +56,30 @@ export const initSocketIO = (server) => {
     socket.join(`user:${socket.userId}`);
     socket.join("online");
 
-    io.emit("user:online", { userId: socket.userId, userName: socket.userName });
+    // Broadcast that this user is online
+    io.emit("user:status", { userId: socket.userId, status: "online" });
 
     socket.on("chat:send", (data) => {
-      io.to(`user:${data.to}`).emit("chat:receive", {
+      const isOnline = userSockets.has(data.to);
+      const messageData = {
         from: socket.userId,
         fromName: socket.userName,
         text: data.text,
         timestamp: new Date().toISOString(),
+        isOnline: isOnline
+      };
+      io.to(`user:${data.to}`).emit("chat:receive", messageData);
+      
+      // Acknowledge to sender that it's sent (and if recipient is online)
+      socket.emit("chat:sent", { to: data.to, timestamp: messageData.timestamp, isOnline });
+    });
+
+    socket.on("message:seen", (data) => {
+      // data: { from: senderId, timestamp: msgTimestamp }
+      io.to(`user:${data.from}`).emit("message:status", {
+        userId: socket.userId,
+        timestamp: data.timestamp,
+        status: "seen"
       });
     });
 
@@ -132,9 +158,12 @@ export const initSocketIO = (server) => {
 
     socket.on("disconnect", () => {
       console.log(`User disconnected: ${socket.userName}`);
-      userSockets.delete(socket.userId);
+      const userId = socket.userId;
+      userSockets.delete(userId);
       socketUsers.delete(socket.id);
-      io.emit("user:offline", { userId: socket.userId });
+      
+      // Broadcast that this user is offline
+      io.emit("user:status", { userId: userId, status: "offline" });
     });
   });
 

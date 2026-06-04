@@ -10,25 +10,40 @@ const NotificationBell = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const isFetchingRef = useRef(false);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (signal) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
-      const res = await api.get(`/notifications`);
+      const res = await api.get(`/notifications`, { signal });
       if (res.data.success) {
         setNotifications(res.data.notifications || []);
         setUnreadCount(res.data.unreadCount || 0);
       }
     } catch (err) {
+      if (err.name === "CanceledError" || err.name === "AbortError") {
+        // Silent for clean unmounts
+        return;
+      }
       console.error("Failed to fetch notifications:", err);
+    } finally {
+      isFetchingRef.current = false;
     }
   };
 
   useEffect(() => {
+    const controller = new AbortController();
     const token = localStorage.getItem("token");
     if (!token) return;
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+
+    fetchNotifications(controller.signal);
+    const interval = setInterval(() => fetchNotifications(controller.signal), 30000);
+    
+    return () => {
+      controller.abort();
+      clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {

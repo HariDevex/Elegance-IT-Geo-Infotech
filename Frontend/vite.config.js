@@ -13,6 +13,9 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 8081,
     strictPort: true,
+    hmr: {
+      clientPort: 8081,
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
@@ -20,6 +23,11 @@ export default defineConfig({
       },
       '/uploads': {
         target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/socket.io': {
+        target: 'http://localhost:3000',
+        ws: true,
         changeOrigin: true,
       },
     },
