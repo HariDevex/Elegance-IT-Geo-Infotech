@@ -155,8 +155,11 @@ cd Frontend && npm install && npm run dev
 # Start PostgreSQL + Redis + API server
 docker compose up --build
 
-# Run migrations + seed
-docker compose exec server sh -c "npx knex migrate:latest --knexfile knexfile.js && node seeds/seed.js"
+# Run migrations only (if not auto)
+docker compose exec server sh -c "npx knex migrate:latest --knexfile knexfile.js"
+
+# Seed data
+docker compose exec server node seeds/seed.js
 ```
 
 The server auto-runs migrations on start. To disable, remove `npx knex migrate:latest --knexfile knexfile.js &&` from the `CMD` in `server/Dockerfile`.
@@ -212,7 +215,7 @@ Creates a root user with credentials from env vars (defaults: `admin@elegance.co
 │   ├── modules/                   # Zod schemas per feature
 │   ├── routes/                    # API route definitions
 │   ├── seeds/                     # Initial data
-│   ├── tests/                     # 60 unit tests
+│   ├── tests/                     # Unit tests
 │   ├── utils/                     # Email, OAuth, Redis, logging, dateUtils
 │   ├── Dockerfile
 │   ├── knexfile.js
@@ -225,7 +228,6 @@ Creates a root user with credentials from env vars (defaults: `admin@elegance.co
 │   │   ├── pages/
 │   │   ├── config/
 │   │   ├── utils/                 # Excel, Date formatting, API helpers
-│   │   └── tests/                 # 13 component tests
 │   ├── Dockerfile
 │   └── vite.config.js
 │

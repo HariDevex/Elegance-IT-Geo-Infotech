@@ -46,7 +46,7 @@ export const sentryErrorHandler = (app) => {
     return;
   }
   
-  app.use(Sentry.Handlers.errorHandler((err, req, res, next) => {
+  app.use(Sentry.Handlers.errorHandler((err, req, res, _next) => {
     const statusCode = err.statusCode || 500;
     const errorId = err.sentry || Sentry.captureException(err);
 

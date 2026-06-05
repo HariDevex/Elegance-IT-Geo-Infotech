@@ -21,7 +21,8 @@ const useAttendance = (initialParams = {}) => {
 
   useEffect(() => {
     fetchAttendance(initialParams);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchAttendance]);
 
   return { records, loading, refetch: fetchAttendance };
 };

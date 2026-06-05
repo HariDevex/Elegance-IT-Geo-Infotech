@@ -57,6 +57,7 @@ const CheckInOut = () => {
 
   useEffect(() => {
     loadRecords();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
 
   const handleCheckin = async () => {

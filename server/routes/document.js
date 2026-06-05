@@ -1,12 +1,9 @@
 import express from "express";
 import multer from "multer";
 import path from "path";
-import { fileURLToPath } from "url";
 import authMiddleware from "../middleware/auth.js";
 import { getDocuments, uploadDocument, deleteDocument } from "../controller/documentController.js";
 import { generateSignedUploadUrl } from "../utils/supabaseStorage.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const storage = multer.memoryStorage();
 

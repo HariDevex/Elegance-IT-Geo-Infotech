@@ -4,7 +4,7 @@ import api from "../config/axios";
 import { SkeletonCard } from "./Skeleton";
 import { getProjectDateStr } from "../utils/dateUtils";
 
-const AnnouncementsList = ({ title = "Announcements", showAudience = false }) => {
+const AnnouncementsList = ({ title = "Announcements" }) => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

@@ -37,7 +37,7 @@ export const uploadFile = async (file, folder = "uploads") => {
     try {
       const fileName = `${folder}/${Date.now()}-${sanitizedName}`;
       
-      const { data, error } = await supabase.storage
+const { error } = await supabase.storage
         .from("ems-uploads")
         .upload(fileName, file.buffer, {
           contentType: file.mimetype,

@@ -1,5 +1,4 @@
 import jwt from "jsonwebtoken";
-import { config } from "../config/appConfig.js";
 import db from "../config/database.js";
 import crypto from "crypto";
 
@@ -13,7 +12,6 @@ export const blacklistToken = async (token) => {
     const ttl = decoded.exp * 1000 - Date.now();
     if (ttl <= 0) return false;
 
-    const hours = Math.ceil(ttl / (1000 * 60 * 60));
     const tokenHash = hashToken(token);
 
     await db("token_blacklist").insert({

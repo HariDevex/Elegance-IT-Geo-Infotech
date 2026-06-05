@@ -118,7 +118,7 @@ export default function useChat() {
 
     socket.on("message:status", (data) => {
       if (!data) return;
-      const { userId: statusId, timestamp, status } = data;
+      const { userId: statusId, timestamp } = data;
       setMessages(prev => {
         const chatMsgs = [...(prev[statusId] || [])];
         // Mark all messages up to this timestamp as seen

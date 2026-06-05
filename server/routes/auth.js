@@ -1,9 +1,7 @@
 import express from "express";
 import multer from "multer";
 import path from "path";
-import { fileURLToPath } from "url";
-import {
-  login,
+import { login,
   logout,
   refreshAccessToken,
   changePassword,
@@ -34,8 +32,6 @@ import {
   resetPasswordSchema,
   refreshTokenSchema,
 } from "../modules/auth/auth.schema.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const upload = multer({
   storage: multer.memoryStorage(),

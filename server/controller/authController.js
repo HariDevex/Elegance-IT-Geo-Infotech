@@ -8,8 +8,7 @@ import { config } from "../config/appConfig.js";
 import { logActivity } from "./activityLogController.js";
 import { addEmailJob } from "../core/queue.js";
 import "../core/emailQueue.js";
-import aiSecurity from "../utils/aiSecurity.js";
-import { blacklistToken } from "../utils/tokenBlacklist.js";
+
 import { isLateCheckIn } from "../utils/attendanceUtils.js";
 
 import { getProjectDateStr } from "../utils/dateUtils.js";
@@ -994,26 +993,6 @@ const terminateAllSessions = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
-  }
-};
-
-const sendLoginNotification = async (userId, ip, deviceType) => {
-  try {
-    const user = await db("users").where("id", userId).first();
-    if (!user || !user.email) return;
-
-    // Check if user has email notifications enabled
-    const preferences = await db("user_preferences").where("user_id", userId).first();
-    if (preferences && !preferences.email_notifications) return;
-
-    // For now, we'll just log this - in production, you would send an actual email
-    await logActivity(userId, "login_alert", "security", userId, {
-      ip,
-      device: deviceType,
-      type: "new_device_login",
-    }, ip);
-  } catch (error) {
-    console.error("Login notification error:", error);
   }
 };
 

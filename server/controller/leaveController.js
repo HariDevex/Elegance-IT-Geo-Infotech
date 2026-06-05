@@ -1,6 +1,6 @@
 import db from "../config/database.js";
 import { createNotification } from "./notificationController.js";
-import { updateBalance, getOrCreateBalance } from "./leaveBalanceController.js";
+import { updateBalance } from "./leaveBalanceController.js";
 import { logActivity } from "./activityLogController.js";
 import { invalidateCache } from "../utils/responseCache.js";
 import crypto from "crypto";
@@ -232,7 +232,7 @@ const updateLeaveStatus = async (req, res, next) => {
       });
     }
 
-    const updatedCount = await db("leaves")
+    await db("leaves")
       .where("id", id)
       .update({
         status,

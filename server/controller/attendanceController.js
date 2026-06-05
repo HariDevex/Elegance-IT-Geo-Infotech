@@ -2,11 +2,6 @@ import db from "../config/database.js";
 import crypto from "crypto";
 import { canViewAll, canWrite, isLateCheckIn } from "../utils/attendanceUtils.js";
 
-const getAttendanceStatus = (checkInTime) => {
-  if (!checkInTime) return "Absent";
-  return isLateCheckIn(checkInTime) ? "Late" : "On Time";
-};
-
 const createOrUpdateAttendance = async (req, res, next) => {
   try {
     const { userId, date, status, action } = req.body;

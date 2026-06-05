@@ -79,10 +79,8 @@ const ChatMessageArea = ({
   const isGroupChat = activeContact?.startsWith("grp-");
   const isActiveOnline = useMemo(() => {
     if (isGroupChat) return false;
-    const contact = (messages[activeContact] || []).find(m => !m.isYou)?.from; // This is a fallback
-    // In a real app we'd look up the contact in the contactList, but for simplicity here:
     return activeName && !isGroupChat; 
-  }, [activeContact, isGroupChat, activeName]);
+  }, [isGroupChat, activeName]);
 
   if (!activeContact) return null;
 

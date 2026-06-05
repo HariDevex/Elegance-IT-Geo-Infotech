@@ -23,7 +23,8 @@ const useLeaves = (initialParams = {}) => {
 
   useEffect(() => {
     fetchLeaves(initialParams);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchLeaves]);
 
   return { leaves, loading, pagination, refetch: fetchLeaves };
 };

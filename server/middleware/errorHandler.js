@@ -30,7 +30,7 @@ const logError = (err, req) => {
   }
 };
 
-export const errorHandler = (err, req, res, next) => {
+export const errorHandler = (err, req, res, _next) => {
   logError(err, req);
 
   if (err.name === "ValidationError") {

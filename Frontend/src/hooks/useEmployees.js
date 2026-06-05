@@ -23,7 +23,8 @@ const useEmployees = (initialParams = {}) => {
 
   useEffect(() => {
     fetchEmployees(initialParams);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchEmployees]);
 
   return { employees, loading, pagination, refetch: fetchEmployees };
 };
