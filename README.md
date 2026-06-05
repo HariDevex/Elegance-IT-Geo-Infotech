@@ -141,6 +141,9 @@ cd Frontend && npm install && npm run dev
 |---------|-----|
 | Docker Compose | Local dev environment |
 | GitHub Actions | CI (lint, migrate, test, build) |
+| Render | Backend API hosting (`elegance-it-geo-infotech.onrender.com`) |
+| Vercel | Frontend SPA hosting (`elegance-it-geo-infotech.vercel.app`) |
+| Supabase | File storage (`kzqheffjtzuwgdzraoqi`) |
 
 ---
 
