@@ -228,6 +228,20 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
   }
 }));
 
+app.use("/uploads", (req, res) => {
+  const transparentPixel = Buffer.from(
+    "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+    "base64"
+  );
+  res.set({
+    "Content-Type": "image/gif",
+    "Content-Length": transparentPixel.length,
+    "Cache-Control": "no-cache",
+    "Cross-Origin-Resource-Policy": "cross-origin",
+  });
+  res.status(200).end(transparentPixel);
+});
+
 app.use(requestLogger);
 
 app.use("/api/auth", authRouter);
