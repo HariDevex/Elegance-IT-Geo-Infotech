@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import toast from "react-hot-toast";
 import { documentService } from "../services/documentService.js";
+import { formatDate } from "../utils/format";
 import {
   Folder,
   FolderOpen,
@@ -29,18 +30,6 @@ const FILE_ICONS = {
   png: Image,
   xls: FileSpreadsheet,
   xlsx: FileSpreadsheet,
-};
-
-const formatDate = (d) => {
-  if (!d) return "";
-  const date = new Date(d);
-  return date.toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 };
 
 const formatSize = (bytes) => {
@@ -97,7 +86,7 @@ const FolderTreeItem = ({ folder, activeFolderId, onSelect, depth = 0 }) => {
               key={child.id}
               folder={child}
               activeFolderId={activeFolderId}
-              onSelect={onSelect}
+              onSelect={handleFolderClick}
               depth={depth + 1}
             />
           ))}
@@ -306,7 +295,7 @@ const FileExplorer = () => {
               )}
             </button>
             <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-              {formatDate(folder.created_at)}
+              {formatDate(folder.created_at, true)}
             </span>
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
               <button
@@ -344,7 +333,7 @@ const FileExplorer = () => {
             <div className="flex-1 min-w-0">
               <span className="text-sm font-medium truncate block">{doc.name}</span>
               <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                {doc.type} &middot; {formatDate(doc.createdAt)}
+                {doc.type} &middot; {formatDate(doc.createdAt, true)}
               </span>
             </div>
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">

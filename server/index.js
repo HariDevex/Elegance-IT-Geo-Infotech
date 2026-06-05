@@ -108,7 +108,7 @@ app.use(helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
       scriptSrc: ["'self'"],
-      connectSrc: ["'self'", "https:", "wss:", "ws:", "https://haridevx-eg-server.onrender.com", "wss://haridevx-eg-server.onrender.com"],
+      connectSrc: ["'self'", "https:", "wss:", "ws:", "https://elegance-it-geo-infotech.onrender.com", "wss://elegance-it-geo-infotech.onrender.com"],
     },
   },
 }));
@@ -119,9 +119,8 @@ const corsOrigins = [
   "http://localhost:8081",
   "http://192.168.1.10:8081",
   "https://192.168.1.10:8081",
-  "https://elegance-ems-haridevx.vercel.app",
-  "https://elegance-it-geo-infotech.vercel.app",
-  "https://haridevx-eg-server.onrender.com",
+  "https://elegance-it-geo-infotech-3onp6wpyx-harizencodedevs-projects.vercel.app",
+  "https://elegance-it-geo-infotech.onrender.com",
 ].filter(Boolean);
 
 app.use(
@@ -288,7 +287,7 @@ app.get("/health", async (req, res) => {
 });
 
 if (fs.existsSync(frontendDistPath)) {
-  app.get("{*path}", (req, res) => {
+  app.get("*", (req, res) => {
     res.sendFile(path.join(frontendDistPath, "index.html"));
   });
 } else {

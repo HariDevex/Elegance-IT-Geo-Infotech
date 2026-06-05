@@ -1,9 +1,10 @@
 import { memo, useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
 import api from "../config/axios";
-import { Download } from "lucide-react";
+import { Download, ShieldCheck } from "lucide-react";
 import { exportToExcel, getImageUrl } from "../utils/excel";
 import { Skeleton, SkeletonTable } from "./Skeleton";
+import { getProjectDateStr } from "../utils/dateUtils";
 
 const EmployeesList = ({ onAddNew, onView, onEdit }) => {
   const [employees, setEmployees] = useState([]);
@@ -41,7 +42,7 @@ const EmployeesList = ({ onAddNew, onView, onEdit }) => {
     try {
       const res = await api.get("/auth/export/employees");
       if (res.data.success && res.data.data.length > 0) {
-        exportToExcel(res.data.data, `employees_${new Date().toISOString().split("T")[0]}`, "Employees");
+        exportToExcel(res.data.data, `employees_${getProjectDateStr()}`, "Employees");
         toast.success("Excel downloaded!");
       } else {
         toast.error("No data to export");
@@ -157,19 +158,27 @@ const EmployeesList = ({ onAddNew, onView, onEdit }) => {
                   <tr key={emp._id || idx} className="border-t border-slate-700 hover:bg-slate-700/30">
                     <td className="px-4 py-3">{idx + 1}</td>
                     <td className="px-4 py-3">
-                      <div className="h-10 w-10 rounded-full bg-slate-700 overflow-hidden flex items-center justify-center">
-                        {emp.profileImage || emp.avatar ? (
-                          <img src={getImageUrl(emp.profileImage || emp.avatar)} alt={emp.name} className="h-full w-full object-cover" loading="lazy" />
-                        ) : (
-                          <div className="h-full w-full flex items-center justify-center text-xs text-white">
-                            {(emp.name || "NA").slice(0, 2).toUpperCase()}
-                          </div>
+                      <div className="relative h-10 w-10">
+                        <div className="h-10 w-10 rounded-full bg-slate-700 overflow-hidden flex items-center justify-center border border-slate-600">
+                          {emp.profileImage || emp.avatar ? (
+                            <img src={getImageUrl(emp.profileImage || emp.avatar)} alt={emp.name} className="h-full w-full object-cover" loading="lazy" />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center text-xs text-white">
+                              {(emp.name || "NA").slice(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        {emp.isOnline && (
+                          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-slate-800 bg-emerald-500 animate-pulse" title="Online now" />
                         )}
                       </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div>
-                        <div className="font-medium">{emp.name}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{emp.name}</span>
+                          {emp.isOnline && <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-tighter">Live</span>}
+                        </div>
                         <div className="text-xs text-slate-400">{emp.email}</div>
                       </div>
                     </td>
@@ -201,7 +210,7 @@ const EmployeesList = ({ onAddNew, onView, onEdit }) => {
           </div>
 
           {pagination.pages > 1 && (
-            <div className="flex justify-center gap-2">
+            <div className="flex justify-center gap-2 pt-4">
               <button
                 onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
                 disabled={pagination.page === 1}

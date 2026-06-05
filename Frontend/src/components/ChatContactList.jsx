@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { Search, Plus, MessageCircle } from "lucide-react";
+import { getProjectTimeStr } from "../utils/dateUtils";
 
 const getInitials = (name) => {
   return (name || "?").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
@@ -7,7 +8,7 @@ const getInitials = (name) => {
 
 const formatTime = (ts) => {
   if (!ts) return "";
-  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return getProjectTimeStr(new Date(ts));
 };
 
 const ContactSkeleton = () => (

@@ -214,24 +214,30 @@ const listEmployees = async (req, res, next) => {
 
     const users = await buildQuery(
       db("users")
+        .leftJoin("login_sessions", function() {
+          this.on("users.id", "=", "login_sessions.user_id")
+            .andOn("login_sessions.is_active", "=", db.raw("?", [true]))
+            .andOn("login_sessions.last_active_at", ">", db.raw("?", [new Date(Date.now() - 15 * 60 * 1000)]));
+        })
         .select(
-          "employee_id",
-          "name",
-          "email",
-          "role",
-          "employee_id",
-          "dob",
-          "gender",
-          "marital_status",
-          "department",
-          "designation",
-          "salary",
-          "profile_image",
-          "avatar",
-          "attendance_status",
-          "created_at"
+          "users.employee_id",
+          "users.name",
+          "users.email",
+          "users.role",
+          "users.dob",
+          "users.gender",
+          "users.marital_status",
+          "users.department",
+          "users.designation",
+          "users.salary",
+          "users.profile_image",
+          "users.avatar",
+          "users.attendance_status",
+          "users.created_at",
+          db.raw("CASE WHEN login_sessions.id IS NOT NULL THEN true ELSE false END as is_online")
         )
-        .orderBy("created_at", "desc")
+        .groupBy("users.id")
+        .orderBy("users.created_at", "desc")
         .limit(limit)
         .offset(offset)
     );
@@ -255,6 +261,7 @@ const listEmployees = async (req, res, next) => {
         salary: canViewSalary ? u.salary : undefined,
         profileImage: u.profile_image,
         avatar: u.avatar,
+        isOnline: !!u.is_online,
         attendanceStatus: u.attendance_status,
         createdAt: u.created_at,
       })),

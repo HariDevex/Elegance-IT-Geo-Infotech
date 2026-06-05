@@ -6,6 +6,10 @@ const ALLOWED_TYPES = ["contract", "id_proof", "certificate", "other"];
 const getDocuments = async (req, res, next) => {
   try {
     let userId = req.user.id;
+    const { folder_id, page = 1, limit = 50 } = req.query;
+    const currentPage = Math.max(1, parseInt(page));
+    const pageSize = Math.min(100, Math.max(1, parseInt(limit)));
+    const offset = (currentPage - 1) * pageSize;
 
     if (req.params.userId) {
       if (!["root", "admin", "manager", "teamlead", "hr"].includes(req.user.role)) {
@@ -18,7 +22,6 @@ const getDocuments = async (req, res, next) => {
       userId = user.id;
     }
 
-    const { folder_id } = req.query;
     let query = db("documents")
       .where("user_id", userId)
       .orderBy("created_at", "desc");
@@ -29,7 +32,8 @@ const getDocuments = async (req, res, next) => {
       query = query.where("folder_id", folder_id);
     }
 
-    const documents = await query;
+    const [{ count }] = await query.clone().clearSelect().clearOrder().count("* as count");
+    const documents = await query.clone().limit(pageSize).offset(offset);
 
     res.json({
       success: true,
@@ -42,6 +46,12 @@ const getDocuments = async (req, res, next) => {
         folder_id: d.folder_id,
         createdAt: d.created_at,
       })),
+      pagination: {
+        page: currentPage,
+        limit: pageSize,
+        total: parseInt(count),
+        pages: Math.ceil(parseInt(count) / pageSize),
+      }
     });
   } catch (error) {
     next(error);
