@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import API_BASE from "../config/api.js";
+import { getProjectDateStr, getProjectTimeStr } from "./dateUtils";
 
 export const getImageUrl = (path) => {
   if (!path) return null;
@@ -19,46 +20,67 @@ export const exportToExcel = async (data, filename, sheetName = "Sheet1") => {
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet(sheetName);
     
+    // Add Metadata header
+    ws.mergeCells("A1:C1");
+    ws.getCell("A1").value = `Report: ${filename.replace(/_/g, ' ')}`;
+    ws.getCell("A1").font = { bold: true, size: 14 };
+    
+    ws.mergeCells("A2:C2");
+    ws.getCell("A2").value = `Generated on: ${getProjectDateStr()} ${getProjectTimeStr()}`;
+    ws.getCell("A2").font = { italic: true, size: 10, color: { argb: "FF666666" } };
+
+    // Header starts at row 4
     const headers = Object.keys(data[0]);
+    const headerRowIdx = 4;
     
-    ws.addRow(headers.map(h => h.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())));
-    
-    const headerRow = ws.getRow(1);
-    headerRow.font = { bold: true };
+    const headerRow = ws.getRow(headerRowIdx);
+    headerRow.values = headers.map(h => h.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
+    headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
     headerRow.fill = {
       type: "pattern",
       pattern: "solid",
-      fgColor: { argb: "FF1e3a5f" }
+      fgColor: { argb: "FF1e3a8a" } // Dark blue
     };
-    headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
-    headerRow.alignment = { horizontal: "center" };
-    
+    headerRow.alignment = { horizontal: "center", vertical: "middle" };
+    headerRow.height = 25;
+
     data.forEach((row, index) => {
       const values = headers.map(h => {
         const val = row[h];
-        if (val === null || val === undefined) return "";
+        if (val === null || val === undefined) return "-";
         if (typeof val === "object") return JSON.stringify(val);
         return val;
       });
-      ws.addRow(values);
+      const wsRow = ws.addRow(values);
       
-      if (index % 2 === 0) {
-        const rowNum = ws.rowCount;
-        ws.getRow(rowNum).fill = {
+      // Alternate row colors
+      if (index % 2 === 1) {
+        wsRow.fill = {
           type: "pattern",
           pattern: "solid",
-          fgColor: { argb: "FFF1f5f9" }
+          fgColor: { argb: "FFF8FAFC" }
         };
       }
+      wsRow.height = 20;
+      wsRow.alignment = { vertical: "middle" };
     });
     
+    // Add Auto-filter
+    ws.autoFilter = {
+      from: { row: headerRowIdx, column: 1 },
+      to: { row: headerRowIdx + data.length, column: headers.length }
+    };
+
+    // Auto-fit columns
     ws.columns.forEach(column => {
       let maxLength = 10;
-      column.eachCell?.({ includeEmpty: true }, cell => {
-        const length = cell.value ? String(cell.value).length : 0;
-        if (length > maxLength) maxLength = Math.min(length, 50);
+      column.eachCell?.({ includeEmpty: true }, (cell, rowNumber) => {
+        if (rowNumber >= headerRowIdx) {
+          const length = cell.value ? String(cell.value).length : 0;
+          if (length > maxLength) maxLength = Math.min(length, 60);
+        }
       });
-      column.width = maxLength + 2;
+      column.width = maxLength + 5;
     });
     
     const buffer = await wb.xlsx.writeBuffer();

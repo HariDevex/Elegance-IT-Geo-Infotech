@@ -4,21 +4,21 @@ import api from "../config/axios";
 import { useAuth } from "../context/authContext";
 import { Clock, CheckCircle, XCircle, AlertCircle, LogIn, LogOut } from "lucide-react";
 import { Skeleton, SkeletonTable } from "./Skeleton";
+import { getProjectDateStr, getProjectTimeStr } from "../utils/dateUtils";
 
 const EmployeeAttendanceView = () => {
   const { user } = useAuth();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [actionMsg, setActionMsg] = useState("");
-  const [actionLoading, setActionLoading] = useState(false);
+  const [actionMsg] = useState("");
 
   const load = async () => {
     setLoading(true);
     setError("");
     try {
+      const today = getProjectDateStr();
       const firstDayOfYear = `${new Date().getFullYear()}-01-01`;
-      const today = new Date().toISOString().split("T")[0];
 
       const res = await api.get("/attendance/my", {
         params: { from: firstDayOfYear, to: today },
@@ -37,37 +37,15 @@ const EmployeeAttendanceView = () => {
     if (user?._id) load();
   }, [user]);
 
-  const act = async (action) => {
-    setActionLoading(true);
-    setActionMsg("");
-    setError("");
-    try {
-      const today = new Date().toISOString().split("T")[0];
-      await api.post(
-        "/attendance",
-        { userId: user?._id, date: today, action }
-      );
-      const msg = action === "checkin" ? "Checked in successfully!" : "Checked out successfully!";
-      setActionMsg(msg);
-      toast.success(msg);
-      load();
-    } catch (err) {
-      setError(err.response?.data?.error || "Failed to update");
-      toast.error(err.response?.data?.error);
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   const formatTime = (isoString) => {
     if (!isoString) return "-";
-    const date = new Date(isoString);
-    return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+    return getProjectTimeStr(new Date(isoString));
   };
 
   const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+    if (!dateStr) return "-";
+    const normalized = dateStr.includes("T") ? dateStr : `${dateStr}T00:00:00.000Z`;
+    return getProjectDateStr(new Date(normalized));
   };
 
   const getTimeDiff = (start, end) => {
@@ -98,22 +76,6 @@ const EmployeeAttendanceView = () => {
         <h2 className="text-xl font-semibold text-white">My Attendance</h2>
         
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => act("checkin")}
-            disabled={actionLoading}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold disabled:opacity-50 text-sm"
-          >
-            <LogIn size={16} />
-            {actionLoading ? "..." : "Check In"}
-          </button>
-          <button
-            onClick={() => act("checkout")}
-            disabled={actionLoading}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold disabled:opacity-50 text-sm"
-          >
-            <LogOut size={16} />
-            {actionLoading ? "..." : "Check Out"}
-          </button>
           {actionMsg && <span className="text-sm text-cyan-300">{actionMsg}</span>}
         </div>
       </div>

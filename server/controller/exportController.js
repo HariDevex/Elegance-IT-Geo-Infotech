@@ -1,4 +1,5 @@
 import db from "../config/database.js";
+import { getProjectDateStr, getProjectTimeStr } from "../utils/dateUtils.js";
 
 const exportEmployeesExcel = async (req, res, next) => {
   try {
@@ -29,11 +30,11 @@ const exportEmployeesExcel = async (req, res, next) => {
         department: e.department || "-",
         designation: e.designation || "-",
         gender: e.gender || "-",
-        dob: e.dob ? new Date(e.dob).toLocaleDateString() : "-",
+        dob: e.dob ? getProjectDateStr(new Date(e.dob)) : "-",
         maritalStatus: e.marital_status || "-",
         salary: e.salary ? `$${e.salary}` : "-",
         attendanceStatus: e.attendance_status,
-        createdAt: new Date(e.created_at).toLocaleDateString(),
+        createdAt: getProjectDateStr(new Date(e.created_at)),
       })),
     });
   } catch (error) {
@@ -74,10 +75,10 @@ const exportAttendanceExcel = async (req, res, next) => {
         employeeId: r.employee_id || "-",
         name: r.name,
         department: r.department || "-",
-        date: new Date(r.date).toLocaleDateString(),
+        date: r.date ? getProjectDateStr(new Date(r.date)) : "-",
         status: r.status,
-        checkIn: r.check_in_at ? new Date(r.check_in_at).toLocaleTimeString() : "-",
-        checkOut: r.check_out_at ? new Date(r.check_out_at).toLocaleTimeString() : "-",
+        checkIn: r.check_in_at ? getProjectTimeStr(r.check_in_at) : "-",
+        checkOut: r.check_out_at ? getProjectTimeStr(r.check_out_at) : "-",
       })),
     });
   } catch (error) {
@@ -124,8 +125,8 @@ const exportLoginLogsExcel = async (req, res, next) => {
         email: l.email,
         ipAddress: l.ip_address || "-",
         status: l.status,
-        date: new Date(l.created_at).toLocaleDateString(),
-        time: new Date(l.created_at).toLocaleTimeString(),
+        date: getProjectDateStr(new Date(l.created_at)),
+        time: getProjectTimeStr(new Date(l.created_at)),
       })),
     });
   } catch (error) {

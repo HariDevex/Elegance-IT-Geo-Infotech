@@ -3,6 +3,8 @@ import toast from "react-hot-toast";
 import api from "../config/axios";
 import { useAuth } from "../context/authContext";
 import { Skeleton, SkeletonTable } from "./Skeleton";
+import { getProjectDateStr } from "../utils/dateUtils";
+
 const statusOptions = ["All", "Pending", "Approved", "Rejected"];
 const leaveTypeOptions = [
   { value: "Annual Leave", label: "Annual Leave" },
@@ -193,8 +195,8 @@ const EmployeeLeaves = () => {
               filtered.map((l) => (
                 <tr key={l.id} className="border-t border-slate-700 hover:bg-slate-700/30">
                   <td className="px-4 py-3">{l.type}</td>
-                  <td className="px-4 py-3">{l.from ? new Date(l.from).toLocaleDateString() : "-"}</td>
-                  <td className="px-4 py-3">{l.to ? new Date(l.to).toLocaleDateString() : "-"}</td>
+                  <td className="px-4 py-3">{l.from ? getProjectDateStr(new Date(l.from)) : "-"}</td>
+                  <td className="px-4 py-3">{l.to ? getProjectDateStr(new Date(l.to)) : "-"}</td>
                   <td className="px-4 py-3 max-w-xs truncate">{l.description || "-"}</td>
                   <td className="px-4 py-3">
                     <span

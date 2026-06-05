@@ -1,7 +1,7 @@
 import db from "../config/database.js";
 import crypto from "crypto";
 import { logActivity } from "./activityLogController.js";
-import { getProjectDateStr } from "../utils/dateUtils.js";
+import { getProjectDateStr, getProjectTimeStr } from "../utils/dateUtils.js";
 import { isLateCheckIn } from "../utils/attendanceUtils.js";
 
 const MAX_CHECKIN_PER_DAY = 3;
@@ -283,7 +283,7 @@ const exportCheckinExcel = async (req, res, next) => {
       let duration = "-";
       
       if (co) {
-        checkoutTime = new Date(co.created_at).toLocaleTimeString();
+        checkoutTime = getProjectTimeStr(co.created_at);
         const start = new Date(ci.created_at);
         const end = new Date(co.created_at);
         duration = `${Math.round((end - start) / 60000)} min`;
@@ -294,7 +294,7 @@ const exportCheckinExcel = async (req, res, next) => {
         employeeId: ci.employee_id,
         name: ci.name,
         department: ci.department || "-",
-        checkinTime: new Date(ci.created_at).toLocaleTimeString(),
+        checkinTime: getProjectTimeStr(ci.created_at),
         checkoutTime,
         duration,
         note: ci.note || "-",

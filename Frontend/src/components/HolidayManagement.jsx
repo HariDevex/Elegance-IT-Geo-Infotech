@@ -4,6 +4,7 @@ import api from "../config/axios";
 import { Trash2, Plus, Lock, Calendar, RefreshCw } from "lucide-react";
 import { useAuth } from "../context/authContext";
 import { Skeleton, SkeletonTable } from "./Skeleton";
+import { getProjectDateStr } from "../utils/dateUtils";
 
 const HolidayManagement = () => {
   const { user } = useAuth();
@@ -227,7 +228,7 @@ const HolidayManagement = () => {
               {holidays.map((holiday, idx) => (
                 <tr key={holiday._id ?? idx} className="border-t border-slate-700 hover:bg-slate-700/30">
                   <td className="px-4 py-3 text-white">
-                    {new Date(holiday.date).toLocaleDateString("en-US", { weekday: "short", year: "numeric", month: "short", day: "numeric" })}
+                    {getProjectDateStr(new Date(holiday.date))}
                   </td>
                   <td className="px-4 py-3 text-white font-medium">{holiday.name}</td>
                   <td className="px-4 py-3">

@@ -4,8 +4,9 @@ import api from "../config/axios";
 import { Download, LogIn, LogOut, Clock, CheckCircle, AlertCircle, Users, User } from "lucide-react";
 import { Skeleton, SkeletonTable } from "./Skeleton";
 import { useAuth } from "../context/authContext";
+import { exportToExcel } from "../utils/excel";
 
-import { getProjectDateStr } from "../utils/dateUtils";
+import { getProjectDateStr, getProjectTimeStr } from "../utils/dateUtils";
 
 const CheckInOut = () => {
   const { user } = useAuth();
@@ -103,29 +104,22 @@ const CheckInOut = () => {
 
   const handleExport = async () => {
     try {
-      const res = await api.get("/checkin/export", { responseType: "blob" });
-      if (res.data instanceof Blob && res.data.size > 0) {
-        const url = URL.createObjectURL(res.data);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `checkin-export-${getProjectDateStr()}.xlsx`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
+      const res = await api.get("/checkin/export");
+      if (res.data.success && res.data.data.length > 0) {
+        exportToExcel(res.data.data, `checkin-export-${getProjectDateStr()}`, "Check-in Records");
         toast.success("Excel downloaded!");
       } else {
         toast.error("No data to export");
       }
-    } catch {
+    } catch (err) {
+      console.error("Export failed:", err);
       toast.error("Export failed");
     }
   };
 
   const formatTime = (isoString) => {
     if (!isoString) return "-";
-    const date = new Date(isoString);
-    return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
+    return getProjectTimeStr(new Date(isoString));
   };
 
   const formatDate = (dateStr) => {
@@ -133,7 +127,7 @@ const CheckInOut = () => {
     const normalized = dateStr.includes("T") ? dateStr : `${dateStr}T00:00:00.000Z`;
     const date = new Date(normalized);
     if (isNaN(date.getTime())) return "-";
-    return date.toLocaleDateString("en-GB", { weekday: "short", month: "short", day: "numeric" });
+    return getProjectDateStr(date);
   };
 
   const getTimeDiff = (start, end) => {

@@ -2,6 +2,7 @@ import { useEffect, useState, memo } from "react";
 import toast from "react-hot-toast";
 import api from "../config/axios";
 import { SkeletonCard } from "./Skeleton";
+import { getProjectDateStr } from "../utils/dateUtils";
 
 const AnnouncementsList = ({ title = "Announcements", showAudience = false }) => {
   const [rows, setRows] = useState([]);
@@ -49,7 +50,7 @@ const AnnouncementsList = ({ title = "Announcements", showAudience = false }) =>
               <div className="flex justify-between items-start gap-2 mb-2">
                 <h3 className="font-semibold text-white">{a.title}</h3>
                 <span className="text-xs text-slate-400">
-                  {new Date(a.createdAt).toLocaleDateString()}
+                  {getProjectDateStr(new Date(a.createdAt))}
                 </span>
               </div>
               <p className="text-sm text-slate-300 whitespace-pre-line">{a.message}</p>

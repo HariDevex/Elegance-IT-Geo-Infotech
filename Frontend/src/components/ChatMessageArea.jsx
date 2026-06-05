@@ -1,6 +1,7 @@
 import { useMemo, useRef, useEffect, memo } from "react";
 import { Search, X, Phone, Video, MoreVertical, Check, CheckCheck } from "lucide-react";
 import chatBgLogo from "../assets/Logo/EG.png";
+import { getProjectDateStr, getProjectTimeStr } from "../utils/dateUtils";
 
 const getInitials = (name) => {
   return (name || "?").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
@@ -8,7 +9,7 @@ const getInitials = (name) => {
 
 const formatTime = (ts) => {
   if (!ts) return "";
-  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return getProjectTimeStr(new Date(ts));
 };
 
 const formatDate = (ts) => {
@@ -19,7 +20,7 @@ const formatDate = (ts) => {
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
   if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
-  return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  return getProjectDateStr(date);
 };
 
 const MessageStatus = ({ status }) => {

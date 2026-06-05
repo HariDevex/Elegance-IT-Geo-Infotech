@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import api from "../config/axios";
 import { Monitor, Smartphone, Globe, Clock, Trash2, LogOut, Shield, AlertCircle } from "lucide-react";
 import { Skeleton } from "./Skeleton";
+import { getProjectDateStr, getProjectTimeStr } from "../utils/dateUtils";
 
 const SessionManagement = () => {
   const [sessions, setSessions] = useState([]);
@@ -66,20 +67,13 @@ const SessionManagement = () => {
   };
 
   const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", { 
-      month: "short", 
-      day: "numeric",
-      year: "numeric"
-    });
+    if (!dateStr) return "-";
+    return getProjectDateStr(new Date(dateStr));
   };
 
   const formatTime = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleTimeString("en-US", { 
-      hour: "2-digit", 
-      minute: "2-digit"
-    });
+    if (!dateStr) return "-";
+    return getProjectTimeStr(new Date(dateStr));
   };
 
   if (loading) {

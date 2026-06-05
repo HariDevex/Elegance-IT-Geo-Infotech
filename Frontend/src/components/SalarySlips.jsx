@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import api from "../config/axios";
 import { useAuth } from "../context/authContext";
 import { SkeletonTable } from "./Skeleton";
+import { getProjectDateStr } from "../utils/dateUtils";
 
 const SalarySlips = () => {
   const { user } = useAuth();
@@ -48,6 +49,7 @@ const SalarySlips = () => {
     try {
       await api.put(`/salary-slips/${id}/download`);
       toast.success("Download recorded");
+      load();
     } catch (err) {
       console.error("Failed to record download:", err);
       toast.error(err.response?.data?.error || "Failed to record download");
@@ -82,7 +84,7 @@ const SalarySlips = () => {
         <td className="px-4 py-3">{r.allowances}</td>
         <td className="px-4 py-3">{r.deductions}</td>
         <td className="px-4 py-3 font-semibold text-cyan-400">{r.net_pay}</td>
-        <td className="px-4 py-3 text-xs">{r.downloaded_at ? new Date(r.downloaded_at).toLocaleDateString() : "-"}</td>
+        <td className="px-4 py-3 text-xs">{r.downloaded_at ? getProjectDateStr(new Date(r.downloaded_at)) : "-"}</td>
         <td className="px-4 py-3">
           <button onClick={() => handleDownload(r.id)} className="text-cyan-400 hover:text-white text-xs">
             Mark Downloaded

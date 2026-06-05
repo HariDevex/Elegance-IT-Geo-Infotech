@@ -4,6 +4,7 @@ import api from "../config/axios";
 import { Download } from "lucide-react";
 import { exportToExcel } from "../utils/excel";
 import { Skeleton, SkeletonTable } from "./Skeleton";
+import { getProjectDateStr, getProjectTimeStr } from "../utils/dateUtils";
 
 const LoginLogs = () => {
   const [logs, setLogs] = useState([]);
@@ -123,8 +124,8 @@ const LoginLogs = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-xs">
-                    {new Date(log.createdAt).toLocaleDateString()}{" "}
-                    {new Date(log.createdAt).toLocaleTimeString()}
+                    {getProjectDateStr(new Date(log.createdAt))}{" "}
+                    {getProjectTimeStr(new Date(log.createdAt))}
                   </td>
                 </tr>
               ))}

@@ -3,6 +3,7 @@ import api from "../config/axios";
 import toast from "react-hot-toast";
 import { Activity, Filter } from "lucide-react";
 import { Skeleton } from "./Skeleton";
+import { getProjectDateStr, getProjectTimeStr } from "../utils/dateUtils";
 
 const ActivityLog = () => {
   const [logs, setLogs] = useState([]);
@@ -64,7 +65,7 @@ const ActivityLog = () => {
     if (diff < 60000) return "Just now";
     if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    return `${getProjectDateStr(d)} ${getProjectTimeStr(d)}`;
   };
 
   const modules = ["employee", "leave", "attendance", "announcement", "document", "holiday"];

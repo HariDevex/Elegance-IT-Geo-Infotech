@@ -6,7 +6,7 @@ import { useAuth } from "../context/authContext";
 import { exportToExcel, getImageUrl } from "../utils/excel";
 import { Skeleton, SkeletonTable } from "./Skeleton";
 
-import { getProjectDateStr } from "../utils/dateUtils.js";
+import { getProjectDateStr, getProjectTimeStr } from "../utils/dateUtils.js";
 
 const AttendanceList = () => {
   const [rows, setRows] = useState([]);
@@ -235,10 +235,10 @@ const AttendanceList = () => {
                     )}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-xs">
-                    {emp.checkInAt ? new Date(emp.checkInAt).toLocaleTimeString() : "-"}
+                    {emp.checkInAt ? getProjectTimeStr(new Date(emp.checkInAt)) : "-"}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-xs">
-                    {emp.checkOutAt ? new Date(emp.checkOutAt).toLocaleTimeString() : "-"}
+                    {emp.checkOutAt ? getProjectTimeStr(new Date(emp.checkOutAt)) : "-"}
                   </td>
                 </tr>
               ))}

@@ -27,7 +27,7 @@ import {
 import api from "../config/axios.js";
 
 
-import { getProjectDateStr } from "../utils/dateUtils.js";
+import { getProjectDateStr, getProjectTimeStr } from "../utils/dateUtils.js";
 
 const EmployeeDashboard = () => {
   const { user } = useAuth();
@@ -114,7 +114,7 @@ const EmployeeDashboard = () => {
                 const h = time.getHours() + time.getMinutes() / 60;
                 checkInOutMap[dayName] = {
                   ...checkInOutMap[dayName],
-                  checkIn: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  checkIn: getProjectTimeStr(time),
                   checkInHour: h,
                 };
               }
@@ -123,7 +123,7 @@ const EmployeeDashboard = () => {
                 const h = time.getHours() + time.getMinutes() / 60;
                 checkInOutMap[dayName] = {
                   ...checkInOutMap[dayName],
-                  checkOut: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  checkOut: getProjectTimeStr(time),
                   checkOutHour: h,
                 };
               }
@@ -134,7 +134,7 @@ const EmployeeDashboard = () => {
         const monthlyStats = {};
         threeMonthsAttendance.forEach((a) => {
           const date = new Date(a.date);
-          const monthKey = date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+          const monthKey = date.toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
           if (!monthlyStats[monthKey]) {
             monthlyStats[monthKey] = { present: 0, absent: 0, total: 0 };
           }

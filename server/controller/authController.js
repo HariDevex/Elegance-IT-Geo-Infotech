@@ -10,6 +10,7 @@ import { addEmailJob } from "../core/queue.js";
 import "../core/emailQueue.js";
 import aiSecurity from "../utils/aiSecurity.js";
 import { blacklistToken } from "../utils/tokenBlacklist.js";
+import { isLateCheckIn } from "../utils/attendanceUtils.js";
 
 import { getProjectDateStr } from "../utils/dateUtils.js";
 
@@ -18,41 +19,78 @@ const createOrUpdateAttendanceOnLogin = async (userId, action = "checkin") => {
     const today = getProjectDateStr();
     const now = new Date();
 
-    try {
-      if (action === "checkin") {
-        await db("attendance")
-          .where("user_id", userId)
-          .where("date", today)
-          .update({ status: "Present", check_in_at: now, updated_at: now });
-        
-        const inserted = await db("attendance")
-          .where("user_id", userId)
-          .where("date", today)
+    if (action === "checkin") {
+      // 1. Handle attendance table (Summary record)
+      const existing = await db("attendance")
+        .where("user_id", userId)
+        .where("date", today)
+        .first();
+
+      if (existing) {
+        // If it's a re-login, we don't overwrite the first check_in_at
+        if (!existing.check_in_at) {
+          const isLate = isLateCheckIn(now);
+          await db("attendance")
+            .where("id", existing.id)
+            .update({ 
+              status: isLate ? "Late" : "On Time", 
+              check_in_at: now, 
+              updated_at: now 
+            });
+        }
+      } else {
+        const isLate = isLateCheckIn(now);
+        await db("attendance").insert({
+          id: crypto.randomUUID(),
+          user_id: userId,
+          date: today,
+          status: isLate ? "Late" : "On Time",
+          check_in_at: now,
+          created_at: now,
+          updated_at: now,
+        });
+      }
+
+      // 2. Handle checkin_checkout table (Session record)
+      await db("checkin_checkout").insert({
+        id: crypto.randomUUID(),
+        user_id: userId,
+        type: "checkin",
+        note: "Auto-checkin on login",
+        created_at: now,
+      });
+
+    } else if (action === "checkout") {
+      // 1. Handle attendance table (Summary record)
+      // Always update checkout time to the latest logout
+      await db("attendance")
+        .where("user_id", userId)
+        .where("date", today)
+        .update({ check_out_at: now, updated_at: now });
+
+      // 2. Handle checkin_checkout table (Session record)
+      // Find the last open checkin session
+      const lastCheckin = await db("checkin_checkout")
+        .where("user_id", userId)
+        .where("type", "checkin")
+        .orderBy("created_at", "desc")
+        .first();
+
+      if (lastCheckin) {
+        // Check if already checked out
+        const existingCheckout = await db("checkin_checkout")
+          .where("parent_id", lastCheckin.id)
           .first();
         
-        if (!inserted) {
-          await db("attendance").insert({
+        if (!existingCheckout) {
+          await db("checkin_checkout").insert({
+            id: crypto.randomUUID(),
             user_id: userId,
-            date: today,
-            status: "Present",
-            check_in_at: now,
+            type: "checkout",
+            parent_id: lastCheckin.id,
+            note: "Auto-checkout on logout",
             created_at: now,
-            updated_at: now,
           });
-        }
-      } else if (action === "checkout") {
-        await db("attendance")
-          .where("user_id", userId)
-          .where("date", today)
-          .update({ check_out_at: now, updated_at: now });
-      }
-    } catch (e) {
-      if (e.code === "SQLITE_CONSTRAINT_UNIQUE") {
-        if (action === "checkin") {
-          await db("attendance")
-            .where("user_id", userId)
-            .where("date", today)
-            .update({ status: "Present", check_in_at: now, updated_at: now });
         }
       }
     }
