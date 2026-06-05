@@ -17,6 +17,10 @@ if (supabaseUrl && supabaseKey) {
 
 const localUploadPath = path.join(process.cwd(), "uploads");
 
+if (!fs.existsSync(localUploadPath)) {
+  fs.mkdirSync(localUploadPath, { recursive: true });
+}
+
 const sanitizeFileName = (name) => {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
 };
