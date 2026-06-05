@@ -1,5 +1,6 @@
 import db from "../config/database.js";
 import crypto from "crypto";
+import { autoPopulateUpcomingYears } from "../utils/holidayService.js";
 
 const getHolidays = async (req, res, next) => {
   try {
@@ -117,4 +118,14 @@ const getUpcomingHolidays = async (req, res, next) => {
     }
     };
 
-    export { getHolidays, createHoliday, deleteHoliday, getUpcomingHolidays };
+    const autoPopulateHolidays = async (req, res, next) => {
+  try {
+    const { years = 2 } = req.query;
+    const results = await autoPopulateUpcomingYears(parseInt(years));
+    res.json({ success: true, message: "Holidays auto-populated", results });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export { getHolidays, createHoliday, deleteHoliday, getUpcomingHolidays, autoPopulateHolidays };

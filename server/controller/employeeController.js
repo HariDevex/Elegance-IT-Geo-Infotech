@@ -234,7 +234,7 @@ const listEmployees = async (req, res, next) => {
           "users.avatar",
           "users.attendance_status",
           "users.created_at",
-          db.raw("CASE WHEN login_sessions.id IS NOT NULL THEN true ELSE false END as is_online")
+          db.raw("bool_or(login_sessions.id IS NOT NULL) as is_online")
         )
         .groupBy("users.id")
         .orderBy("users.created_at", "desc")
