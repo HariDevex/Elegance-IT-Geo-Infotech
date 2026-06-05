@@ -41,6 +41,7 @@ const EmployeeDetails = ({ employee, onBack }) => {
               src={getImageUrl(avatarUrl)}
               alt={employee.name}
               className="h-full w-full object-cover" loading="lazy"
+              onError={(e) => { e.target.style.display = 'none' }}
             />
           ) : (
             <div className="h-full w-full flex items-center justify-center text-2xl font-bold text-white bg-indigo-600">

@@ -195,8 +195,8 @@ const AttendanceList = () => {
                   <td className="px-4 py-3">{idx + 1}</td>
                   <td className="px-4 py-3">
                     <div className="h-10 w-10 rounded-full bg-slate-700 overflow-hidden">
-                        {emp.profileImage ? (
-                          <img src={getImageUrl(emp.profileImage)} alt={emp.name} className="h-full w-full object-cover" loading="lazy" />
+                          {emp.profileImage ? (
+                          <img src={getImageUrl(emp.profileImage)} alt={emp.name} className="h-full w-full object-cover" loading="lazy" onError={(e) => { e.target.style.display = 'none' }} />
                         ) : (
                         <div className="h-full w-full flex items-center justify-center text-xs text-white">
                           {(emp.name || "NA").slice(0, 2).toUpperCase()}

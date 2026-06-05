@@ -165,7 +165,7 @@ const DashboardLayout = ({
           <div className="flex items-center gap-3">
             <div className="h-11 w-11 rounded-full flex items-center justify-center font-bold text-sm gradient-primary">
               {profileImage ? (
-                <img src={profileImage} alt="Profile" className="h-full w-full object-cover rounded-full" loading="lazy" />
+                <img src={profileImage} alt="Profile" className="h-full w-full object-cover rounded-full" loading="lazy" onError={(e) => { e.target.style.display = 'none' }} />
               ) : (
                 <span>{(user?.name || "U").slice(0, 2).toUpperCase()}</span>
               )}
@@ -280,7 +280,7 @@ const DashboardLayout = ({
               >
                 <div className="h-10 w-10 rounded-full flex items-center justify-center font-semibold overflow-hidden border-2 border-transparent hover:border-white transition gradient-primary">
                   {profileImage ? (
-                    <img src={profileImage} alt="Profile" className="h-full w-full object-cover" loading="lazy" />
+                    <img src={profileImage} alt="Profile" className="h-full w-full object-cover" loading="lazy" onError={(e) => { e.target.style.display = 'none' }} />
                   ) : (
                     <span>{(user?.name || "U").slice(0, 2).toUpperCase()}</span>
                   )}
@@ -292,7 +292,7 @@ const DashboardLayout = ({
                   <div className="flex items-center gap-3">
                     <div className="relative h-14 w-14 rounded-full flex items-center justify-center font-bold gradient-primary">
                       {profileImage ? (
-<img src={profileImage} alt="Profile" className="h-full w-full object-cover rounded-full" loading="lazy" />
+<img src={profileImage} alt="Profile" className="h-full w-full object-cover rounded-full" loading="lazy" onError={(e) => { e.target.style.display = 'none' }} />
                       ) : (
                         <span>{(user?.name || "U").slice(0, 2).toUpperCase()}</span>
                       )}

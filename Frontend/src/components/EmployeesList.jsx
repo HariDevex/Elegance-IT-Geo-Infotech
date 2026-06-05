@@ -161,7 +161,7 @@ const EmployeesList = ({ onAddNew, onView, onEdit }) => {
                       <div className="relative h-10 w-10">
                         <div className="h-10 w-10 rounded-full bg-slate-700 overflow-hidden flex items-center justify-center border border-slate-600">
                           {emp.profileImage || emp.avatar ? (
-                            <img src={getImageUrl(emp.profileImage || emp.avatar)} alt={emp.name} className="h-full w-full object-cover" loading="lazy" />
+                            <img src={getImageUrl(emp.profileImage || emp.avatar)} alt={emp.name} className="h-full w-full object-cover" loading="lazy" onError={(e) => { e.target.style.display = 'none' }} />
                           ) : (
                             <div className="h-full w-full flex items-center justify-center text-xs text-white">
                               {(emp.name || "NA").slice(0, 2).toUpperCase()}

@@ -130,6 +130,7 @@ const ProfileEdit = ({ onDone }) => {
                 src={getImageUrl(user?.avatar || user?.profileImage)}
                 alt={form.name}
                 className="h-full w-full object-cover" loading="lazy"
+                onError={(e) => { e.target.style.display = 'none' }}
               />
             ) : (
               <div className="h-full w-full flex items-center justify-center text-3xl text-white font-bold">
