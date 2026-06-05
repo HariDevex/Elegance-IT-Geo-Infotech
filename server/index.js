@@ -106,7 +106,7 @@ app.use(helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
       scriptSrc: ["'self'"],
-      connectSrc: ["'self'", "https:", "wss:", "ws:", "https://haridevx-eg-server.onrender.com", "wss://haridevx-eg-server.onrender.com"],
+      connectSrc: ["'self'", "https:", "wss:", "ws:", "https://elegance-it-geo-infotech.onrender.com", "wss://elegance-it-geo-infotech.onrender.com"],
     },
   },
 }));
