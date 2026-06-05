@@ -61,7 +61,6 @@ if (fs.existsSync(frontendDistPath)) {
 }
 
 // --- HTTPS support -------------------------------------------------------
-// Toggle via USE_HTTPS=true. Defaults to HTTP to avoid reverse-proxy 502s when upstream expects plain HTTP.
 const USE_HTTPS = process.env.USE_HTTPS === "true";
 const SSL_CERT_PATH = process.env.SSL_CERT_PATH || path.resolve(__dirname, "ssl/server.crt");
 const SSL_KEY_PATH = process.env.SSL_KEY_PATH || path.resolve(__dirname, "ssl/server.key");
@@ -81,7 +80,6 @@ if (USE_HTTPS) {
       key: fs.readFileSync(SSL_KEY_PATH),
     };
     server = https.createServer(sslOptions, app);
-    // optional HTTP->HTTPS redirect on port 80
     redirectServer = http.createServer((req, res) => {
       const host = (req.headers.host || "").split(":")[0];
       const targetPort = PORT === 443 ? "" : `:${PORT}`;
@@ -119,17 +117,29 @@ const corsOrigins = [
   "http://localhost:8081",
   "http://192.168.1.10:8081",
   "https://192.168.1.10:8081",
-  "https://elegance-ems-haridevx.vercel.app",
+  "https://elegance-it-geo-infotech.onrender.com",
   "https://elegance-it-geo-infotech.vercel.app",
-  "https://haridevx-eg-server.onrender.com",
-].filter(Boolean);
+].filter(Boolean).map(url => url.replace(/\/$/, ""));
 
 app.use(
   cors({
-    origin: corsOrigins.length > 0 ? corsOrigins : "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "Content-Length"],
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const isAllowed = corsOrigins.includes(origin) || 
+                       origin.endsWith(".vercel.app") || 
+                       origin.includes("localhost") || 
+                       origin.includes("192.168.");
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        console.warn(`CORS blocked for origin: ${origin}`);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Content-Length", "X-Requested-With"],
     credentials: true,
+    optionsSuccessStatus: 200,
   })
 );
 
@@ -145,7 +155,7 @@ const sensitivePaths = ["/api/employees", "/api/leaves", "/api/announcements"];
 
 const globalLimiter = makeRateLimiter({
   windowMs: 60 * 60 * 1000,
-  max: process.env.NODE_ENV === "production" ? 1000 : 50000,
+  max: process.env.NODE_ENV === "production" ? 2000 : 50000,
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: false,
@@ -153,7 +163,8 @@ const globalLimiter = makeRateLimiter({
   message: { success: false, error: "Too many requests, please try again later." },
   skip: (req) => sensitivePaths.some((p) => req.path.startsWith(p)),
 });
-app.use("/api/", globalLimiter);
+
+app.use("/api", globalLimiter);
 
 const authLimiter = makeRateLimiter({
   windowMs: 15 * 60 * 1000,
@@ -163,6 +174,7 @@ const authLimiter = makeRateLimiter({
   validate: { xForwardedForHeader: false },
   message: { success: false, error: "Too many login attempts, please try again later." },
 });
+
 app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/forgot-password", authLimiter);
 
@@ -179,24 +191,10 @@ app.use("/api/employees", sensitiveEndpointLimiter);
 app.use("/api/leaves", sensitiveEndpointLimiter);
 app.use("/api/announcements", sensitiveEndpointLimiter);
 
-app.use(express.json({ 
-  limit: "50mb",
-  strict: true,
-}));
-
-app.use((err, req, res, next) => {
-  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
-    return res.status(400).json({
-      success: false,
-      error: "Invalid JSON format",
-    });
-  }
-  next(err);
-});
-
+app.use(express.json({ limit: "50mb", strict: true }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
-app.use("/api/", validateInputLength);
+app.use("/api", validateInputLength);
 
 app.use(compression());
 
@@ -254,20 +252,16 @@ app.use("/api/onboarding", onboardingRouter);
 
 app.get("/api/health", async (req, res) => {
   const checks = { websocket: true, redis: false, database: false, sentry: !!process.env.SENTRY_DSN };
-
   try {
     const redisClient = getRedisClient();
     checks.redis = redisClient?.isOpen === true;
   } catch { /* redis not available */ }
-
   try {
     const db = (await import("./config/database.js")).default;
     await db.raw("SELECT 1");
     checks.database = true;
   } catch { /* db not reachable */ }
-
   const healthy = checks.redis || !process.env.REDIS_URL;
-
   res.status(healthy ? 200 : 503).json({
     success: healthy,
     message: healthy ? "Server is healthy" : "Server degraded — some services unavailable",
@@ -335,9 +329,6 @@ const startServer = async () => {
   } catch (error) {
     logger.error("=== STARTUP ERROR ===");
     logger.error("Error:", error);
-    logger.error("Error message:", error?.message);
-    logger.error("Error stack:", error?.stack);
-    
     if (server) {
       server.listen(PORT, HOST, () => {
         logger.info(`Server running on http://${HOST}:${PORT}`);

@@ -16,14 +16,22 @@ export const initSocketIO = (server) => {
     process.env.FRONTEND_URL,
     "http://localhost:5173",
     "http://localhost:8081",
-    "https://elegance-ems-haridevx.vercel.app",
-    "https://elegance-it-geo-infotech.vercel.app",
-    "https://haridevx-eg-server.onrender.com",
-  ].filter(Boolean);
+    "https://elegance-it-geo-infotech.onrender.com",
+  ].filter(Boolean).map(url => url.replace(/\/$/, ""));
 
   io = new Server(server, {
     cors: {
-      origin: corsOrigins.length > 0 ? corsOrigins : "*",
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        const isAllowed = corsOrigins.includes(origin) || 
+                         origin.endsWith(".vercel.app") || 
+                         origin.includes("localhost");
+        if (isAllowed) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
       methods: ["GET", "POST"],
       credentials: true,
     },

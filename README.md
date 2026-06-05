@@ -31,6 +31,29 @@ cd Frontend && npm install && npm run dev
 
 ---
 
+## Recent Upgrades (June 2026)
+
+### 🚀 Professional Excel Export
+- **Professional Formatting**: Modern dark-blue theme with zebra-striped rows.
+- **Auto-Filtering**: Built-in Excel filters on all columns for easier management.
+- **Smart Sizing**: Automatic column width adjustment for names and emails.
+- **Metadata**: Every report now includes generation timestamps and titles.
+
+### 🟢 Real-time Employee Visibility
+- **Who's Online**: Live pulsing badges in the Employee List for active users.
+- **Session Sync**: Real-time tracking of active logins within the last 15 minutes.
+
+### 🌍 Universal Timezone Standardization
+- **Asia/Kolkata (IST)**: Unified date and time formatting across all 20+ UI components and backend exports.
+- **Zero-Drift**: Eliminated UTC rollover bugs that previously caused "off-by-one" day errors in charts.
+
+### 🛠️ Process Improvements
+- **Automated Attendance**: "Check In" and "Check Out" buttons removed; attendance is now automatically triggered by login and logout events.
+- **Manual Holidays**: Auto-population removed to provide HR with 100% manual control over the holiday calendar.
+- **SPA Stability**: Fixed wildcard routing to ensure browser refreshes never cause 404 errors.
+
+---
+
 ## Features
 
 ### Authentication & Security
@@ -42,14 +65,15 @@ cd Frontend && npm install && npm run dev
 
 ### Employee Management
 - CRUD with search, filter, pagination
+- **Live Online Status** indicator
 - Profile avatar upload
-- Excel export
+- **Enhanced Professional Excel Export**
 
 ### Attendance
-- Auto check-in/out on login/logout
+- **Fully Automated**: Check-in on login, Check-out on logout
 - QR code check-in with time-limited tokens
 - Geolocation check-in with configurable office radius
-- Calendar dashboard
+- Comprehensive attendance calendar
 
 ### Leave Management
 - Request/approval workflow
@@ -60,19 +84,20 @@ cd Frontend && npm install && npm run dev
 ### Payroll & Salary
 - Payroll processing with allowances/deductions
 - Monthly salary slip generation
-- Download tracking
+- Download tracking with timestamps
 
 ### HR Workflows
 - Resignation submission/approval
 - Onboarding task manager with checklist
+- **Manual Holiday Management** (Manual entry only for total control)
 
 ### Internal Communication
 - Direct messaging + group chats via Socket.io
+- **Online status** sync in chat contact list
 
 ### Notifications
 - In-app notifications
-- Announcements with priority levels
-- Holiday calendar
+- Announcements with priority levels and audience targeting
 
 ---
 
@@ -86,8 +111,8 @@ cd Frontend && npm install && npm run dev
 | Tailwind CSS 3.4 | Styling |
 | React Router 7 | Routing |
 | Recharts | Charts |
+| ExcelJS | Professional Excel Generation |
 | Axios | HTTP client |
-| Framer Motion | Animations |
 | Vitest | Tests |
 
 ### Backend
@@ -177,41 +202,26 @@ Creates a root user with credentials from env vars (defaults: `admin@elegance.co
 ```
 ├── server/                        # Express API
 │   ├── core/                      # Shared framework
-│   │   ├── errors.js              # Custom error classes
-│   │   ├── metrics.js             # Prometheus metrics
-│   │   ├── queue.js               # Bull job queue
-│   │   └── emailQueue.js          # Email processors
 │   ├── config/                    # DB, app config
 │   ├── controller/                # Route handlers
 │   ├── middleware/                # Auth, validation, errors
-│   │   ├── auth.js                # JWT verify + role checks
-│   │   ├── validate.js            # Zod validation middleware
-│   │   ├── validator.js           # Security (sanitize, length check)
-│   │   └── errorHandler.js        # Error handling + logging
 │   ├── migrations/                # Knex schema migrations
 │   ├── modules/                   # Zod schemas per feature
-│   │   ├── auth/
-│   │   ├── employees/
-│   │   ├── attendance/
-│   │   ├── leaves/
-│   │   ├── chat/
-│   │   ├── notifications/
-│   │   ├── hr/
-│   │   └── payroll/
 │   ├── routes/                    # API route definitions
 │   ├── seeds/                     # Initial data
 │   ├── tests/                     # 60 unit tests
-│   ├── utils/                     # Email, OAuth, Redis, logging
+│   ├── utils/                     # Email, OAuth, Redis, logging, dateUtils
 │   ├── Dockerfile
 │   ├── knexfile.js
 │   └── index.js                   # Entry point
 │
 ├── Frontend/                      # React SPA
 │   ├── src/
-│   │   ├── components/
+│   │   ├── components/            # UI components (Timezone Standardized)
 │   │   ├── hooks/
 │   │   ├── pages/
 │   │   ├── config/
+│   │   ├── utils/                 # Excel, Date formatting, API helpers
 │   │   └── tests/                 # 13 component tests
 │   ├── Dockerfile
 │   └── vite.config.js
@@ -220,56 +230,6 @@ Creates a root user with credentials from env vars (defaults: `admin@elegance.co
 ├── .github/workflows/ci.yml       # GitHub Actions
 └── types/                         # TypeScript definitions
 ```
-
----
-
-## API Endpoints
-
-| Module | Path | Methods |
-|--------|------|---------|
-| Auth | `/api/auth/login` | POST |
-| Auth | `/api/auth/logout` | POST |
-| Auth | `/api/auth/refresh` | POST |
-| Auth | `/api/auth/change-password` | PUT |
-| Auth | `/api/auth/forgot-password` | POST |
-| Auth | `/api/auth/reset-password` | POST |
-| Auth | `/api/auth/profile` | GET |
-| Auth | `/api/auth/avatar` | POST |
-| Auth | `/api/auth/sessions` | GET, DELETE |
-| Auth | `/api/auth/login-logs` | GET |
-| Auth | `/api/auth/export/*` | GET (Excel) |
-| 2FA | `/api/auth/2fa/*` | Status, setup, verify |
-| OAuth | `/api/auth/oauth/*` | Google, GitHub |
-| Employees | `/api/employees` | CRUD |
-| Attendance | `/api/attendance` | CRUD, QR, Geo |
-| Leaves | `/api/leaves` | CRUD, approve/reject |
-| Leave Balance | `/api/leave-balance` | GET, PUT |
-| Chat | `/api/chat` | Messages, groups |
-| Notifications | `/api/notifications` | CRUD |
-| Announcements | `/api/announcements` | CRUD |
-| Holidays | `/api/holidays` | CRUD |
-| Activity Logs | `/api/activity-logs` | GET |
-| Payroll | `/api/payroll` | CRUD |
-| Salary Slips | `/api/salary-slips` | Generate, list |
-| Resignations | `/api/resignations` | Submit, approve |
-| Onboarding | `/api/onboarding/*` | Tasks, checklist |
-| Documents | `/api/documents` | CRUD, signed URLs |
-| Health | `/api/health`, `/health` | GET |
-| Metrics | `/metrics` | GET (Prometheus) |
-
----
-
-## CI/CD
-
-Every push/PR to `main` or `develop` runs via `.github/workflows/ci.yml`:
-
-1. Spin up PostgreSQL 16 + Redis 7 (service containers)
-2. Install dependencies (server + frontend)
-3. Lint server
-4. Run database migrations
-5. Run server tests (60)
-6. Run frontend tests (13)
-7. Build frontend
 
 ---
 
