@@ -1,7 +1,6 @@
 import api from "../config/axios";
 import { useState, useEffect } from "react";
 import { Cake, Gift, Calendar } from "lucide-react";
-import { formatDate } from "../utils/format";
 
 const Celebrations = () => {
   const [upcoming, setUpcoming] = useState([]);
@@ -84,6 +83,10 @@ const Celebrations = () => {
     if (daysUntil <= 3) return "bg-yellow-500 text-black";
     if (daysUntil <= 7) return "bg-indigo-500 text-white";
     return "bg-slate-600 text-slate-300";
+  };
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
   if (loading) {

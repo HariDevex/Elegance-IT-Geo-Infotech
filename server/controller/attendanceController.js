@@ -190,32 +190,20 @@ const listAttendance = async (req, res, next) => {
 
 const listMyAttendance = async (req, res, next) => {
   try {
-    let { from, to } = req.query;
+    const { from, to } = req.query;
     const userId = req.user.id;
-
-    // Default to last 30 days if no range provided to prevent large fetches
-    if (!from) {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      from = thirtyDaysAgo.toISOString().split("T")[0];
-    }
-    if (!to) {
-      to = new Date().toISOString().split("T")[0];
-    }
 
     const checkinQuery = db("checkin_checkout")
       .where("user_id", userId)
-      .whereBetween("created_at", [new Date(from + "T00:00:00.000Z"), new Date(to + "T23:59:59.999Z")])
-      .orderBy("created_at", "asc")
-      .limit(500);
+      .whereBetween("created_at", [from ? new Date(from) : new Date("1970-01-01"), to ? new Date(to + "T23:59:59") : new Date("2099-12-31")])
+      .orderBy("created_at", "asc");
 
     const checkinRecords = await checkinQuery;
 
     const loginQuery = db("login_logs")
       .where("user_id", userId)
-      .whereBetween("created_at", [new Date(from + "T00:00:00.000Z"), new Date(to + "T23:59:59.999Z")])
-      .orderBy("created_at", "asc")
-      .limit(500);
+      .whereBetween("created_at", [from ? new Date(from) : new Date("1970-01-01"), to ? new Date(to + "T23:59:59") : new Date("2099-12-31")])
+      .orderBy("created_at", "asc");
 
     const loginLogs = await loginQuery;
 
@@ -249,12 +237,9 @@ const listMyAttendance = async (req, res, next) => {
         });
       } else if (record.type === "checkout") {
         const sessions = groupedByDate[dateStr].sessions;
-        // Find last session without checkout without reversing in-place
-        for (let i = sessions.length - 1; i >= 0; i--) {
-          if (!sessions[i].checkOutAt) {
-            sessions[i].checkOutAt = record.created_at;
-            break;
-          }
+        const lastSessionWithoutCheckout = sessions.reverse().find(s => !s.checkOutAt);
+        if (lastSessionWithoutCheckout) {
+          lastSessionWithoutCheckout.checkOutAt = record.created_at;
         }
       }
     });

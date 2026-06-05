@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, memo } from "react";
 import { ChevronLeft, ChevronRight, Calendar as CalIcon } from "lucide-react";
 import api from "../config/axios";
 import toast from "react-hot-toast";
-import { getProjectDateStr } from "../utils/dateUtils";
 
 const LeaveCalendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -102,7 +101,7 @@ const LeaveCalendar = () => {
   };
 
   const days = getDaysInMonth(currentDate);
-  const monthYear = currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
+  const monthYear = currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
   return (
     <div className="space-y-4">
@@ -204,7 +203,7 @@ const LeaveCalendar = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedDate(null)}>
           <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-white mb-4">
-              {getProjectDateStr(selectedDate.date)}
+              {selectedDate.date?.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
             </h3>
 
             {selectedDate.holidays?.length > 0 && (

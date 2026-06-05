@@ -1,6 +1,5 @@
 import { memo } from "react";
 import { getImageUrl } from "../utils/excel";
-import { formatDate } from "../utils/format";
 
 const DetailRow = memo(({ label, value }) => (
   <div className="flex items-center gap-3 text-sm">
@@ -19,6 +18,15 @@ const EmployeeDetails = ({ employee, onBack }) => {
   }
 
   const avatarUrl = employee.avatar || employee.profileImage;
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "-";
+    // Convert date-only input to UTC date to prevent local timezone shift
+    const normalized = dateStr.includes('T') ? dateStr : `${dateStr}T00:00:00.000Z`;
+    const date = new Date(normalized);
+    if (isNaN(date.getTime())) return "-";
+    return date.toLocaleDateString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  };
 
   return (
     <div className="bg-slate-900 rounded-2xl border border-slate-700 p-6 space-y-6">

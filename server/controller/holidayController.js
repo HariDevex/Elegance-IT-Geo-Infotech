@@ -1,14 +1,13 @@
 import db from "../config/database.js";
 import crypto from "crypto";
+import { populateHolidaysForYear, autoPopulateUpcomingYears, getAllHolidaysForYear } from "../utils/holidayService.js";
 
 const getHolidays = async (req, res, next) => {
   try {
     const { year, type } = req.query;
-    const targetYear = parseInt(year) || new Date().getFullYear();
+    const targetYear = year || new Date().getFullYear();
 
-    let query = db("holidays")
-      .where("type", "!=", "sunday")
-      .where("year", targetYear);
+    let query = db("holidays").where("type", "!=", "sunday");
 
     if (type) {
       query = query.where("type", type);
@@ -16,15 +15,20 @@ const getHolidays = async (req, res, next) => {
 
     const holidays = await query.orderBy("date");
 
+    const filteredHolidays = holidays.filter(h => {
+      const holidayYear = new Date(h.date).getFullYear().toString();
+      return holidayYear === targetYear;
+    });
+
     res.json({
       success: true,
-      holidays: holidays.map(h => ({
+      holidays: filteredHolidays.map(h => ({
         _id: h.id,
         name: h.name,
         date: h.date,
         type: h.type,
         description: h.description,
-        year: h.year,
+        year: new Date(h.date).getFullYear(),
       })),
     });
   } catch (error) {
@@ -44,7 +48,7 @@ const createHoliday = async (req, res, next) => {
       return res.status(400).json({ success: false, error: "Name and date required" });
     }
 
-    const year = parseInt(date.split("-")[0]);
+    const year = new Date(date).getFullYear();
     const holidayId = crypto.randomUUID();
 
     await db("holidays")
@@ -117,4 +121,34 @@ const getUpcomingHolidays = async (req, res, next) => {
   }
 };
 
-export { getHolidays, createHoliday, deleteHoliday, getUpcomingHolidays };
+const autoPopulateHolidays = async (req, res, next) => {
+  try {
+    if (!["root", "admin", "manager", "teamlead", "hr"].includes(req.user.role)) {
+      return res.status(403).json({ success: false, error: "Not authorized" });
+    }
+
+    const { year, years } = req.query;
+    
+    let results;
+    
+    await db("holidays").where("type", "sunday").del();
+    
+    if (year) {
+      results = [await populateHolidaysForYear(parseInt(year))];
+    } else if (years) {
+      results = await autoPopulateUpcomingYears(parseInt(years));
+    } else {
+      results = await autoPopulateUpcomingYears(2);
+    }
+
+    res.json({
+      success: true,
+      message: "Holidays populated successfully (Sundays removed)",
+      results,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export { getHolidays, createHoliday, deleteHoliday, getUpcomingHolidays, autoPopulateHolidays };
