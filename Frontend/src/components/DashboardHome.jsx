@@ -7,11 +7,11 @@ import PieChartComponent from "./charts/PieChartComponent";
 import { Skeleton, SkeletonChart } from "./Skeleton";
 
 const statsCards = [
-  { label: "Total Employees", key: "totalEmployees", color: "#06b6d4" },
+  { label: "Total Employees", key: "totalEmployees", color: "#3b82f6" },
   { label: "Present Today", key: "presentToday", color: "#06b6d4" },
   { label: "Absent Today", key: "absentToday", color: "#ef4444" },
   { label: "Pending Leaves", key: "pendingLeaves", color: "#f59e0b" },
-  { label: "Departments", key: "totalDepartments", color: "#3b82f6" },
+  { label: "Departments", key: "totalDepartments", color: "#8b5cf6" },
 ];
 
 const StatCard = memo(({ label, value, color }) => (

@@ -2,6 +2,8 @@ import db from "../config/database.js";
 import crypto from "crypto";
 import { createNotification } from "./notificationController.js";
 import { logActivity } from "./activityLogController.js";
+import { resolveUserId } from "../utils/dbUtils.js";
+import { getProjectDateStr } from "../utils/dateUtils.js";
 
 const canManageResignations = (role) => ["root", "admin", "manager"].includes(role);
 
@@ -43,7 +45,7 @@ const submitResignation = async (req, res, next) => {
 
 const listResignations = async (req, res, next) => {
   try {
-    const { status, page, limit } = req.query;
+    const { status, userId, page, limit } = req.query;
     const currentPage = Math.max(1, parseInt(page) || 1);
     const pageSize = Math.min(100, Math.max(1, parseInt(limit) || 50));
     const offset = (currentPage - 1) * pageSize;
@@ -62,7 +64,16 @@ const listResignations = async (req, res, next) => {
 
     if (status) query.where("resignations.status", status);
 
-    if (!canManageResignations(req.user.role)) {
+    if (canManageResignations(req.user.role)) {
+      if (userId) {
+        const resolvedId = await resolveUserId(userId);
+        if (resolvedId) {
+          query.where("resignations.user_id", resolvedId);
+        } else {
+          return res.json({ success: true, resignations: [], pagination: { page: currentPage, limit: pageSize, total: 0, pages: 0 } });
+        }
+      }
+    } else {
       query.where("resignations.user_id", req.user.id);
     }
 

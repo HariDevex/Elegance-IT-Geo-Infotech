@@ -1,5 +1,7 @@
 import db from "../config/database.js";
 import crypto from "crypto";
+import { resolveUserId } from "../utils/dbUtils.js";
+import { getProjectToday } from "../utils/dateUtils.js";
 
 const DEFAULT_LEAVE_TYPES = [
   { type: "annual", label: "Annual Leave", defaultDays: 18 },
@@ -9,7 +11,6 @@ const DEFAULT_LEAVE_TYPES = [
 ];
 
 const getOrCreateBalance = async (userId, leaveType, year) => {
-  console.log(`DEBUG: getOrCreateBalance - userId=${userId}, type=${leaveType}, year=${year}`);
   let balance = await db("leave_balances")
     .where("user_id", userId)
     .where("leave_type", leaveType)
@@ -19,7 +20,6 @@ const getOrCreateBalance = async (userId, leaveType, year) => {
   if (!balance) {
     const leaveConfig = DEFAULT_LEAVE_TYPES.find(l => l.type === leaveType) || { defaultDays: 0 };
     const id = crypto.randomUUID();
-    console.log(`DEBUG: Creating new balance with id=${id}`);
     await db("leave_balances")
       .insert({
         id,
@@ -37,7 +37,7 @@ const getOrCreateBalance = async (userId, leaveType, year) => {
 };
 
 const initializeUserBalances = async (userId) => {
-  const year = new Date().getFullYear();
+  const year = getProjectToday().getFullYear();
   for (const leave of DEFAULT_LEAVE_TYPES) {
     await getOrCreateBalance(userId, leave.type, year);
   }
@@ -45,23 +45,36 @@ const initializeUserBalances = async (userId) => {
 
 const getBalances = async (req, res, next) => {
   try {
-    const year = req.query.year || new Date().getFullYear();
-    const userId = req.params.userId
-      ? (await db("users").where("employee_id", req.params.userId).first())?.id
-      : req.user.id;
+    const year = req.query.year || getProjectToday().getFullYear();
+    const inputId = req.params.userId || req.user.id;
 
-    if (!userId) {
+    const resolvedId = await resolveUserId(inputId);
+    if (!resolvedId) {
       return res.status(404).json({ success: false, error: "User not found" });
     }
 
     const balances = await db("leave_balances")
-      .where("user_id", userId)
+      .where("user_id", resolvedId)
       .where("year", year)
       .orderBy("leave_type");
 
     if (balances.length === 0) {
-      await initializeUserBalances(userId);
-      return getBalances(req, res, next);
+      await initializeUserBalances(resolvedId);
+      const newBalances = await db("leave_balances")
+        .where("user_id", resolvedId)
+        .where("year", year)
+        .orderBy("leave_type");
+
+      const formatted = newBalances.map(b => ({
+        _id: b.id,
+        leaveType: b.leave_type,
+        totalDays: b.total_days,
+        usedDays: b.used_days,
+        pendingDays: b.pending_days,
+        availableDays: b.total_days - b.used_days - b.pending_days,
+        year: b.year,
+      }));
+      return res.json({ success: true, balances: formatted });
     }
 
     const formatted = balances.map(b => ({
@@ -82,17 +95,15 @@ const getBalances = async (req, res, next) => {
 
 const updateBalance = async (userId, leaveType, days, year, increment = true) => {
   const balance = await getOrCreateBalance(userId, leaveType, year);
-  console.log(`DEBUG: updateBalance - balanceId=${balance?.id}, currentUsed=${balance?.used_days}`);
   const currentUsed = balance.used_days || 0;
   const newUsed = increment ? currentUsed + days : currentUsed - days;
   
-  const updated = await db("leave_balances")
+  await db("leave_balances")
     .where("id", balance.id)
     .update({
       used_days: newUsed,
       updated_at: db.fn.now(),
     });
-  console.log(`DEBUG: updateBalance - rowsUpdated=${updated}, newUsed=${newUsed}`);
 };
 
 const updatePendingBalance = async (userId, leaveType, days, year, increment = true) => {
@@ -111,13 +122,18 @@ const updatePendingBalance = async (userId, leaveType, days, year, increment = t
 const setBalance = async (req, res, next) => {
   try {
     const { userId, leaveType, totalDays, year } = req.body;
-    const targetYear = year || new Date().getFullYear();
+    const targetYear = year || getProjectToday().getFullYear();
 
     if (!["root", "admin", "manager", "teamlead", "hr"].includes(req.user.role)) {
       return res.status(403).json({ success: false, error: "Not authorized" });
     }
 
-    const balance = await getOrCreateBalance(userId, leaveType, targetYear);
+    const resolvedId = await resolveUserId(userId);
+    if (!resolvedId) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+
+    const balance = await getOrCreateBalance(resolvedId, leaveType, targetYear);
 
     await db("leave_balances")
       .where("id", balance.id)

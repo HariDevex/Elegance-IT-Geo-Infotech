@@ -1,22 +1,20 @@
 import { useState, useEffect, useCallback, memo } from "react";
 import toast from "react-hot-toast";
 import api from "../config/axios";
-import { Trash2, Plus, Lock, Calendar, RefreshCw } from "lucide-react";
+import { Trash2, Plus, Lock } from "lucide-react";
 import { useAuth } from "../context/authContext";
-import { Skeleton, SkeletonTable } from "./Skeleton";
+import { SkeletonTable } from "./Skeleton";
 import { getProjectDateStr } from "../utils/dateUtils";
 
 const HolidayManagement = () => {
   const { user } = useAuth();
   const canManage = ["root", "admin", "manager", "teamlead"].includes(user?.role);
-  const canAutoPopulate = ["root", "admin", "manager"].includes(user?.role);
   const [holidays, setHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", date: "", type: "public", description: "" });
   const [submitting, setSubmitting] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [autoPopulating, setAutoPopulating] = useState(false);
 
   const fetchHolidays = useCallback(async () => {
     try {
@@ -34,24 +32,6 @@ const HolidayManagement = () => {
   useEffect(() => {
     fetchHolidays();
   }, [fetchHolidays, selectedYear]);
-
-  const handleAutoPopulate = async () => {
-    setAutoPopulating(true);
-    try {
-      const res = await api.post(
-        "/holidays/auto-populate?years=2",
-        {}
-      );
-      if (res.data.success) {
-        toast.success("Holidays auto-populated!");
-        fetchHolidays();
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.error || "Failed to auto-populate holidays");
-    } finally {
-      setAutoPopulating(false);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -106,16 +86,6 @@ const HolidayManagement = () => {
               return <option key={year} value={year}>{year}</option>;
             })}
           </select>
-          {canAutoPopulate && (
-            <button
-              onClick={handleAutoPopulate}
-              disabled={autoPopulating}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium transition-colors disabled:opacity-50"
-            >
-              <RefreshCw size={16} className={autoPopulating ? "animate-spin" : ""} />
-              {autoPopulating ? "Populating..." : "Auto Populate (Public Holidays)"}
-            </button>
-          )}
           {canManage ? (
             <button
               onClick={() => setShowForm(!showForm)}

@@ -1,11 +1,11 @@
 import db from "../config/database.js";
 import crypto from "crypto";
-import { autoPopulateUpcomingYears } from "../utils/holidayService.js";
+import { getProjectDateStr, getProjectToday } from "../utils/dateUtils.js";
 
 const getHolidays = async (req, res, next) => {
   try {
     const { year, type } = req.query;
-    const targetYear = parseInt(year) || new Date().getFullYear();
+    const targetYear = parseInt(year) || getProjectToday().getFullYear();
 
     let query = db("holidays")
       .where("type", "!=", "sunday")
@@ -45,7 +45,7 @@ const createHoliday = async (req, res, next) => {
       return res.status(400).json({ success: false, error: "Name and date required" });
     }
 
-    const year = new Date(date).getFullYear();
+    const year = parseInt(date.split("-")[0]);
     const holidayId = crypto.randomUUID();
 
     await db("holidays")
@@ -94,11 +94,12 @@ const deleteHoliday = async (req, res, next) => {
 
 const getUpcomingHolidays = async (req, res, next) => {
   try {
-    const today = new Date().toISOString().split("T")[0];
-    const year = new Date().getFullYear();
+    const todayStr = getProjectDateStr();
+    const today = getProjectToday();
+    const year = today.getFullYear();
 
     const holidays = await db("holidays")
-      .where("date", ">=", today)
+      .where("date", ">=", todayStr)
       .where("year", year)
       .where("type", "!=", "sunday")
       .orderBy("date")
@@ -113,19 +114,9 @@ const getUpcomingHolidays = async (req, res, next) => {
         type: h.type,
       })),
     });
-    } catch (error) {
-    next(error);
-    }
-    };
-
-    const autoPopulateHolidays = async (req, res, next) => {
-  try {
-    const { years = 2 } = req.query;
-    const results = await autoPopulateUpcomingYears(parseInt(years));
-    res.json({ success: true, message: "Holidays auto-populated", results });
   } catch (error) {
     next(error);
   }
 };
 
-export { getHolidays, createHoliday, deleteHoliday, getUpcomingHolidays, autoPopulateHolidays };
+export { getHolidays, createHoliday, deleteHoliday, getUpcomingHolidays };

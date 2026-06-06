@@ -13,91 +13,6 @@ import { isLateCheckIn } from "../utils/attendanceUtils.js";
 
 import { getProjectDateStr } from "../utils/dateUtils.js";
 
-const createOrUpdateAttendanceOnLogin = async (userId, action = "checkin") => {
-  try {
-    const today = getProjectDateStr();
-    const now = new Date();
-
-    if (action === "checkin") {
-      // 1. Handle attendance table (Summary record)
-      const existing = await db("attendance")
-        .where("user_id", userId)
-        .where("date", today)
-        .first();
-
-      if (existing) {
-        // If it's a re-login, we don't overwrite the first check_in_at
-        if (!existing.check_in_at) {
-          const isLate = isLateCheckIn(now);
-          await db("attendance")
-            .where("id", existing.id)
-            .update({ 
-              status: isLate ? "Late" : "On Time", 
-              check_in_at: now, 
-              updated_at: now 
-            });
-        }
-      } else {
-        const isLate = isLateCheckIn(now);
-        await db("attendance").insert({
-          id: crypto.randomUUID(),
-          user_id: userId,
-          date: today,
-          status: isLate ? "Late" : "On Time",
-          check_in_at: now,
-          created_at: now,
-          updated_at: now,
-        });
-      }
-
-      // 2. Handle checkin_checkout table (Session record)
-      await db("checkin_checkout").insert({
-        id: crypto.randomUUID(),
-        user_id: userId,
-        type: "checkin",
-        note: "Auto-checkin on login",
-        created_at: now,
-      });
-
-    } else if (action === "checkout") {
-      // 1. Handle attendance table (Summary record)
-      // Always update checkout time to the latest logout
-      await db("attendance")
-        .where("user_id", userId)
-        .where("date", today)
-        .update({ check_out_at: now, updated_at: now });
-
-      // 2. Handle checkin_checkout table (Session record)
-      // Find the last open checkin session
-      const lastCheckin = await db("checkin_checkout")
-        .where("user_id", userId)
-        .where("type", "checkin")
-        .orderBy("created_at", "desc")
-        .first();
-
-      if (lastCheckin) {
-        // Check if already checked out
-        const existingCheckout = await db("checkin_checkout")
-          .where("parent_id", lastCheckin.id)
-          .first();
-        
-        if (!existingCheckout) {
-          await db("checkin_checkout").insert({
-            id: crypto.randomUUID(),
-            user_id: userId,
-            type: "checkout",
-            parent_id: lastCheckin.id,
-            note: "Auto-checkout on logout",
-            created_at: now,
-          });
-        }
-      }
-    }
-  } catch (err) {
-    console.error("Attendance update error:", err);
-  }
-};
-
 const login = async (req, res, next) => {
   try {
     const { employee_id, password, rememberMe } = req.body;
@@ -226,13 +141,13 @@ const login = async (req, res, next) => {
 
     const tokenExpiry = rememberMe ? "30d" : config.JWT_EXPIRES_IN;
     const token = jwt.sign(
-      { _id: user.employee_id, id: user.id, role: user.role },
+      { id: user.id, _id: user.employee_id, role: user.role },
       config.JWT_SECRET,
       { expiresIn: tokenExpiry }
     );
 
     const refreshToken = jwt.sign(
-      { _id: user.employee_id, id: user.id, type: "refresh" },
+      { id: user.id, _id: user.employee_id, type: "refresh" },
       config.JWT_SECRET,
       { expiresIn: "30d" }
     );
@@ -258,22 +173,7 @@ const login = async (req, res, next) => {
       status: "success",
     });
 
-    await createOrUpdateAttendanceOnLogin(user.id, "checkin");
     await logActivity(user.id, "login", "auth", user.employee_id, { email: user.email, device: deviceType }, ip);
-
-    // AI Security: Analyze login pattern
-    // const loginAnalysis = await aiSecurity.analyzeLoginPattern(user.employee_id, ip, userAgent);
-    // const riskReport = await aiSecurity.generateRiskReport(user.employee_id);
-
-    // Log security event if high risk
-    // if (loginAnalysis.riskLevel === "high" || riskReport.riskScore > 50) {
-    //   await aiSecurity.logSecurityEvent(
-    //     user.employee_id,
-    //     "HIGH_RISK_LOGIN",
-    //     loginAnalysis.riskLevel,
-    //     { ip, userAgent, riskScore: riskReport.riskScore, factors: loginAnalysis }
-    //   );
-    // }
 
     res.json({
       success: true,
@@ -283,6 +183,7 @@ const login = async (req, res, next) => {
       mustChangePassword,
       passwordExpiring,
       user: {
+        id: user.id,
         _id: user.employee_id,
         name: user.name,
         email: user.email,
@@ -313,8 +214,6 @@ const login = async (req, res, next) => {
 
 const logout = async (req, res, next) => {
   try {
-    await createOrUpdateAttendanceOnLogin(req.user.id, "checkout");
-
     await logActivity(req.user.id, "logout", "auth", req.user._id, {}, req.ip);
     res.json({
       success: true,
@@ -355,13 +254,13 @@ const refreshAccessToken = async (req, res, next) => {
     }
 
     const newToken = jwt.sign(
-      { _id: user.employee_id, id: user.id, role: user.role },
+      { id: user.id, _id: user.employee_id, role: user.role },
       config.JWT_SECRET,
       { expiresIn: config.JWT_EXPIRES_IN }
     );
 
     const newRefreshToken = jwt.sign(
-      { _id: user.employee_id, id: user.id, type: "refresh" },
+      { id: user.id, _id: user.employee_id, type: "refresh" },
       config.JWT_SECRET,
       { expiresIn: "30d" }
     );
@@ -870,6 +769,7 @@ const getProfile = async (req, res, next) => {
     res.json({
       success: true,
       user: {
+        id: user.id,
         _id: user.employee_id,
         name: user.name,
         email: user.email,

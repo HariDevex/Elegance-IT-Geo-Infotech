@@ -38,7 +38,7 @@ const LoginLogs = () => {
         params: filter.status ? { status: filter.status } : {},
       });
       if (res.data.success && res.data.data.length > 0) {
-        exportToExcel(res.data.data, `login_logs_${new Date().toISOString().split("T")[0]}`, "Login Logs");
+        exportToExcel(res.data.data, `login_logs_${getProjectDateStr()}`, "Login Logs");
         toast.success("Excel downloaded!");
       } else {
         toast.error("No data to export");

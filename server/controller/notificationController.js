@@ -1,8 +1,11 @@
 import db from "../config/database.js";
+import crypto from "crypto";
 
 const createNotification = async (userId, title, message, type = "info", link = null) => {
+  const id = crypto.randomUUID();
   const [notification] = await db("notifications")
     .insert({
+      id,
       user_id: userId,
       title,
       message,
@@ -11,7 +14,7 @@ const createNotification = async (userId, title, message, type = "info", link = 
     })
     .returning("*");
 
-  return notification;
+  return { ...notification, _id: notification.id };
 };
 
 const notifyUser = async (userId, title, message, type = "info") => {

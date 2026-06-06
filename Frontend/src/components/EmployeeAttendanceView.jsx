@@ -11,7 +11,7 @@ const EmployeeAttendanceView = () => {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [actionMsg] = useState("");
+  const [checking, setChecking] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -37,6 +37,21 @@ const EmployeeAttendanceView = () => {
     if (user?._id) load();
   }, [user]);
 
+  const handleManualAction = async (action) => {
+    setChecking(true);
+    try {
+      const res = await api.post(`/checkin/${action}`, {});
+      if (res.data.success) {
+        toast.success(action === "checkin" ? "Checked in successfully!" : "Checked out successfully!");
+        load();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || `${action} failed`);
+    } finally {
+      setChecking(false);
+    }
+  };
+
   const formatTime = (isoString) => {
     if (!isoString) return "-";
     return getProjectTimeStr(new Date(isoString));
@@ -59,7 +74,7 @@ const EmployeeAttendanceView = () => {
     return `${hours}h ${minutes}m`;
   };
 
-  if (loading) {
+  if (loading && records.length === 0) {
     return (
       <div className="space-y-4">
         <div className="text-center">
@@ -76,7 +91,22 @@ const EmployeeAttendanceView = () => {
         <h2 className="text-xl font-semibold text-white">My Attendance</h2>
         
         <div className="flex flex-wrap items-center gap-3">
-          {actionMsg && <span className="text-sm text-cyan-300">{actionMsg}</span>}
+          <button
+            onClick={() => handleManualAction("checkin")}
+            disabled={checking}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-semibold disabled:opacity-50 transition-colors"
+          >
+            <LogIn size={16} />
+            Check In
+          </button>
+          <button
+            onClick={() => handleManualAction("checkout")}
+            disabled={checking}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold disabled:opacity-50 transition-colors"
+          >
+            <LogOut size={16} />
+            Check Out
+          </button>
         </div>
       </div>
 

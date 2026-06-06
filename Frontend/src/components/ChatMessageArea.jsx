@@ -1,5 +1,5 @@
 import { useMemo, useRef, useEffect, memo } from "react";
-import { Search, X, Phone, Video, MoreVertical, Check, CheckCheck } from "lucide-react";
+import { Search, X, Phone, Video, MoreVertical, Check, CheckCheck, FileText, Download, Play, Pause, File } from "lucide-react";
 import chatBgLogo from "../assets/Logo/EG.png";
 import { getProjectDateStr, getProjectTimeStr } from "../utils/dateUtils";
 
@@ -27,6 +27,72 @@ const MessageStatus = ({ status }) => {
   if (status === "seen") return <CheckCheck size={14} className="text-cyan-400" />;
   if (status === "delivered") return <CheckCheck size={14} className="text-slate-400" />;
   return <Check size={14} className="text-slate-400" />;
+};
+
+const AttachmentRenderer = ({ url, isOwn }) => {
+  if (!url) return null;
+  
+  const ext = url.split('.').pop().toLowerCase();
+  
+  // Images
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+    return (
+      <div className="mt-2 rounded-lg overflow-hidden border border-slate-700 max-w-xs">
+        <img src={url} alt="Attachment" className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition" 
+          onClick={() => window.open(url, '_blank')} />
+      </div>
+    );
+  }
+  
+  // Audio
+  if (['webm', 'mp3', 'wav', 'ogg'].includes(ext)) {
+    return (
+      <div className={`mt-2 p-2 rounded-lg flex items-center gap-3 ${isOwn ? 'bg-[#004d40]' : 'bg-[#202c33]'} border border-slate-700/50`}>
+        <audio controls className="h-8 w-48 custom-audio-player">
+          <source src={url} type={`audio/${ext === 'webm' ? 'webm' : 'mpeg'}`} />
+          Your browser does not support the audio element.
+        </audio>
+      </div>
+    );
+  }
+
+  // Video
+  if (['mp4', 'mov', 'webm'].includes(ext)) {
+    return (
+      <div className="mt-2 rounded-lg overflow-hidden border border-slate-700 max-w-xs">
+        <video src={url} controls className="w-full h-auto" />
+      </div>
+    );
+  }
+
+  // Documents
+  const getFileName = (url) => {
+    if (!url) return "Document";
+    const parts = url.split("/");
+    const lastPart = parts[parts.length - 1];
+    // Remove the timestamp prefix if it exists (e.g. 1780576991220-name.jpg)
+    const nameParts = lastPart.split("-");
+    if (nameParts.length > 1 && /^\d+$/.test(nameParts[0])) {
+      return nameParts.slice(1).join("-");
+    }
+    return lastPart;
+  };
+
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" 
+      className={`mt-2 flex items-center gap-3 p-3 rounded-xl border transition-colors ${
+        isOwn ? 'bg-[#004d40] border-[#00695c] hover:bg-[#00695c]' : 'bg-[#202c33] border-slate-700 hover:bg-[#2a3942]'
+      }`}>
+      <div className="p-2 rounded-lg bg-slate-800/50">
+        <FileText size={20} className="text-cyan-400" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-white truncate font-medium">{getFileName(url)}</p>
+        <p className="text-[10px] text-slate-400 uppercase">{ext} File</p>
+      </div>
+      <Download size={16} className="text-slate-400" />
+    </a>
+  );
 };
 
 const MessageSkeleton = ({ isOwn = false }) => (
@@ -166,6 +232,7 @@ const ChatMessageArea = ({
                     <div className={`inline-block px-4 py-2.5 ${item.isYou ? "rounded-l-xl rounded-tr-xl" : "rounded-r-xl rounded-tl-xl"}`}
                       style={{ backgroundColor: item.isYou ? '#005c4b' : '#182229', color: '#e8eaed' }}>
                       <div className="text-sm break-words">{item.text}</div>
+                      {item.attachment && <AttachmentRenderer url={item.attachment} isOwn={item.isYou} />}
                     </div>
                     <div className={`flex items-center gap-1 mt-1 ${item.isYou ? "justify-end" : "justify-start"}`}>
                       <span className="text-[10px] text-gray-400">{formatTime(item.ts)}</span>

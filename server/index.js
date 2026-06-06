@@ -296,7 +296,7 @@ app.get("/health", async (req, res) => {
 });
 
 if (fs.existsSync(frontendDistPath)) {
-  app.get("*", (req, res) => {
+  app.get(/.*/, (req, res) => {
     res.sendFile(path.join(frontendDistPath, "index.html"));
   });
 } else {

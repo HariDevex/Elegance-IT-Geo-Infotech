@@ -1,5 +1,6 @@
 import db from "../config/database.js";
 import { getProjectDateStr, getProjectTimeStr } from "../utils/dateUtils.js";
+import { resolveUserId } from "../utils/dbUtils.js";
 
 const exportEmployeesExcel = async (req, res, next) => {
   try {
@@ -60,11 +61,18 @@ const exportAttendanceExcel = async (req, res, next) => {
       .orderBy("attendance.date", "desc");
 
     if (from && to) {
-      query = query.whereBetween("attendance.date", [new Date(from), new Date(to)]);
+      const fromStr = from.split("T")[0];
+      const toStr = to.split("T")[0];
+      query = query.whereBetween("attendance.date", [fromStr, toStr]);
     }
 
     if (userId) {
-      query = query.where("attendance.user_id", userId);
+      const resolvedId = await resolveUserId(userId);
+      if (resolvedId) {
+        query = query.where("attendance.user_id", resolvedId);
+      } else {
+        return res.json({ success: true, data: [] });
+      }
     }
 
     const records = await query;
@@ -104,11 +112,18 @@ const exportLoginLogsExcel = async (req, res, next) => {
       .limit(1000);
 
     if (from && to) {
-      query = query.whereBetween("login_logs.created_at", [new Date(from), new Date(to)]);
+      const fromDate = new Date(`${from.split("T")[0]}T00:00:00+05:30`);
+      const toDate = new Date(`${to.split("T")[0]}T23:59:59+05:30`);
+      query = query.whereBetween("login_logs.created_at", [fromDate, toDate]);
     }
 
     if (userId) {
-      query = query.where("login_logs.user_id", userId);
+      const resolvedId = await resolveUserId(userId);
+      if (resolvedId) {
+        query = query.where("login_logs.user_id", resolvedId);
+      } else {
+        return res.json({ success: true, data: [] });
+      }
     }
 
     if (status) {

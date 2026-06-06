@@ -1,6 +1,7 @@
 import db from "../config/database.js";
 import crypto from "crypto";
 import { logActivity } from "./activityLogController.js";
+import { resolveUserId } from "../utils/dbUtils.js";
 
 const canManageOnboarding = (role) => ["root", "admin", "manager", "hr"].includes(role);
 
@@ -10,15 +11,20 @@ const createTask = async (req, res, next) => {
       return res.status(403).json({ success: false, error: "Not authorized" });
     }
 
-    const { userId, taskName, description, assignedTo, dueDate } = req.body;
+    let { userId, taskName, description, assignedTo, dueDate } = req.body;
     if (!userId || !taskName) {
       return res.status(400).json({ success: false, error: "userId and taskName are required" });
+    }
+
+    const resolvedId = await resolveUserId(userId);
+    if (!resolvedId) {
+      return res.status(404).json({ success: false, error: "User not found" });
     }
 
     const id = crypto.randomUUID();
     await db("onboarding_tasks").insert({
       id,
-      user_id: userId,
+      user_id: resolvedId,
       task_name: taskName,
       description: description || null,
       assigned_to: assignedTo || null,
@@ -28,7 +34,7 @@ const createTask = async (req, res, next) => {
 
     const task = await db("onboarding_tasks").where("id", id).first();
 
-    await logActivity(req.user.id, "create", "onboarding", id, { userId, taskName }, req.ip);
+    await logActivity(req.user.id, "create", "onboarding", id, { userId: resolvedId, taskName }, req.ip);
 
     res.status(201).json({ success: true, task });
   } catch (error) {
@@ -54,7 +60,15 @@ const listTasks = async (req, res, next) => {
       )
       .orderBy("onboarding_tasks.created_at", "desc");
 
-    if (userId) query.where("onboarding_tasks.user_id", userId);
+    if (userId) {
+      const resolvedId = await resolveUserId(userId);
+      if (resolvedId) {
+        query.where("onboarding_tasks.user_id", resolvedId);
+      } else {
+        return res.json({ success: true, tasks: [], pagination: { page: currentPage, limit: pageSize, total: 0, pages: 0 } });
+      }
+    }
+    
     if (status) query.where("onboarding_tasks.status", status);
 
     const [{ count }] = await query.clone().clearSelect().count("* as count");
@@ -108,13 +122,18 @@ const deleteTask = async (req, res, next) => {
 
 const createChecklistItem = async (req, res, next) => {
   try {
-    const { userId, item } = req.body;
+    let { userId, item } = req.body;
     if (!userId || !item) {
       return res.status(400).json({ success: false, error: "userId and item are required" });
     }
 
+    const resolvedId = await resolveUserId(userId);
+    if (!resolvedId) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+
     const id = crypto.randomUUID();
-    await db("onboarding_checklist").insert({ id, user_id: userId, item });
+    await db("onboarding_checklist").insert({ id, user_id: resolvedId, item });
 
     const checklistItem = await db("onboarding_checklist").where("id", id).first();
     res.status(201).json({ success: true, checklistItem });
@@ -127,7 +146,15 @@ const listChecklist = async (req, res, next) => {
   try {
     const { userId } = req.query;
     const query = db("onboarding_checklist").orderBy("created_at", "asc");
-    if (userId) query.where("user_id", userId);
+    
+    if (userId) {
+      const resolvedId = await resolveUserId(userId);
+      if (resolvedId) {
+        query.where("user_id", resolvedId);
+      } else {
+        return res.json({ success: true, checklist: [] });
+      }
+    }
 
     const items = await query;
     res.json({ success: true, checklist: items });

@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import api from "../config/axios";
 import { useAuth } from "../context/authContext";
 import { SkeletonTable } from "./Skeleton";
+import { formatDate } from "../utils/format";
 
 const PayrollRow = memo(({ r, idx, canManage, onDelete }) => (
   <tr className="border-t border-slate-700 hover:bg-slate-700/30">
@@ -15,7 +16,7 @@ const PayrollRow = memo(({ r, idx, canManage, onDelete }) => (
     <td className="px-4 py-3">{r.deductions}</td>
     <td className="px-4 py-3 font-semibold text-cyan-400">{r.net_pay}</td>
     <td className="px-4 py-3 text-xs">
-      {r.pay_period_start?.slice(0, 10)} to {r.pay_period_end?.slice(0, 10)}
+      {formatDate(r.pay_period_start)} to {formatDate(r.pay_period_end)}
     </td>
     <td className="px-4 py-3">
       <span className={`px-2 py-1 rounded-full text-xs ${
@@ -42,20 +43,26 @@ const ProcessPayrollForm = memo(({ employees, onProcess, onCancel }) => {
   const [payPeriodStart, setPayPeriodStart] = useState("");
   const [payPeriodEnd, setPayPeriodEnd] = useState("");
   const [paymentDate, setPaymentDate] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!userId || !payPeriodStart || !payPeriodEnd) {
       toast.error("Employee and pay period are required");
       return;
     }
-    onProcess({ userId, basicPay, allowances, deductions, payPeriodStart, payPeriodEnd, paymentDate });
-    setUserId("");
-    setBasicPay("");
-    setAllowances("");
-    setDeductions("");
-    setPayPeriodStart("");
-    setPayPeriodEnd("");
-    setPaymentDate("");
+    setSubmitting(true);
+    try {
+      await onProcess({ userId, basicPay, allowances, deductions, payPeriodStart, payPeriodEnd, paymentDate });
+      setUserId("");
+      setBasicPay("");
+      setAllowances("");
+      setDeductions("");
+      setPayPeriodStart("");
+      setPayPeriodEnd("");
+      setPaymentDate("");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -130,8 +137,12 @@ const ProcessPayrollForm = memo(({ employees, onProcess, onCancel }) => {
         <button onClick={onCancel} className="px-4 py-2 rounded-lg bg-slate-700 text-white text-sm hover:bg-slate-600">
           Cancel
         </button>
-        <button onClick={handleSubmit} className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm hover:bg-cyan-500">
-          Process
+        <button 
+          onClick={handleSubmit} 
+          disabled={submitting}
+          className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm hover:bg-cyan-500 disabled:opacity-50"
+        >
+          {submitting ? "Processing..." : "Process"}
         </button>
       </div>
     </div>
@@ -212,6 +223,7 @@ const PayrollManagement = () => {
     } catch (err) {
       console.error("Failed to process payroll:", err);
       toast.error(err.response?.data?.error || "Failed to process payroll");
+      throw err;
     }
   }, [load]);
 

@@ -1,6 +1,7 @@
 import db from "../config/database.js";
 import crypto from "crypto";
 import { uploadFile } from "../utils/supabaseStorage.js";
+import socketUtil from "../utils/socket.js";
 
 const createGroup = async (req, res, next) => {
   try {
@@ -186,12 +187,19 @@ const getMessages = async (req, res, next) => {
 
 const sendMessage = async (req, res, next) => {
   try {
-    const { contactId, type = "direct", text } = req.body;
+    const { contactId, type = "direct", text = "" } = req.body;
 
-    if (!contactId || !text) {
+    if (!contactId) {
       return res.status(400).json({
         success: false,
-        error: "contactId and text are required",
+        error: "contactId is required",
+      });
+    }
+
+    if (!text && !req.file) {
+      return res.status(400).json({
+        success: false,
+        error: "Message or attachment required",
       });
     }
 
@@ -235,18 +243,35 @@ const sendMessage = async (req, res, next) => {
     }
 
     const sender = await db("users").where("id", req.user.id).first();
+    const payload = {
+      _id: message.id,
+      text: message.text,
+      ts: message.ts,
+      attachment: message.attachment,
+      from: {
+        _id: sender.employee_id,
+        name: sender.name,
+      },
+    };
+
+    // Emit via Socket.io
+    if (type === "group") {
+      socketUtil.sendToGroup(contactId, "chat:receiveGroup", {
+        ...payload,
+        groupId: contactId,
+      });
+    } else {
+      socketUtil.sendToUser(contactId, "chat:receive", {
+        ...payload,
+        from: sender.employee_id,
+        fromName: sender.name,
+      });
+    }
 
     res.status(201).json({
       success: true,
       message: {
-        _id: message.id,
-        text: message.text,
-        ts: message.ts,
-        attachment: message.attachment,
-        from: {
-          _id: sender.employee_id,
-          name: sender.name,
-        },
+        ...payload,
         isYou: true,
       },
     });

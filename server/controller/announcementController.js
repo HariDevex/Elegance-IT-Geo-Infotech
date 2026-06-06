@@ -71,8 +71,9 @@ const listAnnouncements = async (req, res, next) => {
   try {
     const userRole = req.user.role;
     const userDepartment = req.user.department;
+    const isPostgres = db.client.config.client === 'pg';
 
-    const announcements = await db("announcements")
+    let query = db("announcements")
       .leftJoin("users", "announcements.created_by", "users.id")
       .select(
         "announcements.id",
@@ -84,17 +85,34 @@ const listAnnouncements = async (req, res, next) => {
         "users.employee_id as creator_id",
         "users.name as creator_name",
         "users.role as creator_role"
-      )
-      .where((builder) => {
+      );
+
+    if (isPostgres) {
+      // Use JSONB operators for high-performance PostgreSQL filtering
+      query = query.where((builder) => {
         builder
-          .whereRaw("announcements.audience_roles LIKE ?", ["%\"all\"%"])
-          .orWhereRaw("announcements.audience_roles LIKE ?", [`%"${userRole}"%`]);
+          .whereRaw("audience_roles @> ?", [JSON.stringify(["all"])])
+          .orWhereRaw("audience_roles @> ?", [JSON.stringify([userRole])]);
+        
         if (userDepartment) {
-          builder.orWhereRaw("announcements.audience_departments LIKE ?", [`%"${userDepartment}"%`]);
+          builder.orWhereRaw("audience_departments @> ?", [JSON.stringify([userDepartment])]);
         }
-      })
-      .orderBy("announcements.created_at", "desc")
-      .limit(100);
+      });
+    } else {
+      // Fallback for SQLite using more precise JSON_EACH or cross-engine compatible approach
+      // Using LIKE with explicit JSON array markers is safer but still slow
+      query = query.where((builder) => {
+        builder
+          .where("announcements.audience_roles", "like", "%\"all\"%")
+          .orWhere("announcements.audience_roles", "like", `%\"${userRole}\"%`);
+        
+        if (userDepartment) {
+          builder.orWhere("announcements.audience_departments", "like", `%\"${userDepartment}\"%`);
+        }
+      });
+    }
+
+    const announcements = await query.orderBy("announcements.created_at", "desc").limit(100);
 
     res.json({
       success: true,

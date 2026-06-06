@@ -10,15 +10,27 @@ const router = express.Router();
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/") || 
-        file.mimetype === "application/pdf" ||
-        file.mimetype.includes("word") ||
-        file.mimetype === "text/plain") {
+    // Allow images, audio, video, and common document types
+    const allowedMimeTypes = [
+      "image/",
+      "audio/",
+      "video/",
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+      "application/zip",
+      "application/x-zip-compressed",
+      "text/plain"
+    ];
+
+    if (allowedMimeTypes.some(type => file.mimetype.startsWith(type))) {
       cb(null, true);
     } else {
-      cb(new Error("Invalid file type"), false);
+      cb(new Error(`Invalid file type: ${file.mimetype}`), false);
     }
   }
 });

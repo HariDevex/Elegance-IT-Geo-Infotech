@@ -67,37 +67,12 @@ export const initSocketIO = (server) => {
     // Broadcast that this user is online
     io.emit("user:status", { userId: socket.userId, status: "online" });
 
-    socket.on("chat:send", (data) => {
-      const isOnline = userSockets.has(data.to);
-      const messageData = {
-        from: socket.userId,
-        fromName: socket.userName,
-        text: data.text,
-        timestamp: new Date().toISOString(),
-        isOnline: isOnline
-      };
-      io.to(`user:${data.to}`).emit("chat:receive", messageData);
-      
-      // Acknowledge to sender that it's sent (and if recipient is online)
-      socket.emit("chat:sent", { to: data.to, timestamp: messageData.timestamp, isOnline });
-    });
-
     socket.on("message:seen", (data) => {
       // data: { from: senderId, timestamp: msgTimestamp }
       io.to(`user:${data.from}`).emit("message:status", {
         userId: socket.userId,
         timestamp: data.timestamp,
         status: "seen"
-      });
-    });
-
-    socket.on("chat:sendGroup", (data) => {
-      socket.to(`group:${data.groupId}`).emit("chat:receiveGroup", {
-        from: socket.userId,
-        fromName: socket.userName,
-        text: data.text,
-        groupId: data.groupId,
-        timestamp: new Date().toISOString(),
       });
     });
 

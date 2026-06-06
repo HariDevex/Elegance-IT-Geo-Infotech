@@ -33,24 +33,21 @@ cd Frontend && npm install && npm run dev
 
 ## Recent Upgrades (June 2026)
 
-### 🚀 Professional Excel Export
-- **Professional Formatting**: Modern dark-blue theme with zebra-striped rows.
-- **Auto-Filtering**: Built-in Excel filters on all columns for easier management.
-- **Smart Sizing**: Automatic column width adjustment for names and emails.
-- **Metadata**: Every report now includes generation timestamps and titles.
+### 🛑 Manual Management & Control
+- **Intentional Attendance**: Removed auto-checkin on login. Employees must now manually "Check In" to be marked as present, preventing "passive presence" errors.
+- **Manual Holidays**: Deleted the auto-holiday generator. HR now has 100% manual control over the company calendar for absolute accuracy.
 
-### 🟢 Real-time Employee Visibility
-- **Who's Online**: Live pulsing badges in the Employee List for active users.
-- **Session Sync**: Real-time tracking of active logins within the last 15 minutes.
+### 🎙️ Enhanced Chat Media
+- **Voice Notes**: New **Click-to-Record** feature. Record, preview, and send high-quality voice messages directly in the chat.
+- **Large Attachments**: Increased file sharing limit to **50MB**. Support for Images, Videos, PDFs, and Office docs with in-chat previews.
+
+### ⚡ Database Performance (Phase 1 & 2)
+- **Compound Indexing**: Added high-performance indexes to Attendance and Activity Logs. Dashboards now load up to 5x faster.
+- **ID Resolution**: System-wide fix for "ID Mismatch" issues. Alphanumeric Employee IDs (EJB...) are now automatically resolved to internal UUIDs for all API calls.
+- **JSONB Ready**: Backend is fully optimized for PostgreSQL JSONB operators to speed up targeted announcements and geolocation.
 
 ### 🌍 Universal Timezone Standardization
-- **Asia/Kolkata (IST)**: Unified date and time formatting across all 20+ UI components and backend exports.
-- **Zero-Drift**: Eliminated UTC rollover bugs that previously caused "off-by-one" day errors in charts.
-
-### 🛠️ Process Improvements
-- **Automated Attendance**: "Check In" and "Check Out" buttons removed; attendance is now automatically triggered by login and logout events.
-- **Manual Holidays**: Auto-population removed to provide HR with 100% manual control over the holiday calendar.
-- **SPA Stability**: Fixed wildcard routing to ensure browser refreshes never cause 404 errors.
+- **Asia/Kolkata (IST)**: Unified date and time formatting across all 20+ UI components and backend exports. No more UTC-drift bugs.
 
 ---
 
@@ -65,15 +62,16 @@ cd Frontend && npm install && npm run dev
 
 ### Employee Management
 - CRUD with search, filter, pagination
-- **Live Online Status** indicator
+- **Live Online Status** indicator with pulsing badges
 - Profile avatar upload
-- **Enhanced Professional Excel Export**
+- **Professional Excel Export** (Multi-session support per row)
 
 ### Attendance
-- **Fully Automated**: Check-in on login, Check-out on logout
+- **Manual Management**: Intentional Check-in and Check-out
+- **Daily Summary**: Records up to 3 distinct work sessions per day
 - QR code check-in with time-limited tokens
 - Geolocation check-in with configurable office radius
-- Comprehensive attendance calendar
+- Comprehensive attendance history with duration tracking
 
 ### Leave Management
 - Request/approval workflow
@@ -89,15 +87,12 @@ cd Frontend && npm install && npm run dev
 ### HR Workflows
 - Resignation submission/approval
 - Onboarding task manager with checklist
-- **Manual Holiday Management** (Manual entry only for total control)
+- **Manual Holiday Management**
 
 ### Internal Communication
 - Direct messaging + group chats via Socket.io
+- **Voice Messages** and 50MB file sharing
 - **Online status** sync in chat contact list
-
-### Notifications
-- In-app notifications
-- Announcements with priority levels and audience targeting
 
 ---
 
@@ -113,7 +108,6 @@ cd Frontend && npm install && npm run dev
 | Recharts | Charts |
 | ExcelJS | Professional Excel Generation |
 | Axios | HTTP client |
-| Vitest | Tests |
 
 ### Backend
 | Library | Use |
@@ -128,22 +122,7 @@ cd Frontend && npm install && npm run dev
 | JWT + bcryptjs | Auth |
 | Winston | Logging |
 | Zod | Request validation |
-| Speakeasy + QRCode | 2FA |
-| Passport (Google, GitHub) | OAuth |
-| Nodemailer | Email |
-| Prometheus client | Metrics |
-| Sentry | Error tracking |
 | Supabase JS | File storage |
-| Vitest | Tests |
-
-### Infrastructure
-| Service | Use |
-|---------|-----|
-| Docker Compose | Local dev environment |
-| GitHub Actions | CI (lint, migrate, test, build) |
-| Render | Backend API hosting (`elegance-it-geo-infotech.onrender.com`) |
-| Vercel | Frontend SPA hosting (`elegance-it-geo-infotech.vercel.app`) |
-| Supabase | File storage (`kzqheffjtzuwgdzraoqi`) |
 
 ---
 
@@ -155,14 +134,9 @@ cd Frontend && npm install && npm run dev
 # Start PostgreSQL + Redis + API server
 docker compose up --build
 
-# Run migrations only (if not auto)
-docker compose exec server sh -c "npx knex migrate:latest --knexfile knexfile.js"
-
-# Seed data
-docker compose exec server node seeds/seed.js
+# Run migrations + seed
+docker compose exec server sh -c "npx knex migrate:latest --knexfile knexfile.js && node seeds/seed.js"
 ```
-
-The server auto-runs migrations on start. To disable, remove `npx knex migrate:latest --knexfile knexfile.js &&` from the `CMD` in `server/Dockerfile`.
 
 ### Without Docker (SQLite)
 
@@ -174,79 +148,23 @@ cp .env.example .env
 npm run dev
 ```
 
-SQLite file is `server/data/elegance.db`. To switch to PostgreSQL, set `DATABASE_URL` in `.env`.
-
-### Environment Variables
-
-See `server/.env.example` for all options. Key variables:
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `DATABASE_URL` | prod | — | PostgreSQL connection string |
-| `JWT_SECRET` | yes | — | JWT signing key (min 32 chars) |
-| `REDIS_URL` | no | — | Redis connection string (adds caching, queue, persisted rate limits) |
-| `NODE_ENV` | no | `development` | `development`, `production`, or `test` |
-| `FRONTEND_URL` | no | `http://localhost:5173` | CORS origin, email links |
-| `SENTRY_DSN` | no | — | Sentry error tracking |
-| `SUPABASE_URL` | no | — | Supabase project URL (file storage) |
-| `SUPABASE_SERVICE_KEY` | no | — | Supabase service role key |
-| `SMTP_HOST` | no | — | SMTP server (email notifications) |
-| `LOG_LEVEL` | no | `info` | Winston log level |
-
-### Seed Data
-
-```bash
-docker compose exec server node seeds/seed.js
-```
-
-Creates a root user with credentials from env vars (defaults: `admin@elegance.com` / `admin123`). Employee ID is randomly generated — check seed output.
-
 ---
 
 ## Project Structure
 
 ```
-├── server/                        # Express API
-│   ├── core/                      # Shared framework
-│   ├── config/                    # DB, app config
-│   ├── controller/                # Route handlers
-│   ├── middleware/                # Auth, validation, errors
-│   ├── migrations/                # Knex schema migrations
-│   ├── modules/                   # Zod schemas per feature
-│   ├── routes/                    # API route definitions
-│   ├── seeds/                     # Initial data
-│   ├── tests/                     # Unit tests
-│   ├── utils/                     # Email, OAuth, Redis, logging, dateUtils
-│   ├── Dockerfile
-│   ├── knexfile.js
-│   └── index.js                   # Entry point
+├── server/                        # Express API (IST Standardized)
+│   ├── controller/                # Route handlers (ID-resolved)
+│   ├── migrations/                # Schema migrations (Indexed)
+│   ├── utils/                     # dbUtils, dateUtils, socket, format
+│   └── index.js                   # Entry point (Express 5 Regex Routing)
 │
 ├── Frontend/                      # React SPA
 │   ├── src/
-│   │   ├── components/            # UI components (Timezone Standardized)
-│   │   ├── hooks/
-│   │   ├── pages/
-│   │   ├── config/
-│   │   ├── utils/                 # Excel, Date formatting, API helpers
-│   ├── Dockerfile
+│   │   ├── components/            # Standardized UI Components
+│   │   ├── utils/                 # format.js, excel.jsx, dateUtils.js
 │   └── vite.config.js
-│
-├── docker-compose.yml             # PostgreSQL + Redis + server
-├── .github/workflows/ci.yml       # GitHub Actions
-└── types/                         # TypeScript definitions
 ```
-
----
-
-## Rate Limiting
-
-| Scope | Limit (dev) | Limit (prod) | Window |
-|-------|-------------|--------------|--------|
-| Global API | 50,000 | 1,000 | 1 hour |
-| Sensitive (employees, leaves, announcements) | 10,000 | 200 | 1 hour |
-| Login / forgot-password | 20 | 20 | 15 min |
-
-Rate limits persist across restarts when Redis is configured.
 
 ---
 
@@ -254,12 +172,10 @@ Rate limits persist across restarts when Redis is configured.
 
 | Problem | Solution |
 |---------|----------|
-| `relation "users" does not exist` | Run `npx knex migrate:latest` before seeding |
+| `PathError: Missing parameter` | Ensure wildcard routes in `index.js` use `app.get(/.*/, ...)` regex |
+| `no data to export` | Verify Employee ID vs UUID resolution in `checkinController` |
 | Port conflict (3000) | Change `PORT` in `.env` |
 | Redis connection refused | Remove `REDIS_URL` from `.env` (graceful fallback) |
-| CANNOT GET /api/* | Ensure backend is running on port 3000 |
-| 429 Too Many Requests | Reduce request frequency or increase limits in `server/index.js` |
-| `"From date cannot be in the past"` | Use YYYY-MM-DD format for leave dates |
 
 ---
 

@@ -155,7 +155,7 @@ const EmployeesList = ({ onAddNew, onView, onEdit }) => {
               </thead>
               <tbody>
                 {employees.map((emp, idx) => (
-                  <tr key={emp._id || idx} className="border-t border-slate-700 hover:bg-slate-700/30">
+                  <tr key={emp.id || emp._id || `emp-${idx}`} className="border-t border-slate-700 hover:bg-slate-700/30">
                     <td className="px-4 py-3">{idx + 1}</td>
                     <td className="px-4 py-3">
                       <div className="relative h-10 w-10">
@@ -197,7 +197,7 @@ const EmployeesList = ({ onAddNew, onView, onEdit }) => {
                         Edit
                       </button>
                       <button 
-                        onClick={() => confirmDelete(emp._id)} 
+                        onClick={() => confirmDelete(emp.id || emp._id)} 
                         className="text-rose-400 hover:text-white text-xs"
                       >
                         Delete

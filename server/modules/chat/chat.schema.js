@@ -3,7 +3,7 @@ import { z } from "zod";
 export const chatMessageSchema = z.object({
   contactId: z.string().min(1, "Contact ID is required"),
   type: z.enum(["direct", "group"]),
-  text: z.string().min(1, "Message cannot be empty").max(5000),
+  text: z.string().max(5000).optional().or(z.literal("")),
 });
 
 export const createGroupSchema = z.object({

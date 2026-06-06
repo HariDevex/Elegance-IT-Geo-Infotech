@@ -1,6 +1,7 @@
 import db from "../config/database.js";
 import crypto from "crypto";
 import { logActivity } from "./activityLogController.js";
+import { resolveUserId } from "../utils/dbUtils.js";
 
 const canManagePayroll = (role) => ["root", "admin", "manager"].includes(role);
 const canViewAllPayroll = (role) => ["root", "admin", "manager"].includes(role);
@@ -17,8 +18,8 @@ const processPayroll = async (req, res, next) => {
       return res.status(400).json({ success: false, error: "userId, payPeriodStart, and payPeriodEnd are required" });
     }
 
-    const user = await db("users").where("id", userId).first();
-    if (!user) {
+    const resolvedId = await resolveUserId(userId);
+    if (!resolvedId) {
       return res.status(404).json({ success: false, error: "User not found" });
     }
 
@@ -28,7 +29,7 @@ const processPayroll = async (req, res, next) => {
     const netPay = basic + allow - deduct;
 
     const existing = await db("payroll")
-      .where("user_id", userId)
+      .where("user_id", resolvedId)
       .where("pay_period_start", payPeriodStart)
       .where("pay_period_end", payPeriodEnd)
       .first();
@@ -49,7 +50,7 @@ const processPayroll = async (req, res, next) => {
       const id = crypto.randomUUID();
       await db("payroll").insert({
         id,
-        user_id: userId,
+        user_id: resolvedId,
         basic_pay: basic,
         allowances: allow,
         deductions: deduct,
@@ -62,7 +63,7 @@ const processPayroll = async (req, res, next) => {
       payroll = await db("payroll").where("id", id).first();
     }
 
-    await logActivity(req.user.id, "process_payroll", "payroll", payroll.id, { userId, netPay, period: `${payPeriodStart} to ${payPeriodEnd}` }, req.ip);
+    await logActivity(req.user.id, "process_payroll", "payroll", payroll.id, { userId: resolvedId, netPay, period: `${payPeriodStart} to ${payPeriodEnd}` }, req.ip);
 
     res.json({ success: true, payroll });
   } catch (error) {
@@ -83,7 +84,14 @@ const listPayroll = async (req, res, next) => {
       .orderBy("payroll.created_at", "desc");
 
     if (canViewAllPayroll(req.user.role)) {
-      if (userId) query.where("payroll.user_id", userId);
+      if (userId) {
+        const resolvedId = await resolveUserId(userId);
+        if (resolvedId) {
+          query.where("payroll.user_id", resolvedId);
+        } else {
+          return res.json({ success: true, payroll: [], pagination: { page: currentPage, limit: pageSize, total: 0, pages: 0 } });
+        }
+      }
     } else {
       query.where("payroll.user_id", req.user.id);
     }

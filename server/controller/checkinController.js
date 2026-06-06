@@ -3,15 +3,14 @@ import crypto from "crypto";
 import { logActivity } from "./activityLogController.js";
 import { getProjectDateStr, getProjectTimeStr } from "../utils/dateUtils.js";
 import { isLateCheckIn } from "../utils/attendanceUtils.js";
+import { resolveUserId } from "../utils/dbUtils.js";
 
 const MAX_CHECKIN_PER_DAY = 3;
 
 const getTodayCheckins = async (userId) => {
   const dateStr = getProjectDateStr();
-  // Calculate UTC range for the project date (IST is UTC+5:30)
-  // June 4 IST starts at June 3 18:30 UTC
-  const todayStart = new Date(new Date(`${dateStr}T00:00:00`).getTime() - 5.5 * 60 * 60 * 1000).toISOString();
-  const todayEnd = new Date(new Date(`${dateStr}T23:59:59.999`).getTime() - 5.5 * 60 * 60 * 1000).toISOString();
+  const todayStart = new Date(`${dateStr}T00:00:00+05:30`).toISOString();
+  const todayEnd = new Date(`${dateStr}T23:59:59.999+05:30`).toISOString();
   
   const checkins = await db("checkin_checkout")
     .where("user_id", userId)
@@ -192,13 +191,14 @@ const getMyRecords = async (req, res, next) => {
 
     let query = db("checkin_checkout")
       .where("user_id", userId)
-      .orderBy("created_at", "desc")
-      .limit(parseInt(limit));
+      .orderBy("created_at", "desc");
 
     if (date) {
-      const dayStart = new Date(date);
-      const dayEnd = new Date(date + "T23:59:59.999Z");
+      const dayStart = new Date(`${date}T00:00:00+05:30`);
+      const dayEnd = new Date(`${date}T23:59:59.999+05:30`);
       query = query.where("created_at", ">=", dayStart).where("created_at", "<=", dayEnd);
+    } else {
+        query = query.limit(parseInt(limit));
     }
 
     const records = await query;
@@ -248,7 +248,14 @@ const getMyRecords = async (req, res, next) => {
 
 const exportCheckinExcel = async (req, res, next) => {
   try {
-    const { from, to, userId } = req.query;
+    let { from, to, userId } = req.query;
+
+    const isAdmin = ["root", "admin", "manager", "teamlead", "hr"].includes(req.user.role);
+    
+    // If not an admin, force the userId filter to their own ID
+    if (!isAdmin) {
+      userId = req.user.id;
+    }
 
     let query = db("checkin_checkout")
       .join("users", "checkin_checkout.user_id", "users.id")
@@ -256,54 +263,87 @@ const exportCheckinExcel = async (req, res, next) => {
         "users.employee_id",
         "users.name",
         "users.department",
+        "checkin_checkout.id",
+        "checkin_checkout.user_id",
         "checkin_checkout.type",
-        "checkin_checkout.note",
+        "checkin_checkout.parent_id",
         "checkin_checkout.created_at"
       )
-      .orderBy("checkin_checkout.created_at", "desc");
+      .orderBy("checkin_checkout.created_at", "asc");
 
     if (from && to) {
-      query = query.whereBetween("checkin_checkout.created_at", [new Date(from), new Date(to)]);
+      query = query.whereBetween("checkin_checkout.created_at", [new Date(`${from}T00:00:00+05:30`), new Date(`${to}T23:59:59+05:30`)]);
     }
 
     if (userId) {
-      query = query.where("checkin_checkout.user_id", userId);
+      const resolvedId = await resolveUserId(userId);
+      if (resolvedId) {
+        query = query.where("checkin_checkout.user_id", resolvedId);
+      } else {
+        return res.json({ success: true, data: [] });
+      }
     }
 
-    const records = await query;
+    const rawRecords = await query;
 
-    const checkins = records.filter(r => r.type === "checkin");
-    const checkouts = records.filter(r => r.type === "checkout");
+    const userDateMap = {};
 
-    const sessions = [];
-    for (const ci of checkins) {
-      const co = checkouts.find(o => o.parent_id === ci.id);
+    rawRecords.forEach(record => {
+      const dateStr = getProjectDateStr(new Date(record.created_at));
+      const key = `${record.employee_id}_${dateStr}`;
       
-      let checkoutTime = "-";
-      let duration = "-";
-      
-      if (co) {
-        checkoutTime = getProjectTimeStr(co.created_at);
-        const start = new Date(ci.created_at);
-        const end = new Date(co.created_at);
-        duration = `${Math.round((end - start) / 60000)} min`;
+      if (!userDateMap[key]) {
+        userDateMap[key] = {
+          date: dateStr,
+          employeeId: record.employee_id,
+          name: record.name,
+          department: record.department || "-",
+          sessions: []
+        };
       }
 
-      sessions.push({
-        date: getProjectDateStr(new Date(ci.created_at)),
-        employeeId: ci.employee_id,
-        name: ci.name,
-        department: ci.department || "-",
-        checkinTime: getProjectTimeStr(ci.created_at),
-        checkoutTime,
-        duration,
-        note: ci.note || "-",
-      });
-    }
+      if (record.type === "checkin") {
+        userDateMap[key].sessions.push({
+          id: record.id,
+          checkin: record.created_at,
+          checkout: null
+        });
+      } else if (record.type === "checkout" && record.parent_id) {
+        const session = userDateMap[key].sessions.find(s => s.id === record.parent_id);
+        if (session) {
+          session.checkout = record.created_at;
+        }
+      }
+    });
+
+    const rows = Object.values(userDateMap).map(data => {
+      const row = {
+        date: data.date,
+        employeeId: data.employeeId,
+        name: data.name,
+        department: data.department
+      };
+
+      for (let i = 0; i < 3; i++) {
+        const s = data.sessions[i];
+        const num = i + 1;
+        row[`checkin${num}`] = s?.checkin ? getProjectTimeStr(s.checkin) : "-";
+        row[`checkout${num}`] = s?.checkout ? getProjectTimeStr(s.checkout) : "-";
+        
+        if (s?.checkin && s?.checkout) {
+          const mins = Math.round((new Date(s.checkout) - new Date(s.checkin)) / 60000);
+          row[`duration${num}`] = `${mins} min`;
+        } else {
+          row[`duration${num}`] = "-";
+        }
+      }
+
+      return row;
+    });
 
     res.json({
       success: true,
-      data: sessions,
+      data: rows,
     });
   } catch (error) {
     next(error);
@@ -314,7 +354,7 @@ const getAllCheckinRecords = async (req, res, next) => {
   try {
     const { date, limit = 500, userId } = req.query;
 
-    if (!["root", "admin", "manager"].includes(req.user.role)) {
+    if (!["root", "admin", "manager", "teamlead", "hr"].includes(req.user.role)) {
       return res.status(403).json({ success: false, error: "Not authorized" });
     }
 
@@ -326,17 +366,23 @@ const getAllCheckinRecords = async (req, res, next) => {
         "users.employee_id",
         "users.department"
       )
-      .orderBy("checkin_checkout.created_at", "desc")
-      .limit(parseInt(limit));
+      .orderBy("checkin_checkout.created_at", "desc");
 
     if (date) {
-      const dayStart = new Date(date);
-      const dayEnd = new Date(date + "T23:59:59.999Z");
+      const dayStart = new Date(`${date}T00:00:00+05:30`);
+      const dayEnd = new Date(`${date}T23:59:59.999+05:30`);
       query = query.where("checkin_checkout.created_at", ">=", dayStart).where("checkin_checkout.created_at", "<=", dayEnd);
+    } else {
+        query = query.limit(parseInt(limit));
     }
 
     if (userId) {
-      query = query.where("checkin_checkout.user_id", userId);
+      const resolvedId = await resolveUserId(userId);
+      if (resolvedId) {
+        query = query.where("checkin_checkout.user_id", resolvedId);
+      } else {
+        return res.json({ success: true, records: [] });
+      }
     }
 
     const records = await query;
@@ -360,7 +406,7 @@ const getAllCheckinRecords = async (req, res, next) => {
           employeeId: ci.employee_id,
           department: ci.department,
         },
-        date: ci.created_at,
+        date: getProjectDateStr(new Date(ci.created_at)),
         checkin: {
           _id: ci.id,
           time: ci.created_at,

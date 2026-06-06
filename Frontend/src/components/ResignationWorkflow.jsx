@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import api from "../config/axios";
 import { useAuth } from "../context/authContext";
 import { SkeletonTable } from "./Skeleton";
+import { formatDate } from "../utils/format";
 
 const statusOptions = ["All", "Pending", "Approved", "Rejected"];
 
@@ -15,6 +16,7 @@ const ResignationWorkflow = () => {
   const [statusFilter, setStatusFilter] = useState("All");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ reason: "", lastWorkingDay: "" });
+  const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,6 +51,7 @@ const ResignationWorkflow = () => {
       toast.error("Reason and last working day are required");
       return;
     }
+    setSubmitting(true);
     try {
       await api.post("/resignations", form);
       toast.success("Resignation submitted");
@@ -58,12 +61,16 @@ const ResignationWorkflow = () => {
     } catch (err) {
       console.error("Failed to submit resignation:", err);
       toast.error(err.response?.data?.error || "Failed to submit");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleUpdateStatus = async (id, status) => {
     try {
       const adminNotes = prompt(`Enter notes for ${status}:`);
+      if (adminNotes === null) return; // User cancelled
+      
       await api.put(`/resignations/${id}/status`, { status, adminNotes });
       toast.success(`Resignation ${status.toLowerCase()}`);
       load();
@@ -138,8 +145,12 @@ const ResignationWorkflow = () => {
             <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg bg-slate-700 text-white text-sm hover:bg-slate-600">
               Cancel
             </button>
-            <button onClick={handleSubmit} className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm hover:bg-cyan-500">
-              Submit
+            <button 
+              onClick={handleSubmit} 
+              disabled={submitting}
+              className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm hover:bg-cyan-500 disabled:opacity-50"
+            >
+              {submitting ? "Submitting..." : "Submit"}
             </button>
           </div>
         </div>
@@ -180,7 +191,7 @@ const ResignationWorkflow = () => {
                   <td className="px-4 py-3 whitespace-nowrap">{r.user_name}</td>
                   <td className="px-4 py-3">{r.department}</td>
                   <td className="px-4 py-3 max-w-[200px] truncate">{r.reason}</td>
-                  <td className="px-4 py-3">{r.last_working_day?.slice(0, 10)}</td>
+                  <td className="px-4 py-3">{formatDate(r.last_working_day)}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 rounded-full text-xs ${
                       r.status === "Approved" ? "bg-cyan-500/20 text-cyan-400" :

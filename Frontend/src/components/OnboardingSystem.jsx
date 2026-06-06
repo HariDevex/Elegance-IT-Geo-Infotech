@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import api from "../config/axios";
 import { useAuth } from "../context/authContext";
 import { SkeletonTable, SkeletonList } from "./Skeleton";
+import { formatDate } from "../utils/format";
 
 const taskStatusOptions = ["All", "pending", "in_progress", "completed"];
 
@@ -20,6 +21,7 @@ const OnboardingSystem = () => {
   const [taskForm, setTaskForm] = useState({ userId: "", taskName: "", description: "", assignedTo: "", dueDate: "" });
   const [checklistForm, setChecklistForm] = useState({ userId: "", item: "" });
   const [employees, setEmployees] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -74,6 +76,7 @@ const OnboardingSystem = () => {
       toast.error("Employee and task name are required");
       return;
     }
+    setSubmitting(true);
     try {
       await api.post("/onboarding/tasks", taskForm);
       toast.success("Task created");
@@ -83,6 +86,8 @@ const OnboardingSystem = () => {
     } catch (err) {
       console.error("Failed to create task:", err);
       toast.error(err.response?.data?.error || "Failed to create task");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -114,6 +119,7 @@ const OnboardingSystem = () => {
       toast.error("Employee and checklist item are required");
       return;
     }
+    setSubmitting(true);
     try {
       await api.post("/onboarding/checklist", checklistForm);
       toast.success("Checklist item added");
@@ -123,6 +129,8 @@ const OnboardingSystem = () => {
     } catch (err) {
       console.error("Failed to add checklist item:", err);
       toast.error(err.response?.data?.error || "Failed to add checklist item");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -246,8 +254,12 @@ const OnboardingSystem = () => {
               <button onClick={() => setShowTaskForm(false)} className="px-4 py-2 rounded-lg bg-slate-700 text-white text-sm hover:bg-slate-600">
                 Cancel
               </button>
-              <button onClick={handleCreateTask} className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm hover:bg-cyan-500">
-                Create
+              <button 
+                onClick={handleCreateTask} 
+                disabled={submitting}
+                className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm hover:bg-cyan-500 disabled:opacity-50"
+              >
+                {submitting ? "Creating..." : "Create"}
               </button>
             </div>
           </div>
@@ -286,7 +298,7 @@ const OnboardingSystem = () => {
                     <td className="px-4 py-3 font-medium">{t.task_name}</td>
                     <td className="px-4 py-3 max-w-[200px] truncate text-xs text-slate-400">{t.description || "-"}</td>
                     <td className="px-4 py-3">{t.assigned_to_name || "-"}</td>
-                    <td className="px-4 py-3 text-xs">{t.due_date ? t.due_date.slice(0, 10) : "-"}</td>
+                    <td className="px-4 py-3 text-xs">{formatDate(t.due_date)}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-1 rounded-full text-xs ${
                         t.status === "completed" ? "bg-cyan-500/20 text-cyan-400" :
@@ -366,8 +378,12 @@ const OnboardingSystem = () => {
               <button onClick={() => setShowChecklistForm(false)} className="px-4 py-2 rounded-lg bg-slate-700 text-white text-sm hover:bg-slate-600">
                 Cancel
               </button>
-              <button onClick={handleCreateChecklistItem} className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm hover:bg-cyan-500">
-                Add
+              <button 
+                onClick={handleCreateChecklistItem} 
+                disabled={submitting}
+                className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm hover:bg-cyan-500 disabled:opacity-50"
+              >
+                {submitting ? "Adding..." : "Add"}
               </button>
             </div>
           </div>

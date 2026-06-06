@@ -138,6 +138,7 @@ const createEmployee = async (req, res, next) => {
     res.status(201).json({
       success: true,
       user: {
+        id: user.id,
         _id: user.employee_id,
         name: user.name,
         email: user.email,
@@ -234,7 +235,7 @@ const listEmployees = async (req, res, next) => {
           "users.avatar",
           "users.attendance_status",
           "users.created_at",
-          db.raw("bool_or(login_sessions.id IS NOT NULL) as is_online")
+          db.raw("MAX(CASE WHEN login_sessions.id IS NOT NULL THEN 1 ELSE 0 END) as is_online")
         )
         .groupBy("users.id")
         .orderBy("users.created_at", "desc")
@@ -248,6 +249,7 @@ const listEmployees = async (req, res, next) => {
     res.json({
       success: true,
       users: users.map((u) => ({
+        id: u.id,
         _id: u.employee_id,
         name: u.name,
         email: u.email,
@@ -387,7 +389,8 @@ const updateEmployee = async (req, res, next) => {
     res.json({
       success: true,
       user: {
-        _id: user.id,
+        id: user.id,
+        _id: user.employee_id,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -452,7 +455,8 @@ const updateAttendance = async (req, res, next) => {
     res.json({
       success: true,
       user: {
-        _id: user.id,
+        id: user.id,
+        _id: user.employee_id,
         name: user.name,
         attendanceStatus: user.attendance_status,
       },
@@ -545,6 +549,7 @@ const getEmployee = async (req, res, next) => {
     res.json({
       success: true,
       user: {
+        id: user.id,
         _id: user.employee_id,
         name: user.name,
         email: user.email,

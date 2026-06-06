@@ -5,6 +5,7 @@ import { Download, LogIn, LogOut, Clock, CheckCircle, AlertCircle, Users, User }
 import { Skeleton, SkeletonTable } from "./Skeleton";
 import { useAuth } from "../context/authContext";
 import { exportToExcel } from "../utils/excel";
+import { formatDate as formatUI, formatRelativeTime } from "../utils/format";
 
 import { getProjectDateStr, getProjectTimeStr } from "../utils/dateUtils";
 
@@ -105,7 +106,8 @@ const CheckInOut = () => {
 
   const handleExport = async () => {
     try {
-      const res = await api.get("/checkin/export");
+      const exportUrl = view === "my" ? `/checkin/export?userId=${user._id}` : "/checkin/export";
+      const res = await api.get(exportUrl);
       if (res.data.success && res.data.data.length > 0) {
         exportToExcel(res.data.data, `checkin-export-${getProjectDateStr()}`, "Check-in Records");
         toast.success("Excel downloaded!");
@@ -121,14 +123,6 @@ const CheckInOut = () => {
   const formatTime = (isoString) => {
     if (!isoString) return "-";
     return getProjectTimeStr(new Date(isoString));
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "-";
-    const normalized = dateStr.includes("T") ? dateStr : `${dateStr}T00:00:00.000Z`;
-    const date = new Date(normalized);
-    if (isNaN(date.getTime())) return "-";
-    return getProjectDateStr(date);
   };
 
   const getTimeDiff = (start, end) => {
@@ -257,7 +251,7 @@ const CheckInOut = () => {
                       <tr key={`${record._id}-${idx}`} className="border-b border-slate-700/50 hover:bg-slate-700/30">
                         {idx === 0 && (
                           <td rowSpan={record.sessions.length} className="px-4 py-3 text-sm text-white align-top">
-                            {formatDate(record.date)}
+                            {formatUI(record.date)}
                           </td>
                         )}
                         {idx === 0 && (
@@ -309,7 +303,7 @@ const CheckInOut = () => {
                     ))
                   ) : (
                     <tr key={record._id} className="border-b border-slate-700/50 hover:bg-slate-700/30">
-                      <td className="px-4 py-3 text-sm text-white">{formatDate(record.date)}</td>
+                      <td className="px-4 py-3 text-sm text-white">{formatUI(record.date)}</td>
                       <td className="px-4 py-3 text-sm">
                         <span className={`flex items-center gap-1.5 ${record.loginAt ? "text-slate-300" : "text-slate-500"}`}>
                           <Clock size={14} />
@@ -332,7 +326,7 @@ const CheckInOut = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-300">
-                      {formatDate(session.date)}
+                      {formatUI(session.date)}
                     </td>
                     <td className="px-4 py-3 text-sm">
                       {session.checkin?.time ? (

@@ -1,38 +1,35 @@
 import db from "../config/database.js";
 import crypto from "crypto";
 import { canViewAll, canWrite, isLateCheckIn } from "../utils/attendanceUtils.js";
+import { resolveUserId } from "../utils/dbUtils.js";
+import { getProjectDateStr, getProjectTimeStr } from "../utils/dateUtils.js";
+import { logActivity } from "./activityLogController.js";
 
 const createOrUpdateAttendance = async (req, res, next) => {
   try {
     const { userId, date, status, action } = req.body;
-    const input = userId || req.user._id;
+    const inputId = userId || req.user.id;
 
-    if (!input || !date) {
+    if (!inputId || !date) {
       return res.status(400).json({ success: false, error: "Missing required fields" });
     }
 
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input);
-    const self = isUuid ? input === req.user.id : input === req.user._id;
-    if (!self && !canWrite(req.user.role)) {
-      return res.status(403).json({ success: false, error: "Not authorized" });
+    const resolvedId = await resolveUserId(inputId);
+    if (!resolvedId) {
+      return res.status(404).json({ success: false, error: "User not found" });
     }
 
-    const user = isUuid
-      ? await db("users").where("id", input).first()
-      : await db("users").where("employee_id", input).first();
-    if (!user) {
-      return res.status(404).json({ success: false, error: "User not found" });
+    const isSelf = resolvedId === req.user.id;
+    if (!isSelf && !canWrite(req.user.role)) {
+      return res.status(403).json({ success: false, error: "Not authorized" });
     }
 
     const dateStr = date.split("T")[0];
     const now = new Date();
 
-    let record;
-    let updated = false;
-
     if (action === "checkin") {
       const existing = await db("attendance")
-        .where("user_id", user.id)
+        .where("user_id", resolvedId)
         .where("date", dateStr)
         .first();
       
@@ -40,14 +37,10 @@ const createOrUpdateAttendance = async (req, res, next) => {
         await db("attendance")
           .where("id", existing.id)
           .update({ status: "Present", check_in_at: now, updated_at: now });
-        updated = true;
-      }
-      
-      if (!updated) {
-        const newId = crypto.randomUUID();
+      } else {
         await db("attendance").insert({
-          id: newId,
-          user_id: user.id,
+          id: crypto.randomUUID(),
+          user_id: resolvedId,
           date: dateStr,
           status: "Present",
           check_in_at: now,
@@ -57,14 +50,12 @@ const createOrUpdateAttendance = async (req, res, next) => {
       }
     } else if (action === "checkout") {
       await db("attendance")
-        .where("user_id", user.id)
+        .where("user_id", resolvedId)
         .where("date", dateStr)
         .update({ check_out_at: now, updated_at: now });
-    } else if (!action && !status) {
-      return res.status(400).json({ success: false, error: "Missing required fields" });
     } else if (status) {
       const existing = await db("attendance")
-        .where("user_id", user.id)
+        .where("user_id", resolvedId)
         .where("date", dateStr)
         .first();
       
@@ -73,10 +64,9 @@ const createOrUpdateAttendance = async (req, res, next) => {
           .where("id", existing.id)
           .update({ status, updated_at: now });
       } else {
-        const newId = crypto.randomUUID();
         await db("attendance").insert({
-          id: newId,
-          user_id: user.id,
+          id: crypto.randomUUID(),
+          user_id: resolvedId,
           date: dateStr,
           status,
           created_at: now,
@@ -85,8 +75,8 @@ const createOrUpdateAttendance = async (req, res, next) => {
       }
     }
 
-    record = await db("attendance")
-      .where("user_id", user.id)
+    const record = await db("attendance")
+      .where("user_id", resolvedId)
       .where("date", dateStr)
       .first();
 
@@ -105,6 +95,8 @@ const createOrUpdateAttendance = async (req, res, next) => {
         isLate: isLate,
       },
     });
+
+    await logActivity(req.user.id, "update_attendance", "attendance", record.id, { targetUser: resolvedId, status: attendanceStatus }, req.ip);
   } catch (error) {
     next(error);
   }
@@ -112,14 +104,14 @@ const createOrUpdateAttendance = async (req, res, next) => {
 
 const listAttendance = async (req, res, next) => {
   try {
-    const { date, from, to, userId, page, limit } = req.query;
+    const { date, from, to, userId, page = 1, limit = 50 } = req.query;
     
     if (!canViewAll(req.user.role)) {
       return res.status(403).json({ success: false, error: "Not authorized to view all attendance" });
     }
     
-    const currentPage = Math.max(1, parseInt(page) || 1);
-    const pageSize = Math.min(100, Math.max(1, parseInt(limit) || 50));
+    const currentPage = Math.max(1, parseInt(page));
+    const pageSize = Math.min(100, Math.max(1, parseInt(limit)));
     const offset = (currentPage - 1) * pageSize;
     
     const attendanceQuery = db("attendance")
@@ -139,8 +131,7 @@ const listAttendance = async (req, res, next) => {
       .orderBy("attendance.date", "desc");
 
     if (date) {
-      const dateStr = date.split("T")[0];
-      attendanceQuery.where("attendance.date", dateStr);
+      attendanceQuery.where("attendance.date", date.split("T")[0]);
     }
 
     if (from && to) {
@@ -148,7 +139,12 @@ const listAttendance = async (req, res, next) => {
     }
 
     if (userId) {
-      attendanceQuery.where("attendance.user_id", userId);
+      const resolvedId = await resolveUserId(userId);
+      if (resolvedId) {
+        attendanceQuery.where("attendance.user_id", resolvedId);
+      } else {
+        return res.json({ success: true, records: [], pagination: { page: currentPage, limit: pageSize, total: 0, pages: 0 } });
+      }
     }
 
     const [{ count }] = await attendanceQuery.clone().clearSelect().clearOrder().count("* as count");
@@ -188,32 +184,33 @@ const listMyAttendance = async (req, res, next) => {
     const { from, to } = req.query;
     const userId = req.user.id;
 
-    const checkinQuery = db("checkin_checkout")
+    let fromDate = from || getProjectDateStr(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+    let toDate = to || getProjectDateStr();
+
+    // Fetch checkin_checkout sessions
+    const checkinRecords = await db("checkin_checkout")
       .where("user_id", userId)
-      .whereBetween("created_at", [from ? new Date(from) : new Date("1970-01-01"), to ? new Date(to + "T23:59:59") : new Date("2099-12-31")])
+      .whereBetween("created_at", [new Date(fromDate + "T00:00:00+05:30"), new Date(toDate + "T23:59:59+05:30")])
       .orderBy("created_at", "asc");
 
-    const checkinRecords = await checkinQuery;
-
-    const loginQuery = db("login_logs")
+    // Fetch login logs
+    const loginLogs = await db("login_logs")
       .where("user_id", userId)
-      .whereBetween("created_at", [from ? new Date(from) : new Date("1970-01-01"), to ? new Date(to + "T23:59:59") : new Date("2099-12-31")])
+      .whereBetween("created_at", [new Date(fromDate + "T00:00:00+05:30"), new Date(toDate + "T23:59:59+05:30")])
       .orderBy("created_at", "asc");
-
-    const loginLogs = await loginQuery;
 
     const loginByDate = {};
     loginLogs.forEach(log => {
-      const date = new Date(log.created_at).toISOString().split("T")[0];
-      if (!loginByDate[date]) {
-        loginByDate[date] = log.created_at;
+      const dateStr = getProjectDateStr(new Date(log.created_at));
+      if (!loginByDate[dateStr]) {
+        loginByDate[dateStr] = log.created_at;
       }
     });
 
     const groupedByDate = {};
 
     checkinRecords.forEach(record => {
-      const dateStr = new Date(record.created_at).toISOString().split("T")[0];
+      const dateStr = getProjectDateStr(new Date(record.created_at));
       
       if (!groupedByDate[dateStr]) {
         groupedByDate[dateStr] = {
@@ -232,20 +229,23 @@ const listMyAttendance = async (req, res, next) => {
         });
       } else if (record.type === "checkout") {
         const sessions = groupedByDate[dateStr].sessions;
-        const lastSessionWithoutCheckout = sessions.reverse().find(s => !s.checkOutAt);
-        if (lastSessionWithoutCheckout) {
-          lastSessionWithoutCheckout.checkOutAt = record.created_at;
+        for (let i = sessions.length - 1; i >= 0; i--) {
+          if (!sessions[i].checkOutAt) {
+            sessions[i].checkOutAt = record.created_at;
+            break;
+          }
         }
       }
     });
 
+    // Ensure all days in range are represented if they have a login or a checkin
     const records = Object.values(groupedByDate)
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .map(day => ({
         _id: day.date,
         date: day.date,
         loginAt: day.loginAt,
-        sessions: day.sessions.filter(s => s.checkInAt).map(s => ({
+        sessions: day.sessions.map(s => ({
           ...s,
           status: s.checkOutAt ? (s.isLate ? "Late" : "On Time") : "Active"
         }))
@@ -260,15 +260,6 @@ const listMyAttendance = async (req, res, next) => {
   }
 };
 
-const haversineDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371000;
-  const toRad = (deg) => (deg * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-};
-
 const generateQrToken = async (req, res, next) => {
   try {
     if (!["root", "admin", "manager", "teamlead", "hr"].includes(req.user.role)) {
@@ -278,10 +269,15 @@ const generateQrToken = async (req, res, next) => {
     const { userId } = req.body;
     if (!userId) return res.status(400).json({ success: false, error: "userId is required" });
 
+    const resolvedId = await resolveUserId(userId);
+    if (!resolvedId) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+
     const token = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-    await db("qr_checkin_tokens").insert({ token, user_id: userId, expires_at: expiresAt });
+    await db("qr_checkin_tokens").insert({ token, user_id: resolvedId, expires_at: expiresAt });
 
     res.json({ success: true, token, expires_at: expiresAt.toISOString() });
   } catch (error) {
@@ -322,7 +318,13 @@ const geoCheckin = async (req, res, next) => {
     const OFFICE_LNG = parseFloat(process.env.OFFICE_LNG) || 77.209;
     const MAX_RADIUS = parseFloat(process.env.GEO_MAX_RADIUS) || 100;
 
-    const distance = haversineDistance(parseFloat(latitude), parseFloat(longitude), OFFICE_LAT, OFFICE_LNG);
+    const R = 6371000;
+    const toRad = (deg) => (deg * Math.PI) / 180;
+    const dLat = toRad(OFFICE_LAT - parseFloat(latitude));
+    const dLon = toRad(OFFICE_LNG - parseFloat(longitude));
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(latitude)) * Math.cos(toRad(OFFICE_LAT)) * Math.sin(dLon / 2) ** 2;
+    const distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
     if (distance > MAX_RADIUS) {
       return res.status(400).json({
         success: false, error: `You are ${Math.round(distance)}m away from office. Must be within ${MAX_RADIUS}m.`,

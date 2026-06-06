@@ -1,4 +1,5 @@
 import db from "../config/database.js";
+import { resolveUserId } from "../utils/dbUtils.js";
 
 const logActivity = async (userId, action, module, targetId = null, details = null, ipAddress = null) => {
   try {
@@ -20,6 +21,23 @@ const getActivityLogs = async (req, res, next) => {
     const { module, action, userId, from, to, limit = 100, page = 1 } = req.query;
     const offset = (page - 1) * limit;
 
+    let resolvedId = userId;
+    if (userId) {
+      resolvedId = await resolveUserId(userId);
+      if (!resolvedId) {
+        return res.json({ 
+          success: true, 
+          logs: [], 
+          pagination: { 
+            page: parseInt(page), 
+            limit: parseInt(limit), 
+            total: 0, 
+            pages: 0 
+          } 
+        });
+      }
+    }
+
     let query = db("activity_logs")
       .leftJoin("users", "activity_logs.user_id", "users.id")
       .select(
@@ -37,11 +55,13 @@ const getActivityLogs = async (req, res, next) => {
     if (action) {
       query = query.where("activity_logs.action", action);
     }
-    if (userId) {
-      query = query.where("activity_logs.user_id", userId);
+    if (resolvedId) {
+      query = query.where("activity_logs.user_id", resolvedId);
     }
     if (from && to) {
-      query = query.whereBetween("activity_logs.created_at", [new Date(from), new Date(to)]);
+      // Ensure 'to' spans until the very end of the day if it's just a YYYY-MM-DD string
+      const toDate = to.includes("T") ? new Date(to) : new Date(`${to}T23:59:59.999Z`);
+      query = query.whereBetween("activity_logs.created_at", [new Date(from), toDate]);
     }
 
     const logs = await query;
@@ -49,7 +69,7 @@ const getActivityLogs = async (req, res, next) => {
     const countQuery = db("activity_logs").count("* as count");
     if (module) countQuery.where("module", module);
     if (action) countQuery.where("action", action);
-    if (userId) countQuery.where("user_id", userId);
+    if (resolvedId) countQuery.where("user_id", resolvedId);
     const countResult = await countQuery.first();
 
     res.json({
@@ -71,7 +91,8 @@ const getActivityLogs = async (req, res, next) => {
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
-        total: countResult?.count || 0,
+        total: parseInt(countResult?.count || 0),
+        pages: Math.ceil(parseInt(countResult?.count || 0) / parseInt(limit)),
       },
     });
   } catch (error) {

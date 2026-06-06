@@ -3,6 +3,7 @@ import { createNotification } from "./notificationController.js";
 import { updateBalance } from "./leaveBalanceController.js";
 import { logActivity } from "./activityLogController.js";
 import { invalidateCache } from "../utils/responseCache.js";
+import { resolveUserId } from "../utils/dbUtils.js";
 import crypto from "crypto";
 
 import { getProjectToday } from "../utils/dateUtils.js";
@@ -161,7 +162,12 @@ const listLeaves = async (req, res, next) => {
 
     if (canViewAll) {
       if (userId) {
-        query = query.where("leaves.user_id", userId);
+        const resolvedId = await resolveUserId(userId);
+        if (resolvedId) {
+          query = query.where("leaves.user_id", resolvedId);
+        } else {
+          return res.json({ success: true, leaves: [], pagination: { page: currentPage, limit: pageSize, total: 0, pages: 0 } });
+        }
       }
     } else {
       // Regular employees can only see their own leaves

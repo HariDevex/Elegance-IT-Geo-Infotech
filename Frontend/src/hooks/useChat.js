@@ -4,7 +4,7 @@ import { io } from "socket.io-client";
 import api from "../config/axios";
 import API_BASE from "../config/api";
 
-const isGroupId = (id) => id && id.includes("-") && id.length === 36;
+const isGroupId = (id) => id && (id.includes("-") || id.startsWith("grp-")) && id.length >= 36;
 
 export default function useChat() {
   const [user, setUser] = useState(null);
@@ -80,11 +80,12 @@ export default function useChat() {
       if (!data) return;
       const contactId = data.from;
       const newMsg = {
-        _id: `socket-${Date.now()}`,
+        _id: data._id || `socket-${Date.now()}`,
         text: data.text,
         from: { _id: data.from, name: data.fromName },
         isYou: data.from === userId,
-        ts: data.timestamp,
+        ts: data.ts || data.timestamp,
+        attachment: data.attachment,
         status: "delivered"
       };
 
@@ -96,7 +97,7 @@ export default function useChat() {
 
       // If this is the active chat, send 'seen' status
       if (activeContactRef.current === contactId) {
-        socket.emit("message:seen", { from: contactId, timestamp: data.timestamp });
+        socket.emit("message:seen", { from: contactId, timestamp: data.ts || data.timestamp });
       }
     });
 
@@ -136,11 +137,12 @@ export default function useChat() {
       if (!data) return;
       const contactId = data.groupId;
       const newMsg = {
-        _id: `socket-${Date.now()}`,
+        _id: data._id || `socket-${Date.now()}`,
         text: data.text,
-        from: { _id: data.from, name: data.fromName },
-        isYou: data.from === userId,
-        ts: data.timestamp,
+        from: { _id: data.from?._id || data.from, name: data.from?.name || data.fromName },
+        isYou: (data.from?._id || data.from) === userId,
+        ts: data.ts || data.timestamp,
+        attachment: data.attachment,
       };
       setMessages((prev) => ({
         ...prev,
@@ -304,13 +306,16 @@ export default function useChat() {
 
     const isGroup = isGroupId(activeContact);
     const tempId = `temp-${Date.now()}`;
+    
+    // Create local preview for immediate UI feedback
     const newMsg = {
       _id: tempId,
       text,
       from: { _id: userId, name: user?.name || "You" },
       isYou: true,
       ts: new Date().toISOString(),
-      attachment: attachment,
+      attachment: attachment instanceof File ? URL.createObjectURL(attachment) : null,
+      status: "sending"
     };
 
     setMessages((prev) => ({
@@ -326,26 +331,43 @@ export default function useChat() {
       if (attachment) {
         formData.append("file", attachment);
       }
-      await api.post("/chat", formData, {
+      
+      const res = await api.post("/chat", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      if (socketRef.current?.connected) {
-        if (isGroup) {
-          socketRef.current.emit("chat:sendGroup", {
-            groupId: activeContact,
-            text,
-          });
-        } else {
-          socketRef.current.emit("chat:send", {
-            to: activeContact,
-            text,
-          });
-        }
+      if (res.data.success) {
+        // Replace temp message with confirmed message from server
+        const confirmedMsg = {
+          ...res.data.message,
+          isYou: true,
+          status: "sent"
+        };
+        
+        setMessages(prev => {
+          const chatMsgs = [...(prev[activeContact] || [])];
+          const idx = chatMsgs.findIndex(m => m._id === tempId);
+          if (idx !== -1) {
+            chatMsgs[idx] = confirmedMsg;
+          }
+          return { ...prev, [activeContact]: chatMsgs };
+        });
+        
+        // No need for socketRef.current.emit here because 
+        // the backend chatController now broadcasts the message.
       }
     } catch (err) {
       console.error("Failed to send message:", err);
       toast.error("Failed to send message");
+      
+      setMessages(prev => {
+        const chatMsgs = [...(prev[activeContact] || [])];
+        const idx = chatMsgs.findIndex(m => m._id === tempId);
+        if (idx !== -1) {
+          chatMsgs[idx] = { ...chatMsgs[idx], status: "error" };
+        }
+        return { ...prev, [activeContact]: chatMsgs };
+      });
     }
   }, [activeContact, userId, user]);
 

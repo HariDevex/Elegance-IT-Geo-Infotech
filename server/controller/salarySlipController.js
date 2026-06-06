@@ -1,6 +1,7 @@
 import db from "../config/database.js";
 import crypto from "crypto";
 import { logActivity } from "./activityLogController.js";
+import { resolveUserId } from "../utils/dbUtils.js";
 
 const generateSlip = async (req, res, next) => {
   try {
@@ -16,7 +17,9 @@ const generateSlip = async (req, res, next) => {
     }
 
     const periodStart = new Date(payroll.pay_period_start);
-    const month = periodStart.toLocaleString("en-US", { month: "short" });
+    // Standardized month name using fixed array to avoid locale drift
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const month = months[periodStart.getMonth()];
     const year = periodStart.getFullYear();
 
     const existing = await db("salary_slips")
@@ -68,7 +71,14 @@ const listSlips = async (req, res, next) => {
       .orderBy("salary_slips.month", "desc");
 
     if (canViewAllSlips(req.user.role)) {
-      if (userId) query.where("salary_slips.user_id", userId);
+      if (userId) {
+        const resolvedId = await resolveUserId(userId);
+        if (resolvedId) {
+          query.where("salary_slips.user_id", resolvedId);
+        } else {
+          return res.json({ success: true, slips: [], pagination: { page: currentPage, limit: pageSize, total: 0, pages: 0 } });
+        }
+      }
     } else {
       query.where("salary_slips.user_id", req.user.id);
     }
