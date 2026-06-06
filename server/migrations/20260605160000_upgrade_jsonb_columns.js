@@ -3,11 +3,15 @@ export async function up(knex) {
 
   if (isPostgres) {
     // 1. Upgrade announcements table
+    await knex.schema.raw(`ALTER TABLE announcements ALTER COLUMN audience_roles DROP DEFAULT`);
+    await knex.schema.raw(`ALTER TABLE announcements ALTER COLUMN audience_departments DROP DEFAULT`);
     await knex.schema.raw(`
       ALTER TABLE announcements 
       ALTER COLUMN audience_roles TYPE JSONB USING audience_roles::JSONB,
       ALTER COLUMN audience_departments TYPE JSONB USING audience_departments::JSONB
     `);
+    await knex.schema.raw(`ALTER TABLE announcements ALTER COLUMN audience_roles SET DEFAULT '[]'::JSONB`);
+    await knex.schema.raw(`ALTER TABLE announcements ALTER COLUMN audience_departments SET DEFAULT '[]'::JSONB`);
 
     // 2. Upgrade checkin_checkout table
     await knex.schema.raw(`
