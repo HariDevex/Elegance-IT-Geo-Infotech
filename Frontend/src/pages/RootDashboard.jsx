@@ -46,35 +46,41 @@ const RootDashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [empRes, leaveRes, attRes] = await Promise.all([
+        const todayStr = getProjectDateStr();
+        
+        const results = await Promise.allSettled([
           api.get(`/employees`, {
-            params: { limit: 100 },
+            params: { limit: 500 },
           }),
-          api.get(`/leaves?status=Pending`),
+          api.get(`/leaves`, { params: { status: "Pending" } }),
           api.get(`/attendance`, {
-            params: { date: getProjectDateStr() },
+            params: { date: todayStr },
           }),
         ]);
 
-        const employees = empRes.data.users || [];
-        const pendingLeaves = leaveRes.data.leaves || [];
-        const todayAttendance = attRes.data.records || [];
+        const employees = results[0].status === 'fulfilled' ? (results[0].value.data.users || []) : [];
+        const pendingLeaves = results[1].status === 'fulfilled' ? (results[1].value.data.leaves || []) : [];
+        const todayAttendance = results[2].status === 'fulfilled' ? (results[2].value.data.records || []) : [];
 
-        const presentCount = todayAttendance.filter((a) => a.status === "On Time" || a.status === "Late").length;
-        const absentCount = todayAttendance.filter((a) => a.status === "Absent").length;
+        const presentCount = todayAttendance.filter((a) => 
+          ["On Time", "Late", "Present"].includes(a.status)
+        ).length;
+        
+        const absentCount = employees.length > 0 ? employees.length - presentCount : 0;
 
         const departments = [...new Set(employees.map((e) => e.department).filter(Boolean))];
 
         setStats({
           totalEmployees: employees.length,
           presentToday: presentCount,
-          absentToday: absentCount,
+          absentToday: Math.max(0, absentCount),
           pendingLeaves: pendingLeaves.length,
           totalDepartments: departments.length,
           byRole: {
             developers: employees.filter((e) => e.role === "developer").length,
             teamleads: employees.filter((e) => e.role === "teamlead").length,
             admins: employees.filter((e) => ["admin", "manager"].includes(e.role)).length,
+            hr: employees.filter((e) => e.role === "hr").length,
             root: employees.filter((e) => e.role === "root").length,
           },
         });
@@ -188,7 +194,7 @@ const RootDashboard = () => {
       setChatOpen={setChatOpen}
       ChatComponent={loadingStats ? <SkeletonChat /> : <ChatWindow />}
     >
-      {loadingStats ? getSkeletonForView(currentView) : renderContent()}
+      {loadingStats ? <SkeletonDashboardHome /> : renderContent()}
     </DashboardLayout>
   );
 };

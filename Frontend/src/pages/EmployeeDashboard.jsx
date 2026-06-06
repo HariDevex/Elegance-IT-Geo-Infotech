@@ -43,13 +43,11 @@ const EmployeeDashboard = () => {
         const todayStr = getProjectDateStr(today);
         const timestamp = Date.now();
         
-        // Use a base date in the project timezone for month calculations
-        // For simplicity, we can use the project date string parts
         const [year, month] = todayStr.split("-").map(Number);
         
         const firstDayOfMonth = `${year}-${String(month).padStart(2, "0")}-01`;
         
-        // Calculate last month
+        // Accurate last month boundaries
         let lmYear = year;
         let lmMonth = month - 1;
         if (lmMonth === 0) {
@@ -57,7 +55,8 @@ const EmployeeDashboard = () => {
           lmYear -= 1;
         }
         const lastMonthFirstDay = `${lmYear}-${String(lmMonth).padStart(2, "0")}-01`;
-        const lastMonthLastDay = new Date(year, month - 1, 0).toISOString().split("T")[0]; // This is mostly fine for boundaries
+        const lastMonthLastDayDate = new Date(year, month - 1, 0); // Last day of month
+        const lastMonthLastDay = getProjectDateStr(lastMonthLastDayDate);
         
         // Two months ago
         let tmaYear = lmYear;
@@ -68,12 +67,15 @@ const EmployeeDashboard = () => {
         }
         const twoMonthsAgoFirstDay = `${tmaYear}-${String(tmaMonth).padStart(2, "0")}-01`;
         
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay() + 1);
-        const weekStartStr = getProjectDateStr(startOfWeek);
+        // Start of week (Monday)
+        const startOfWeekDate = new Date(today);
+        const day = today.getDay();
+        const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+        startOfWeekDate.setDate(diff);
+        const weekStartStr = getProjectDateStr(startOfWeekDate);
 
-        const [leaveRes, attRes, lastMonthAttRes, weekAttRes, threeMonthsAttRes] = await Promise.all([
-          api.get(`/leaves?userId=${user?._id}&_t=${timestamp}`),
+        const results = await Promise.allSettled([
+          api.get(`/leaves`, { params: { userId: user?._id || user?.employeeId, _t: timestamp } }),
           api.get(`/attendance/my`, {
             params: { from: firstDayOfMonth, to: todayStr, _t: timestamp },
           }),
@@ -88,11 +90,11 @@ const EmployeeDashboard = () => {
           }),
         ]);
 
-        const leaves = leaveRes.data.leaves || [];
-        const attendance = attRes.data.records || [];
-        const lastMonthAttendance = lastMonthAttRes.data.records || [];
-        const weekAttendance = weekAttRes.data.records || [];
-        const threeMonthsAttendance = threeMonthsAttRes.data.records || [];
+        const leaves = results[0].status === 'fulfilled' ? (results[0].value.data.leaves || []) : [];
+        const attendance = results[1].status === 'fulfilled' ? (results[1].value.data.records || []) : [];
+        const lastMonthAttendance = results[2].status === 'fulfilled' ? (results[2].value.data.records || []) : [];
+        const weekAttendance = results[3].status === 'fulfilled' ? (results[3].value.data.records || []) : [];
+        const threeMonthsAttendance = results[4].status === 'fulfilled' ? (results[4].value.data.records || []) : [];
 
         const weekMap = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
         weekAttendance.forEach((a) => {
@@ -108,26 +110,30 @@ const EmployeeDashboard = () => {
             const date = new Date(a.date);
             const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
             const dayName = days[date.getDay()];
-            a.sessions.forEach(s => {
-              if (s.checkInAt) {
-                const time = new Date(s.checkInAt);
-                const h = time.getHours() + time.getMinutes() / 60;
-                checkInOutMap[dayName] = {
-                  ...checkInOutMap[dayName],
-                  checkIn: getProjectTimeStr(time),
-                  checkInHour: h,
-                };
-              }
-              if (s.checkOutAt) {
-                const time = new Date(s.checkOutAt);
-                const h = time.getHours() + time.getMinutes() / 60;
-                checkInOutMap[dayName] = {
-                  ...checkInOutMap[dayName],
-                  checkOut: getProjectTimeStr(time),
-                  checkOutHour: h,
-                };
-              }
-            });
+            
+            // Just take the first checkin and last checkout for the chart
+            const sessions = [...a.sessions].sort((x, y) => new Date(x.checkInAt) - new Date(y.checkInAt));
+            const firstSession = sessions[0];
+            const lastSession = [...sessions].reverse().find(s => s.checkOutAt);
+
+            if (firstSession) {
+              const time = new Date(firstSession.checkInAt);
+              const h = time.getHours() + time.getMinutes() / 60;
+              checkInOutMap[dayName] = {
+                ...checkInOutMap[dayName],
+                checkIn: getProjectTimeStr(time),
+                checkInHour: h,
+              };
+            }
+            if (lastSession) {
+              const time = new Date(lastSession.checkOutAt);
+              const h = time.getHours() + time.getMinutes() / 60;
+              checkInOutMap[dayName] = {
+                ...checkInOutMap[dayName],
+                checkOut: getProjectTimeStr(time),
+                checkOutHour: h,
+              };
+            }
           }
         });
 
@@ -160,7 +166,7 @@ const EmployeeDashboard = () => {
           monthPresent: attendance.filter((a) => a.sessions && a.sessions.length > 0).length,
           monthAbsent: attendance.filter((a) => !a.sessions || a.sessions.length === 0).length,
           lastMonthPresent: lastMonthAttendance.filter((a) => a.sessions && a.sessions.length > 0).length,
-          lastMonthAbsent: lastMonthAttendance.filter((a) => !a.sessions || a.sessions.length === 0).length,
+          lastMonthAbsent: lastMonthAbsentCount(lastMonthAttendance),
           pendingLeaves: leaves.filter((l) => l.status === "Pending").length,
           approvedLeaves: leaves.filter((l) => l.status === "Approved").length,
           weekAttendance: weekMap,
@@ -174,7 +180,12 @@ const EmployeeDashboard = () => {
       }
     };
 
-    if (user?._id) {
+    const lastMonthAbsentCount = (records) => {
+       // Logic to count business days without checkins
+       return records.filter((a) => !a.sessions || a.sessions.length === 0).length;
+    };
+
+    if (user?._id || user?.employeeId) {
       fetchStats();
     }
   }, [user]);

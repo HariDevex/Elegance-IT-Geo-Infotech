@@ -36,13 +36,24 @@ services:
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-local_dev_secret_key_elegance_2024}
       JWT_EXPIRES_IN: 7d
-      FRONTEND_URL: http://localhost:5173
+      FRONTEND_URL: http://localhost:8081
       LOG_LEVEL: debug
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Frontend/Dockerfile
+    ports:
+      - "8081:80"
+    depends_on:
+      - server
+    environment:
+      VITE_API_BASE_URL: ""
 
 volumes:
   pgdata:

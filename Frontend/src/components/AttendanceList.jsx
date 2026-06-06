@@ -14,77 +14,81 @@ const AttendanceList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [date, setDate] = useState(() => getProjectDateStr());
+  
   const [exportFrom, setExportFrom] = useState(() => {
     const d = new Date();
-    // Use project-aware date components
     const [year, month] = getProjectDateStr(d).split("-").map(Number);
     return `${year}-${String(month).padStart(2, "0")}-01`;
   });
   const [exportTo, setExportTo] = useState(() => getProjectDateStr());
   const [exportEmployee, setExportEmployee] = useState("all");
+  
   const { user } = useAuth();
   const canUpdate = ["admin", "manager", "root"].includes(user?.role);
 
-  const fetchEmployees = async () => {
+  const fetchInitialData = async () => {
+    setLoading(true);
     try {
-      const res = await api.get("/employees?limit=500");
-      setEmployees(res.data.users || []);
-    } catch { /* empty */ }
+      const res = await api.get("/employees", { params: { limit: 500 } });
+      const allUsers = res.data.users || [];
+      setEmployees(allUsers);
+      return allUsers;
+    } catch {
+      setError("Failed to load employees");
+      return [];
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => {
-    fetchEmployees();
-  }, []);
-
-  const loadData = async (selectedDate) => {
+  const loadAttendance = async (selectedDate, allEmployees) => {
     setLoading(true);
-    setError("");
     try {
       const res = await api.get("/attendance", {
         params: { date: selectedDate },
       });
 
-      const statusByUser = {};
+      const statusMap = {};
       (res.data.records || []).forEach((r) => {
-        statusByUser[r.user?._id] = r;
+        // Map by internal id or employee_id
+        const key = r.user?._id || r.user?.employeeId;
+        statusMap[key] = r;
       });
 
-      const employees = res.data.records || [];
-      const uniqueEmployees = [];
-      const seen = new Set();
-      employees.forEach((r) => {
-        if (!seen.has(r.user?._id)) {
-          seen.add(r.user?._id);
-          uniqueEmployees.push({
-            ...r.user,
-            attendanceStatus: statusByUser[r.user?._id]?.status || "Pending",
-            checkInAt: statusByUser[r.user?._id]?.checkInAt,
-            checkOutAt: statusByUser[r.user?._id]?.checkOutAt,
-          });
-        }
+      const mergedRows = allEmployees.map((emp) => {
+        const att = statusMap[emp._id] || statusMap[emp.employeeId];
+        return {
+          ...emp,
+          attendanceStatus: att?.status || "Pending",
+          checkInAt: att?.checkInAt,
+          checkOutAt: att?.checkOutAt,
+        };
       });
 
-      setRows(uniqueEmployees);
+      setRows(mergedRows);
     } catch {
-      setError("Failed to load attendance");
-      toast.error("Failed to load attendance");
+      toast.error("Failed to load attendance records");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData(date);
+    fetchInitialData().then((allEmps) => {
+      if (allEmps.length > 0) {
+        loadAttendance(date, allEmps);
+      }
+    });
   }, [date]);
 
-  const setStatus = async (id, status) => {
+  const setStatus = async (empId, status) => {
     try {
       await api.post(
         "/attendance",
-        { userId: id, status, date }
+        { userId: empId, status, date }
       );
       toast.success(`Marked as ${status}`);
-      loadData(date);
+      loadAttendance(date, employees);
     } catch (err) {
       toast.error(err.response?.data?.error || "Failed to update");
     }
@@ -97,12 +101,9 @@ const AttendanceList = () => {
     }
     try {
       const params = { from: exportFrom, to: exportTo };
-      if (exportEmployee !== "all") {
-        params.userId = exportEmployee;
-      }
-      const res = await api.get("/auth/export/attendance", {
-        params,
-      });
+      if (exportEmployee !== "all") params.userId = exportEmployee;
+      
+      const res = await api.get("/auth/export/attendance", { params });
       if (res.data.success && res.data.data.length > 0) {
         const fileName = exportEmployee !== "all" 
           ? `attendance_${exportEmployee}_${exportFrom}_to_${exportTo}`
@@ -110,10 +111,9 @@ const AttendanceList = () => {
         exportToExcel(res.data.data, fileName, "Attendance");
         toast.success("Excel downloaded!");
       } else {
-        toast.error("No data to export for selected date range");
+        toast.error("No data found for selected range");
       }
-    } catch (err) {
-      console.error("Export failed:", err);
+    } catch {
       toast.error("Export failed");
     }
   };
@@ -130,8 +130,8 @@ const AttendanceList = () => {
             className="rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-1.5 text-white text-sm"
           >
             <option value="all">All Employees</option>
-            {employees.map((emp, idx) => (
-              <option key={emp._id ?? idx} value={emp._id}>{emp.name}</option>
+            {employees.map((emp) => (
+              <option key={emp._id} value={emp._id}>{emp.name}</option>
             ))}
           </select>
           <input
@@ -158,10 +158,9 @@ const AttendanceList = () => {
       </div>
 
       <div className="flex justify-end">
-        <label htmlFor="att-date" className="text-sm text-slate-400 mr-2">Select date:</label>
+        <label htmlFor="att-date" className="text-sm text-slate-400 mr-2 flex items-center">Select date:</label>
         <input
           id="att-date"
-          name="date"
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
@@ -169,7 +168,7 @@ const AttendanceList = () => {
         />
       </div>
 
-      {loading ? (
+      {loading && rows.length === 0 ? (
         <SkeletonTable rows={10} cols={7} />
       ) : error ? (
         <div className="text-center py-8 text-rose-400">{error}</div>
@@ -204,16 +203,19 @@ const AttendanceList = () => {
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">{emp.name}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="font-medium text-white">{emp.name}</div>
+                    <div className="text-[10px] text-slate-500">{emp.employeeId}</div>
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap">{emp.department || "-"}</td>
                   <td className="px-4 py-3">
                     {canUpdate ? (
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => setStatus(emp._id, "Present")}
-                          className={`px-3 py-1 rounded text-xs ${
+                          className={`px-3 py-1 rounded text-xs transition-colors ${
                             ["Present", "On Time", "Late"].includes(emp.attendanceStatus)
-                              ? "bg-cyan-500/30 text-cyan-300"
+                              ? "bg-cyan-500/30 text-cyan-300 font-bold"
                               : "bg-slate-700 text-slate-300 hover:text-white"
                           }`}
                         >
@@ -221,9 +223,9 @@ const AttendanceList = () => {
                         </button>
                         <button
                           onClick={() => setStatus(emp._id, "Absent")}
-                          className={`px-3 py-1 rounded text-xs ${
+                          className={`px-3 py-1 rounded text-xs transition-colors ${
                             emp.attendanceStatus === "Absent"
-                              ? "bg-rose-500/30 text-rose-300"
+                              ? "bg-rose-500/30 text-rose-300 font-bold"
                               : "bg-slate-700 text-slate-300 hover:text-white"
                           }`}
                         >
@@ -231,7 +233,11 @@ const AttendanceList = () => {
                         </button>
                       </div>
                     ) : (
-                      <span className="text-xs text-slate-300">{emp.attendanceStatus}</span>
+                      <span className={`px-2 py-1 rounded-full text-[10px] uppercase font-bold ${
+                        ["Present", "On Time"].includes(emp.attendanceStatus) ? "bg-emerald-500/20 text-emerald-400" :
+                        emp.attendanceStatus === "Late" ? "bg-amber-500/20 text-amber-400" :
+                        "bg-rose-500/20 text-rose-400"
+                      }`}>{emp.attendanceStatus}</span>
                     )}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-xs">
