@@ -3,8 +3,6 @@ import crypto from "crypto";
 import { createNotification } from "./notificationController.js";
 import { logActivity } from "./activityLogController.js";
 import { resolveUserId } from "../utils/dbUtils.js";
-import { getProjectDateStr } from "../utils/dateUtils.js";
-
 const canManageResignations = (role) => ["root", "admin", "manager"].includes(role);
 
 const submitResignation = async (req, res, next) => {

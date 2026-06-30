@@ -1,6 +1,6 @@
 import db from "../config/database.js";
 import { createNotification } from "./notificationController.js";
-import { updateBalance } from "./leaveBalanceController.js";
+import { updateBalance, updatePendingBalance } from "./leaveBalanceController.js";
 import { logActivity } from "./activityLogController.js";
 import { invalidateCache } from "../utils/responseCache.js";
 import { resolveUserId } from "../utils/dbUtils.js";
@@ -104,6 +104,20 @@ const createLeave = async (req, res, next) => {
 
     const leave = await db("leaves").where("id", leaveId).first();
 
+    // Map leave type to balance type
+    const leaveTypeMap = {
+      "Annual Leave": "annual",
+      "Sick Leave": "sick",
+      "Casual Leave": "casual",
+      "unpaid": "unpaid",
+    };
+    const balanceType = leaveTypeMap[type] || "casual";
+    const year = fromDate.getFullYear();
+    const days = countWeekdays(fromDate, toDate) || 1;
+
+    // Increment pending balance
+    await updatePendingBalance(req.user.id, balanceType, days, year);
+
     // Get user info
     const user = await db("users").where("id", userId).first();
 
@@ -151,6 +165,7 @@ const listLeaves = async (req, res, next) => {
         "leaves.to_date",
         "leaves.description",
         "leaves.status",
+        "leaves.admin_comment",
         "leaves.created_at",
         "users.employee_id as user_id",
         "users.name as user_name",
@@ -191,6 +206,7 @@ const listLeaves = async (req, res, next) => {
         description: l.description,
         status: l.status,
         createdAt: l.created_at,
+        adminComment: l.admin_comment,
         user: {
           _id: l.user_id,
           name: l.user_name,
@@ -221,7 +237,7 @@ const updateLeaveStatus = async (req, res, next) => {
     }
 
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, adminComment } = req.body;
 
     if (!["Pending", "Approved", "Rejected"].includes(status)) {
       return res.status(400).json({
@@ -242,6 +258,7 @@ const updateLeaveStatus = async (req, res, next) => {
       .where("id", id)
       .update({
         status,
+        admin_comment: adminComment || null,
         updated_at: db.fn.now(),
       });
 
@@ -264,11 +281,18 @@ const updateLeaveStatus = async (req, res, next) => {
     // Update leave balance
     if (status === "Approved") {
       await updateBalance(leave.user_id, balanceType, days, year);
+      if (oldLeave.status === "Pending") {
+        await updatePendingBalance(leave.user_id, balanceType, -days, year);
+      }
     } else if (status === "Rejected" && oldLeave.status === "Pending") {
-      // If rejecting a pending leave, no balance change needed
+      await updatePendingBalance(leave.user_id, balanceType, -days, year);
     } else if (status === "Rejected" && oldLeave.status === "Approved") {
-      // If rejecting an already approved leave, deduct from used
       await updateBalance(leave.user_id, balanceType, -days, year);
+    } else if (status === "Pending" && oldLeave.status === "Approved") {
+      await updateBalance(leave.user_id, balanceType, -days, year);
+      await updatePendingBalance(leave.user_id, balanceType, days, year);
+    } else if (status === "Pending" && oldLeave.status === "Rejected") {
+      await updatePendingBalance(leave.user_id, balanceType, days, year);
     }
 
     // Invalidate leave balance cache
@@ -341,6 +365,20 @@ const deleteLeave = async (req, res, next) => {
         error: "Can only delete pending leave requests",
       });
     }
+
+    const year = new Date(leave.from_date).getFullYear();
+    const fromDate = new Date(leave.from_date);
+    const toDate = new Date(leave.to_date);
+    const days = countWeekdays(fromDate, toDate) || 1;
+    const leaveTypeMap = {
+      "Annual Leave": "annual",
+      "Sick Leave": "sick",
+      "Casual Leave": "casual",
+      "unpaid": "unpaid",
+    };
+    const balanceType = leaveTypeMap[leave.type] || "casual";
+
+    await updatePendingBalance(leave.user_id, balanceType, -days, year);
 
     await db("leaves").where("id", id).del();
 

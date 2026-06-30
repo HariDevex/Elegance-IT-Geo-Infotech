@@ -38,6 +38,7 @@ services:
       JWT_EXPIRES_IN: 7d
       FRONTEND_URL: http://localhost:8081
       LOG_LEVEL: debug
+      DB_SSL: "false"
     depends_on:
       postgres:
         condition: service_healthy

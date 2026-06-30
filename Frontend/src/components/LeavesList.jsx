@@ -12,6 +12,8 @@ const LeavesList = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ type: "", from: "", to: "", description: "" });
+  const [rejectLeaveId, setRejectLeaveId] = useState(null);
+  const [adminComment, setAdminComment] = useState("");
   const { user } = useAuth();
   const canApprove = ["admin", "manager", "root"].includes(user?.role);
 
@@ -33,6 +35,7 @@ const LeavesList = () => {
           dept: l.user?.department || "-",
           days: l.from && l.to ? Math.max(1, Math.ceil((new Date(l.to) - new Date(l.from)) / 86400000) + 1) : 1,
           status: l.status,
+          adminComment: l.adminComment,
         })) || []
       );
     } catch (err) {
@@ -55,9 +58,9 @@ const LeavesList = () => {
     );
   }, [rows, search]);
 
-  const updateStatus = async (id, status) => {
+  const updateStatus = async (id, status, comment) => {
     try {
-      await api.put(`/leaves/${id}/status`, { status });
+      await api.put(`/leaves/${id}/status`, { status, adminComment: comment });
       toast.success(`Leave ${status.toLowerCase()}`);
       load();
     } catch (err) {
@@ -230,22 +233,29 @@ const LeavesList = () => {
                         <button onClick={() => updateStatus(l.id, "Approved")} className="text-cyan-400 hover:text-white text-xs">
                           Approve
                         </button>
-                        <button onClick={() => updateStatus(l.id, "Rejected")} className="text-rose-400 hover:text-white text-xs">
+                        <button onClick={() => { setRejectLeaveId(l.id); setAdminComment(""); }} className="text-rose-400 hover:text-white text-xs">
                           Reject
                         </button>
                       </div>
                     ) : (
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs ${
-                          l.status === "Approved"
-                            ? "bg-cyan-500/20 text-cyan-400"
-                            : l.status === "Rejected"
-                            ? "bg-rose-500/20 text-rose-400"
-                            : "bg-amber-500/20 text-amber-400"
-                        }`}
-                      >
-                        {l.status}
-                      </span>
+                      <div className="flex flex-col">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs text-center font-medium ${
+                            l.status === "Approved"
+                              ? "bg-cyan-500/20 text-cyan-400"
+                              : l.status === "Rejected"
+                              ? "bg-rose-500/20 text-rose-400"
+                              : "bg-amber-500/20 text-amber-400"
+                          }`}
+                        >
+                          {l.status}
+                        </span>
+                        {l.status === "Rejected" && l.adminComment && (
+                          <span className="text-[11px] text-slate-400 mt-1 max-w-[150px] truncate" title={l.adminComment}>
+                            Reason: {l.adminComment}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -254,6 +264,48 @@ const LeavesList = () => {
           </tbody>
         </table>
       </div>
+
+      {rejectLeaveId && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6 max-w-md w-full shadow-2xl space-y-4">
+            <h3 className="text-lg font-bold text-white">Reject Leave Request</h3>
+            <p className="text-sm text-slate-400">Please provide a reason for rejecting this leave request. This will be visible to the employee.</p>
+            <div className="space-y-1">
+              <label htmlFor="modal-comment" className="sr-only">Rejection Reason</label>
+              <textarea
+                id="modal-comment"
+                placeholder="Reason for rejection..."
+                value={adminComment}
+                onChange={(e) => setAdminComment(e.target.value)}
+                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+                rows={4}
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setRejectLeaveId(null);
+                  setAdminComment("");
+                }}
+                className="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold transition animate-hover"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  updateStatus(rejectLeaveId, "Rejected", adminComment);
+                  setRejectLeaveId(null);
+                  setAdminComment("");
+                }}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold transition animate-hover"
+              >
+                Confirm Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

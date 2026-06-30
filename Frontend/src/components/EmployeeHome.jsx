@@ -3,6 +3,7 @@ import { Calendar as CalIcon, Clock, CheckCircle, XCircle, TrendingUp } from "lu
 import MonthlyAttendanceChart from "./charts/MonthlyAttendanceChart";
 import AttendanceBarChart from "./charts/AttendanceBarChart";
 import CheckInOutChart from "./charts/CheckInOutChart";
+import LeaveBalance from "./LeaveBalance";
 import { Skeleton, SkeletonChart } from "./Skeleton";
 
 const EmployeeHome = ({ stats, loading }) => {
@@ -121,6 +122,8 @@ const EmployeeHome = ({ stats, loading }) => {
           <MonthlyAttendanceChart data={getMonthlyData()} />
         </div>
       </div>
+
+      <LeaveBalance />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div 

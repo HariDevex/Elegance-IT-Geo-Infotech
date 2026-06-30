@@ -34,6 +34,7 @@ const EmployeeLeaves = () => {
           to: l.to,
           description: l.description,
           status: l.status,
+          adminComment: l.adminComment,
         }))
       );
     } catch (err) {
@@ -199,17 +200,24 @@ const EmployeeLeaves = () => {
                   <td className="px-4 py-3">{l.to ? getProjectDateStr(new Date(l.to)) : "-"}</td>
                   <td className="px-4 py-3 max-w-xs truncate">{l.description || "-"}</td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        l.status === "Approved"
-                          ? "bg-cyan-500/20 text-cyan-400"
-                          : l.status === "Rejected"
-                          ? "bg-rose-500/20 text-rose-400"
-                          : "bg-amber-500/20 text-amber-400"
-                      }`}
-                    >
-                      {l.status}
-                    </span>
+                    <div className="flex flex-col">
+                      <span
+                        className={`inline-block px-2 py-1 rounded-full text-xs text-center font-medium ${
+                          l.status === "Approved"
+                            ? "bg-cyan-500/20 text-cyan-400"
+                            : l.status === "Rejected"
+                            ? "bg-rose-500/20 text-rose-400"
+                            : "bg-amber-500/20 text-amber-400"
+                        }`}
+                      >
+                        {l.status}
+                      </span>
+                      {l.status === "Rejected" && l.adminComment && (
+                        <span className="text-[11px] text-slate-400 mt-1 max-w-[150px] truncate" title={l.adminComment}>
+                          Reason: {l.adminComment}
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))

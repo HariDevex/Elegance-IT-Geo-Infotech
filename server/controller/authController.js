@@ -9,10 +9,6 @@ import { logActivity } from "./activityLogController.js";
 import { addEmailJob } from "../core/queue.js";
 import "../core/emailQueue.js";
 
-import { isLateCheckIn } from "../utils/attendanceUtils.js";
-
-import { getProjectDateStr } from "../utils/dateUtils.js";
-
 const login = async (req, res, next) => {
   try {
     const { employee_id, password, rememberMe } = req.body;
@@ -117,7 +113,7 @@ const login = async (req, res, next) => {
     }
 
     // Check password expiry (90 days for admin roles) or must_change_password flag
-    const adminRoles = ["root", "admin", "manager", "hr"];
+    const adminRoles = ["root", "admin", "manager", "teamlead", "hr"];
     let mustChangePassword = !!user.must_change_password;
     let passwordExpiring = false;
 
@@ -352,7 +348,7 @@ const changePassword = async (req, res, next) => {
   try {
     const { oldPassword, newPassword } = req.body;
     const userId = req.user.id;
-    const adminRoles = ["root", "admin", "manager", "hr"];
+    const adminRoles = ["root", "admin", "manager", "teamlead", "hr"];
     const user = await db("users").where("id", userId).first();
 
     if (!oldPassword || !newPassword) {
@@ -741,11 +737,11 @@ const getProfile = async (req, res, next) => {
     const user = await db("users")
       .where("employee_id", req.user._id)
       .select(
+        "id",
         "employee_id",
         "name",
         "email",
         "role",
-        "employee_id",
         "dob",
         "gender",
         "marital_status",

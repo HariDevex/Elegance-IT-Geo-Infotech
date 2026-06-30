@@ -104,10 +104,10 @@ const listAnnouncements = async (req, res, next) => {
       query = query.where((builder) => {
         builder
           .where("announcements.audience_roles", "like", "%\"all\"%")
-          .orWhere("announcements.audience_roles", "like", `%\"${userRole}\"%`);
+          .orWhere("announcements.audience_roles", "like", `%"${userRole}"%`);
         
         if (userDepartment) {
-          builder.orWhere("announcements.audience_departments", "like", `%\"${userDepartment}\"%`);
+          builder.orWhere("announcements.audience_departments", "like", `%"${userDepartment}"%`);
         }
       });
     }

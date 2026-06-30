@@ -221,6 +221,7 @@ const listEmployees = async (req, res, next) => {
             .andOn("login_sessions.last_active_at", ">", db.raw("?", [new Date(Date.now() - 15 * 60 * 1000)]));
         })
         .select(
+          "users.id",
           "users.employee_id",
           "users.name",
           "users.email",

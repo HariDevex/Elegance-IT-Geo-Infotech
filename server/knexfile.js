@@ -7,11 +7,13 @@ dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 const connectionString = process.env.DATABASE_URL || process.env.DB_URL;
 
+const sslEnabled = process.env.DB_SSL !== "false";
+
 const pgConfig = (conn) => ({
   client: "pg",
   connection: {
     connectionString: conn,
-    ssl: { rejectUnauthorized: false },
+    ...(sslEnabled ? { ssl: { rejectUnauthorized: false } } : {}),
   },
   migrations: { directory: "./migrations", extension: "js" },
   pool: { min: 2, max: 10 },

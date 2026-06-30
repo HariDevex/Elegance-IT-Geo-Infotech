@@ -60,7 +60,7 @@ const EditEmployeeForm = ({ employee, onDone }) => {
       if (res.data.success) {
         setSuccess("Employee updated!");
         toast.success("Employee updated!");
-        setTimeout(onDone, 1500);
+        setTimeout(() => onDone?.(res.data.user), 1500);
       }
     } catch (err) {
       const msg = err.response?.data?.error || "Failed to update";

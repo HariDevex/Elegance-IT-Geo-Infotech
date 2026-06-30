@@ -163,7 +163,9 @@ const canManageUser = async (req, res, next) => {
 
   try {
     const db = (await import("../config/database.js")).default;
-    const targetUser = await db("users").where("id", targetUserId).first();
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const queryField = uuidRegex.test(targetUserId) ? "id" : "employee_id";
+    const targetUser = await db("users").where(queryField, targetUserId).first();
     if (!targetUser) {
       return res.status(404).json({ success: false, error: "User not found" });
     }

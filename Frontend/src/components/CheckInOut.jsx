@@ -5,7 +5,7 @@ import { Download, LogIn, LogOut, Clock, CheckCircle, AlertCircle, Users, User }
 import { Skeleton, SkeletonTable } from "./Skeleton";
 import { useAuth } from "../context/authContext";
 import { exportToExcel } from "../utils/excel";
-import { formatDate as formatUI, formatRelativeTime } from "../utils/format";
+import { formatDate as formatUI } from "../utils/format";
 
 import { getProjectDateStr, getProjectTimeStr } from "../utils/dateUtils";
 
@@ -251,7 +251,10 @@ const CheckInOut = () => {
                       <tr key={`${record._id}-${idx}`} className="border-b border-slate-700/50 hover:bg-slate-700/30">
                         {idx === 0 && (
                           <td rowSpan={record.sessions.length} className="px-4 py-3 text-sm text-white align-top">
-                            {formatUI(record.date)}
+                            <div>{formatUI(record.date)}</div>
+                            <div className="text-[10px] text-cyan-400 font-bold mt-1 uppercase tracking-wider">
+                              Total: {Math.floor(record.totalDuration / 60)}h {record.totalDuration % 60}m
+                            </div>
                           </td>
                         )}
                         {idx === 0 && (
@@ -317,51 +320,62 @@ const CheckInOut = () => {
                   )
                 ))
               ) : (
-                allRecords.map((session) => (
-                  <tr key={session._id} className="border-b border-slate-700/50 hover:bg-slate-700/30">
-                    <td className="px-4 py-3 text-sm">
-                      <div className="flex flex-col">
-                        <span className="text-white font-medium">{session.user?.name}</span>
-                        <span className="text-slate-500 text-xs">{session.user?.employeeId}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-300">
-                      {formatUI(session.date)}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {session.checkin?.time ? (
-                        <span className="flex items-center gap-1.5 text-cyan-400">
-                          <CheckCircle size={14} />
-                          {formatTime(session.checkin.time)}
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1.5 text-slate-500">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {session.checkout?.time ? (
-                        <span className="flex items-center gap-1.5 text-amber-400">
-                          <CheckCircle size={14} />
-                          {formatTime(session.checkout.time)}
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1.5 text-indigo-400">
-                          <AlertCircle size={14} />
-                          Active
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-300">
-                      {session.duration ? `${session.duration}m` : "-"}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                        session.checkout ? "bg-emerald-500/20 text-emerald-400" : "bg-indigo-500/20 text-indigo-400"
-                      }`}>
-                        {session.checkout ? "Completed" : "Active"}
-                      </span>
-                    </td>
-                  </tr>
+                allRecords.map((record) => (
+                  record.sessions && record.sessions.length > 0 ? (
+                    record.sessions.map((session, idx) => (
+                      <tr key={`${record._id}-${idx}`} className="border-b border-slate-700/50 hover:bg-slate-700/30">
+                        {idx === 0 && (
+                          <td rowSpan={record.sessions.length} className="px-4 py-3 text-sm align-top">
+                            <div className="flex flex-col">
+                              <span className="text-white font-medium">{record.user?.name}</span>
+                              <span className="text-slate-500 text-xs">{record.user?.employeeId}</span>
+                            </div>
+                          </td>
+                        )}
+                        {idx === 0 && (
+                          <td rowSpan={record.sessions.length} className="px-4 py-3 text-sm text-slate-300 align-top">
+                            <div>{formatUI(record.date)}</div>
+                            <div className="text-[10px] text-cyan-400 font-bold mt-1 uppercase tracking-wider">
+                              Total: {Math.floor(record.totalDuration / 60)}h {record.totalDuration % 60}m
+                            </div>
+                          </td>
+                        )}
+                        <td className="px-4 py-3 text-sm">
+                          {session.checkInAt ? (
+                            <span className="flex items-center gap-1.5 text-cyan-400">
+                              <CheckCircle size={14} />
+                              {formatTime(session.checkInAt)}
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5 text-slate-500">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {session.checkOutAt ? (
+                            <span className="flex items-center gap-1.5 text-amber-400">
+                              <CheckCircle size={14} />
+                              {formatTime(session.checkOutAt)}
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5 text-indigo-400">
+                              <AlertCircle size={14} />
+                              Active
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-300">
+                          {getTimeDiff(session.checkInAt, session.checkOutAt)}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                            session.checkOutAt ? "bg-emerald-500/20 text-emerald-400" : "bg-indigo-500/20 text-indigo-400"
+                          }`}>
+                            {session.checkOutAt ? "Completed" : "Active"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : null
                 ))
               )}
             </tbody>

@@ -1,8 +1,8 @@
 import db from "../config/database.js";
 import crypto from "crypto";
-import { canViewAll, canWrite, isLateCheckIn } from "../utils/attendanceUtils.js";
+import { canViewAll, canWrite, isLateCheckIn, isEarlyCheckout } from "../utils/attendanceUtils.js";
 import { resolveUserId } from "../utils/dbUtils.js";
-import { getProjectDateStr, getProjectTimeStr } from "../utils/dateUtils.js";
+import { getProjectDateStr } from "../utils/dateUtils.js";
 import { logActivity } from "./activityLogController.js";
 
 const createOrUpdateAttendance = async (req, res, next) => {
@@ -241,15 +241,28 @@ const listMyAttendance = async (req, res, next) => {
     // Ensure all days in range are represented if they have a login or a checkin
     const records = Object.values(groupedByDate)
       .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .map(day => ({
-        _id: day.date,
-        date: day.date,
-        loginAt: day.loginAt,
-        sessions: day.sessions.map(s => ({
-          ...s,
-          status: s.checkOutAt ? (s.isLate ? "Late" : "On Time") : "Active"
-        }))
-      }));
+      .map(day => {
+        let collapsedSessions = [];
+        if (day.sessions.length > 0) {
+          const firstSession = day.sessions[0];
+          const lastSession = day.sessions[day.sessions.length - 1];
+          const isEarly = lastSession.checkOutAt ? isEarlyCheckout(lastSession.checkOutAt) : false;
+          collapsedSessions.push({
+            _id: firstSession._id,
+            checkInAt: firstSession.checkInAt,
+            checkOutAt: lastSession.checkOutAt,
+            isLate: firstSession.isLate,
+            isEarly,
+            status: lastSession.checkOutAt ? (firstSession.isLate ? "Late" : isEarly ? "Early" : "On Time") : "Active"
+          });
+        }
+        return {
+          _id: day.date,
+          date: day.date,
+          loginAt: day.loginAt,
+          sessions: collapsedSessions
+        };
+      });
 
     res.json({
       success: true,

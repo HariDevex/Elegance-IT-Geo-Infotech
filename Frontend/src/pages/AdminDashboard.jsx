@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import DashboardLayout from "../components/DashboardLayout";
 import ChatWindow from "../components/ChatWindow";
 import AddEmployeeForm from "../components/AddEmployeeForm";
@@ -44,52 +44,56 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const todayStr = getProjectDateStr();
-        
-        const results = await Promise.allSettled([
-          api.get(`/employees`, { params: { limit: 500 } }),
-          api.get(`/leaves`, { params: { status: "Pending" } }),
-          api.get(`/attendance`, { params: { date: todayStr } }),
-        ]);
+  const fetchStats = async () => {
+    try {
+      const todayStr = getProjectDateStr();
+      
+      const results = await Promise.allSettled([
+        api.get(`/employees`, { params: { limit: 500 } }),
+        api.get(`/leaves`, { params: { status: "Pending" } }),
+        api.get(`/attendance`, { params: { date: todayStr } }),
+      ]);
 
-        const employees = results[0].status === 'fulfilled' ? (results[0].value.data.users || []) : [];
-        const pendingLeaves = results[1].status === 'fulfilled' ? (results[1].value.data.leaves || []) : [];
-        const todayAttendance = results[2].status === 'fulfilled' ? (results[2].value.data.records || []) : [];
+      const employees = results[0].status === 'fulfilled' ? (results[0].value.data.users || []) : [];
+      const pendingLeaves = results[1].status === 'fulfilled' ? (results[1].value.data.leaves || []) : [];
+      const todayAttendance = results[2].status === 'fulfilled' ? (results[2].value.data.records || []) : [];
 
-        // Uniform present count across all dashboards
-        const presentCount = todayAttendance.filter((a) => 
-          ["On Time", "Late", "Present"].includes(a.status)
-        ).length;
-        
-        const absentCount = employees.length > 0 ? employees.length - presentCount : 0;
+      // Uniform present count across all dashboards
+      const presentCount = todayAttendance.filter((a) => 
+        ["On Time", "Late", "Present"].includes(a.status)
+      ).length;
+      
+      const absentCount = employees.length > 0 ? employees.length - presentCount : 0;
 
-        const departments = [...new Set(employees.map((e) => e.department).filter(Boolean))];
+      const departments = [...new Set(employees.map((e) => e.department).filter(Boolean))];
 
-        setStats({
-          totalEmployees: employees.length,
-          presentToday: presentCount,
-          absentToday: Math.max(0, absentCount),
-          pendingLeaves: pendingLeaves.length,
-          totalDepartments: departments.length,
-          byRole: {
-            developers: employees.filter((e) => e.role === "developer").length,
-            teamleads: employees.filter((e) => e.role === "teamlead").length,
-            admins: employees.filter((e) => ["admin", "manager"].includes(e.role)).length,
-            hr: employees.filter((e) => e.role === "hr").length,
-          },
-        });
-      } catch (err) {
-        console.error("Failed to fetch admin stats:", err);
-      } finally {
-        setLoadingStats(false);
-      }
-    };
+      setStats({
+        totalEmployees: employees.length,
+        presentToday: presentCount,
+        absentToday: Math.max(0, absentCount),
+        pendingLeaves: pendingLeaves.length,
+        totalDepartments: departments.length,
+        byRole: {
+          developers: employees.filter((e) => e.role === "developer").length,
+          teamleads: employees.filter((e) => e.role === "teamlead").length,
+          admins: employees.filter((e) => ["admin", "manager"].includes(e.role)).length,
+          hr: employees.filter((e) => e.role === "hr").length,
+        },
+      });
+    } catch (err) {
+      console.error("Failed to fetch admin stats:", err);
+    }
+  };
 
-    fetchStats();
+  const refreshStats = useCallback(async () => {
+    setLoadingStats(true);
+    await fetchStats();
+    setLoadingStats(false);
   }, []);
+
+  useEffect(() => {
+    refreshStats();
+  }, [refreshStats]);
 
   const renderContent = () => {
     switch (currentView) {
@@ -118,6 +122,7 @@ const AdminDashboard = () => {
             onDone={() => {
               setCurrentView("employeesList");
               setSelectedEmployee(null);
+              refreshStats();
             }}
           />
         ) : null;

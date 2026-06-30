@@ -53,11 +53,23 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const updateAvatar = useCallback((avatarUrl) => {
-    setUser((prev) => (prev ? { ...prev, avatar: avatarUrl } : prev));
+    setUser((prev) => {
+      const updated = prev ? { ...prev, avatar: avatarUrl } : prev;
+      if (updated) {
+        localStorage.setItem("user", JSON.stringify(updated));
+      }
+      return updated;
+    });
   }, []);
 
   const updateUser = useCallback((updates) => {
-    setUser((prev) => (prev ? { ...prev, ...updates } : prev));
+    setUser((prev) => {
+      const updated = prev ? { ...prev, ...updates } : prev;
+      if (updated) {
+        localStorage.setItem("user", JSON.stringify(updated));
+      }
+      return updated;
+    });
   }, []);
 
   return (
