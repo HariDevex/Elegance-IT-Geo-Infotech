@@ -18,7 +18,16 @@ export const connectRedis = async () => {
   }
 
   try {
-    redisClient = createClient({ url: redisUrl });
+    redisClient = createClient({
+      url: redisUrl,
+      socket: {
+        connectTimeout: 3000,
+        reconnectStrategy: (retries) => {
+          if (retries > 2) return false;
+          return Math.min(retries * 500, 1500);
+        },
+      },
+    });
     
     redisClient.on("error", (err) => {
       console.error("Redis error:", err.message);
@@ -34,8 +43,11 @@ export const connectRedis = async () => {
       console.log("Redis reconnecting...");
     });
 
-    await redisClient.connect();
-    return true;
+    await Promise.race([
+      redisClient.connect(),
+      new Promise((resolve) => setTimeout(resolve, 5000)),
+    ]);
+    return isConnected;
   } catch (error) {
     console.error("Redis connection failed:", error.message);
     return false;
